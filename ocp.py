@@ -11,7 +11,6 @@ from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
 # ============================================================
-# FORCE LA SIDEBAR A RESTER OUVERTE PAR DEFAUT
 st.set_page_config(layout="wide", page_title="Dashboard KPI", initial_sidebar_state="expanded")
 # ============================================================
 
@@ -305,7 +304,6 @@ def calculate_rankings(var_df):
 def inject_custom_css():
     st.markdown("""<style>
     section[data-testid="stSidebar"]{width:250px!important}
-    section[data-testid="stSidebar"][aria-expanded="false"]{width:0px!important}
     .main .block-container{max-width:100%!important;width:100%!important;padding-left:0.5rem!important;padding-right:0.5rem!important}
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
     :root{--p:#1e3a5f;--pl:#2c5282;--b:#e2e8f0;--r:10px}
@@ -314,10 +312,8 @@ def inject_custom_css():
     .main .block-container{padding-top:.8rem;padding-bottom:.8rem}
     .stTabs,.stTabs>div,.stTabs [data-baseweb="tab-list"]{width:100%!important;max-width:100%!important}
     .mh{background:linear-gradient(135deg,var(--p),var(--pl));padding:10px 20px;border-radius:var(--r);margin-bottom:6px;box-shadow:0 6px 20px rgba(0,0,0,.1);overflow:hidden;display:flex;align-items:center;gap:12px}
-    /* ===== TITRE AGRANDI 1.5X (27px -> 40px) ===== */
     .mh h1{color:#fff;font-size:40px;font-weight:800;margin:0;display:inline;flex:1}
     .mh .logo{height:47px;width:auto;max-width:140px;object-fit:contain;flex-shrink:0;border-radius:4px}
-    /* ===== DATE AGRANDIE 1.5X (14px -> 21px) ===== */
     .mh .db{background:rgba(255,255,255,.15);padding:3px 12px;border-radius:14px;color:#fff;font-size:21px;font-weight:500;border:1px solid rgba(255,255,255,.2);white-space:nowrap;flex-shrink:0}
     .cr{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:6px}
     .cc{background:#fff;border-radius:var(--r);padding:10px 12px;box-shadow:0 2px 8px rgba(0,0,0,.04);border:1px solid var(--b);text-align:center}
@@ -450,11 +446,9 @@ def inject_custom_css():
     .synth-tbl .poste-cell{text-align:left;font-weight:700;white-space:nowrap;min-width:140px;color:#1a202c !important}
     div[data-testid="stHorizontalBlock"]{align-items:center!important}
     
-    header[data-testid="stHeader"] [data-testid="stToolbar"]{display:none !important;}
+    /* ===== SUPPRIMER UNIQUEMENT LES BOUTONS DE PARTAGE/MENU STREAMLIT (Garder le bouton Sidebar) ===== */
     [data-testid="stHeaderActionElements"]{display:none !important;}
     [data-testid="stActionButtonContainer"]{display:none !important;}
-    [data-testid="stHeader"] [data-testid="stToolbar"]{display:none !important;}
-    #stAppViewblockContainer > header button[kind="header"]{display:none !important;}
     
     .footer {
         text-align: center;
@@ -466,19 +460,22 @@ def inject_custom_css():
         font-weight: 600;
     }
 
-    /* ===== AGRANDIR LA TAILLE DU TEXTE DANS LE PLAN D' ACTIONS (x2) ===== */
+    /* ===== AGRANDIR LA TAILLE DU TEXTE DANS LE PLAN D' ACTIONS (sans scroll horizontal) ===== */
     div[data-testid="stDataEditor"] table, 
     div[data-testid="stDataEditor"] th, 
     div[data-testid="stDataEditor"] td {
-        font-size: 26px !important;
+        font-size: 18px !important;
         line-height: 1.4 !important;
+        white-space: normal !important; /* Permet le retour à la ligne */
+        word-wrap: break-word !important;
     }
     div[data-testid="stDataEditor"] [data-testid="stMarkdownContainer"] {
-        font-size: 26px !important;
+        font-size: 18px !important;
     }
-    /* Hauteur des lignes augmentée pour plus de confort */
-    div[data-testid="stDataEditor"] [data-testid="stTable"] > div > div > div {
-        min-height: 50px !important;
+    /* Empêcher la barre de défilement horizontale et s'adapter à la page */
+    div[data-testid="stDataEditor"] [data-testid="stTable"] {
+        overflow-x: hidden !important;
+        width: 100% !important;
     }
 
     @media(max-width:768px){
@@ -502,7 +499,7 @@ def inject_custom_css():
         .stl{font-size:13px}
         .stTabs [data-baseweb="tab"]{padding:8px 12px;font-size:15px}
         .stTabs [data-baseweb="tab"] span{font-size:16px !important}
-        div[data-testid="stDataEditor"] table, div[data-testid="stDataEditor"] th, div[data-testid="stDataEditor"] td { font-size: 16px !important; }
+        div[data-testid="stDataEditor"] table, div[data-testid="stDataEditor"] th, div[data-testid="stDataEditor"] td { font-size: 14px !important; }
     }
     
     /* ===== CSS POUR L'IMPRESSION PDF (MASQUE L'INTERFACE STREAMLIT) ===== */
@@ -916,12 +913,9 @@ def main():
             st.cache_data.clear()
             st.rerun()
 
-        # BOUTON PRINT / MODE PRÉSENTATION
         if st.button("🖥️ Mode Présentation (Slide/PDF)", use_container_width=True):
-            # Utilisation de window.parent.print() pour imprimer la page principale et non l'iframe vide
             components.html("<script>window.parent.print();</script>", height=0, width=0)
             
-        # Le checkbox est volontairement laissé en dehors du bloc 'if' pour qu'il soit toujours visible
         show_filters=st.checkbox("✅ Afficher les filtres",value=True,key="show_filters")
         if show_filters:
             unf=st.toggle("📁 Charger nouveaux fichiers",value=False,key="tf")
@@ -1356,6 +1350,7 @@ def main():
                     
                     st.write("")
                     
+                    # Hauteur augmentée à 1000 pour limiter la barre de défilement verticale si beaucoup de lignes
                     edited_plan_df = st.data_editor(
                         df_plan_actions,
                         column_config={
@@ -1367,7 +1362,8 @@ def main():
                         },
                         use_container_width=True,
                         hide_index=True,
-                        num_rows="fixed"
+                        num_rows="fixed",
+                        height=1000
                     )
                     
                     st.write("")
