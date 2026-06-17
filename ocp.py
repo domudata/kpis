@@ -11,7 +11,8 @@ from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
 # ============================================================
-st.set_page_config(layout="wide", page_title="Dashboard KPI")
+# FORCE LA SIDEBAR A RESTER OUVERTE PAR DEFAUT
+st.set_page_config(layout="wide", page_title="Dashboard KPI", initial_sidebar_state="expanded")
 # ============================================================
 
 QK = ["TAUX_REALISATION_CORRECTIF/PT","OT préparation <1 mois","OT préparation >3 mois",
@@ -465,6 +466,21 @@ def inject_custom_css():
         font-weight: 600;
     }
 
+    /* ===== AGRANDIR LA TAILLE DU TEXTE DANS LE PLAN D' ACTIONS (x2) ===== */
+    div[data-testid="stDataEditor"] table, 
+    div[data-testid="stDataEditor"] th, 
+    div[data-testid="stDataEditor"] td {
+        font-size: 26px !important;
+        line-height: 1.4 !important;
+    }
+    div[data-testid="stDataEditor"] [data-testid="stMarkdownContainer"] {
+        font-size: 26px !important;
+    }
+    /* Hauteur des lignes augmentée pour plus de confort */
+    div[data-testid="stDataEditor"] [data-testid="stTable"] > div > div > div {
+        min-height: 50px !important;
+    }
+
     @media(max-width:768px){
         .cr{grid-template-columns:repeat(2,1fr)}
         .mh{padding:8px 10px;gap:8px}
@@ -486,20 +502,46 @@ def inject_custom_css():
         .stl{font-size:13px}
         .stTabs [data-baseweb="tab"]{padding:8px 12px;font-size:15px}
         .stTabs [data-baseweb="tab"] span{font-size:16px !important}
+        div[data-testid="stDataEditor"] table, div[data-testid="stDataEditor"] th, div[data-testid="stDataEditor"] td { font-size: 16px !important; }
     }
     
+    /* ===== CSS POUR L'IMPRESSION PDF (MASQUE L'INTERFACE STREAMLIT) ===== */
     @media print {
-        section[data-testid="stSidebar"] { display: none !important; }
-        div[data-testid="stToolbar"] { display: none !important; }
-        header { display: none !important; }
-        .main .block-container { padding-top: 0 !important; max-width: 100% !important; }
+        /* Cacher toute l'interface Streamlit */
+        section[data-testid="stSidebar"], 
+        header[data-testid="stHeader"], 
+        div[data-testid="stToolbar"], 
+        div[data-testid="stHeaderActionElements"],
+        footer, 
+        .stDeployButton, 
+        #MainMenu { display: none !important; }
+        
+        /* S'assurer que le contenu prend toute la largeur sans marge */
+        .main .block-container { 
+            padding-top: 0 !important; 
+            padding-left: 0 !important; 
+            padding-right: 0 !important; 
+            max-width: 100% !important; 
+        }
+        
+        /* Cacher tous les boutons (y compris le bouton d'impression et d'export) */
+        .stButton, .stDownloadButton { display: none !important; }
+        
+        /* Forcer l'impression des couleurs de fond (pour vos tableaux et cartes) */
+        * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        
+        /* Gérer les onglets : cacher la barre d'onglets mais garder le contenu visible */
         .stTabs [data-baseweb="tab-list"] { display: none !important; }
-        .stTabs [data-baseweb="tab-panel"] { display: block !important; page-break-after: always; padding: 10px; }
-        .stDownloadButton, .stButton { display: none !important; }
-        .cr { page-break-inside: avoid; }
-        .ca { page-break-inside: avoid; }
-        .tw { page-break-inside: avoid; overflow: visible !important; }
-        .synth-tbl { page-break-inside: avoid; }
+        .stTabs [data-baseweb="tab-panel"] { 
+            display: block !important; 
+            page-break-inside: avoid; 
+        }
+        
+        /* Éviter de couper les tableaux */
+        .tw, .synth-tbl { page-break-inside: avoid; overflow: visible !important; }
     }
     </style>""",unsafe_allow_html=True)
 
@@ -876,9 +918,11 @@ def main():
 
         # BOUTON PRINT / MODE PRÉSENTATION
         if st.button("🖥️ Mode Présentation (Slide/PDF)", use_container_width=True):
-            components.html("<script>window.print();</script>", height=0, width=0)
+            # Utilisation de window.parent.print() pour imprimer la page principale et non l'iframe vide
+            components.html("<script>window.parent.print();</script>", height=0, width=0)
             
-        show_filters=st.checkbox("Afficher les filtres",value=True,key="show_filters")
+        # Le checkbox est volontairement laissé en dehors du bloc 'if' pour qu'il soit toujours visible
+        show_filters=st.checkbox("✅ Afficher les filtres",value=True,key="show_filters")
         if show_filters:
             unf=st.toggle("📁 Charger nouveaux fichiers",value=False,key="tf")
             ot_f=av_f=None
