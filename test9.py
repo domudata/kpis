@@ -846,13 +846,15 @@ def main():
         
     def html_grouped_bars(posts,pscores,qscores,title):
         h='<div class="ca"><div class="ct" style="color:#1e3a5f">%s</div>'%title
-        # Remplacement de la légende par les en-têtes Performance et Qualite
-        h+='<div style="display:flex;align-items:center;padding-bottom:6px;margin-bottom:6px;border-bottom:1px solid #e2e8f0;font-size:13px;font-weight:800;">'
+        # Pas de légende (no key)
+        
+        # Ajout de l'en-tête Performance / Qualite
+        h+='<div style="display:flex;align-items:center;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid #e2e8f0;">'
         h+='<div class="gbr-l"></div>'
         h+='<div class="gbr-g">'
-        h+='<div style="flex:1;text-align:center;color:#2b6cb0;">Performance</div>'
+        h+='<div style="flex:1;text-align:center;font-weight:800;color:#2b6cb0;font-size:14px;">Performance</div>'
         h+='<div style="min-width:48px;"></div>'
-        h+='<div style="flex:1;text-align:center;color:#276749;">Qualite</div>'
+        h+='<div style="flex:1;text-align:center;font-weight:800;color:#276749;font-size:14px;">Qualite</div>'
         h+='<div style="min-width:48px;"></div>'
         h+='</div></div>'
         
@@ -1221,6 +1223,9 @@ def main():
                     if "Avis" in df_anom.columns:
                         cols_exist = [c for c in av_cols if c in df_anom.columns]
                         df_anom = df_anom[cols_exist].copy()
+                        if "Avis" in df_anom.columns:
+                            avis_idx = df_anom.columns.get_loc("Avis")
+                            df_anom.insert(avis_idx + 1, "OT à créer", "")
                     else:
                         cols_exist = [c for c in ot_cols if c in df_anom.columns]
                         df_anom = df_anom[cols_exist].copy()
