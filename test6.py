@@ -510,33 +510,40 @@ def main():
                 color_discrete_map={"CARACTERISE": "#38a169", "NON CARACTERISE": "#e53e3e"}
             )
             fig.update_traces(textposition='inside', textinfo='percent+value', textfont_size=11)
-            fig.update_layout(margin=dict(t=40, b=10, l=10, r=10), height=280,
+            fig.update_layout(margin=dict(t=40, b=10, l=10, r=10), height=300,
                               legend=dict(font_size=10, orientation="h", yanchor="bottom", y=-0.1))
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.markdown('<div class="es">Aucune donnee</div>', unsafe_allow_html=True)
 
-    # NOUVELLE FONCTION POUR AFFICHER LES TYPES EN BARRES (PLUS LISIBLE S'IL Y A PLUSIEURS TYPES)
-    def show_carac_type_bar(piv_df, title):
-        counts = piv_df.sum().sort_values(ascending=True)
+    def show_carac_type_pie(piv_df, title):
+        counts = piv_df.sum()
+        counts = counts[counts > 0]
         if counts.empty:
             st.markdown('<div class="es">Aucune donnee</div>', unsafe_allow_html=True)
             return
-        fig = px.bar(
-            x=counts.values, 
-            y=counts.index, 
-            orientation='h',
+        color_map = {
+            "CRPR ATPD": "#3182ce", "CRPR ATMR": "#38a169", "CRPR ATER": "#805ad5",
+            "CRPR ATRS": "#d69e2e", "CRPR ATMO": "#e53e3e",
+            "ATPD": "#4299e1", "ATMR": "#48bb78", "ATER": "#9f7aea",
+            "ATRS": "#ecc94b", "ATMO": "#fc8181",
+            "ATPL ATEI": "#3182ce", "ATPL ATAL": "#38a169", "ATPL ATER": "#805ad5",
+            "ATPL AGAR": "#d69e2e", "ATPL ATHS": "#e53e3e",
+            "ATEI": "#4299e1", "ATAL": "#48bb78", "ATAS": "#9f7aea",
+            "AGAR": "#ecc94b", "ATHS": "#fc8181",
+        }
+        fig = px.pie(
+            names=counts.index,
+            values=counts.values,
             title=title,
-            text=counts.values,
-            color_discrete_sequence=["#805ad5"]
+            color=counts.index,
+            color_discrete_map=color_map
         )
-        fig.update_traces(textposition='outside')
+        fig.update_traces(textposition='inside', textinfo='percent+value', textfont_size=11)
         fig.update_layout(
-            margin=dict(t=40, b=20, l=10, r=20), 
-            height=max(300, len(counts)*35),
-            xaxis_title="Nombre d'OT",
-            yaxis_title="",
-            showlegend=False
+            margin=dict(t=40, b=10, l=10, r=10),
+            height=300,
+            legend=dict(font_size=10, orientation="h", yanchor="bottom", y=-0.1)
         )
         st.plotly_chart(fig, use_container_width=True)
 
@@ -627,7 +634,7 @@ def main():
         if c in ["OT préparation 1mois< <3mois","OT planification 1mois< <3mois","OT exécution 1mois< <3mois"]:
             return "background:#c6efce;color:#006100;font-weight:600" if val<=15 else "background:#ffc7ce;color:#9c0006;font-weight:600"
         if c in ["OT préparation >3 mois","OT planification >3 mois","OT exécution >3 mois"]:
-            return "background:#c6efce;color:#006100;font-weight:600" if val<=5 else "background:#ffc7ce;color:#9c0006;font-weight:600")
+            return "background:#c6efce;color:#006100;font-weight:600" if val<=5 else "background:#ffc7ce;color:#9c0006;font-weight:600"
         if c=="TAUX_REALISATION_CORRECTIF/PT":
             return "background:#c6efce;color:#006100;font-weight:600" if val>=85 else ("background:#ffeb9c;color:#9c6500;font-weight:600" if val>=80 else "background:#ffc7ce;color:#9c0006;font-weight:600")
         if c=="appel avis approuvé":
@@ -770,17 +777,19 @@ def main():
         piv_df = piv_df.copy()
         piv_df["Total"] = piv_df.sum(axis=1)
         cols = ["Poste de travail"] + [str(c) for c in piv_df.columns]
-        h='<div class="ca"><div class="ct" style="color:#1e3a5f">%s</div>'%title
-        h+='<table class="tw %s"><thead><tr>'%table_class+''.join('<th>%s</th>'%c for c in cols)+'</tr></thead><tbody>'
-        for poste,row in piv_df.iterrows():
-            h+='<tr><td style="font-weight:600">%s</td>'%poste
+        h = '<div class="ca"><div class="ct" style="color:#1e3a5f">%s</div>' % title
+        h += '<div style="max-height:320px;overflow-y:auto;overflow-x:auto;border-radius:6px">'
+        h += '<table class="tw %s"><thead><tr>' % table_class + ''.join(
+            '<th>%s</th>' % c for c in cols) + '</tr></thead><tbody>'
+        for poste, row in piv_df.iterrows():
+            h += '<tr><td style="font-weight:600">%s</td>' % poste
             for c in piv_df.columns:
-                h+='<td style="text-align:center">%d</td>'%int(row.get(c,0))
-            h+='</tr>'
-        h+='<tr class="tr"><td>Total</td>'
+                h += '<td style="text-align:center">%d</td>' % int(row.get(c, 0))
+            h += '</tr>'
+        h += '<tr class="tr"><td>Total</td>'
         for c in piv_df.columns:
-            h+='<td style="text-align:center">%d</td>'%int(piv_df[c].sum())
-        h+='</tr></tbody></table></div>'
+            h += '<td style="text-align:center">%d</td>' % int(piv_df[c].sum())
+        h += '</tr></tbody></table></div></div>'
         return h
 
     # ===================== LOAD CACHED DATA =====================
@@ -1168,40 +1177,47 @@ def main():
                 st.markdown(html_actions_table(PK,qa,CIBLE,ACT_MAP),unsafe_allow_html=True)
 
             with tabs[3]:
+                # ===== BACKLOG PREPARATION =====
                 st.markdown('<div class="stl c">Caractérisation Backlog Préparation</div>',unsafe_allow_html=True)
-                c1, c2 = st.columns([0.6, 0.4])
+                st.markdown(html_generic_pivot(piv_carac_prep_stat, "omt", "Synthèse Caractérisé / Non Caractérisé"),unsafe_allow_html=True)
+                c1, c2 = st.columns(2)
                 with c1:
-                    st.markdown(html_generic_pivot(piv_carac_prep_stat, "omt", "Synthèse Caractérisé / Non Caractérisé"),unsafe_allow_html=True)
+                    show_simple_pie(piv_carac_prep_stat, "Répartition Caractérisé / Non Caractérisé")
                 with c2:
-                    show_simple_pie(piv_carac_prep_stat, "Répartition Globale Caractérisé / Non Caractérisé")
-                    # UTILISATION DU GRAPHIQUE EN BARRES POUR LES TYPES
-                    show_carac_type_bar(piv_carac_prep_type, "Répartition par Type de Caractérisation")
+                    show_carac_type_pie(piv_carac_prep_type, "Répartition par Type de Caractérisation")
 
+                # ===== BACKLOG PLANIFICATION =====
                 st.markdown('<div class="stl c">Caractérisation Backlog Planification</div>',unsafe_allow_html=True)
-                c5, c6 = st.columns([0.6, 0.4])
-                with c5:
-                    st.markdown(html_generic_pivot(piv_carac_plan_stat, "omt", "Synthèse Caractérisé / Non Caractérisé"),unsafe_allow_html=True)
-                with c6:
-                    show_simple_pie(piv_carac_plan_stat, "Répartition Globale Caractérisé / Non Caractérisé")
-                    # UTILISATION DU GRAPHIQUE EN BARRES POUR LES TYPES
-                    show_carac_type_bar(piv_carac_plan_type, "Répartition par Type de Caractérisation")
+                st.markdown(html_generic_pivot(piv_carac_plan_stat, "omt", "Synthèse Caractérisé / Non Caractérisé"),unsafe_allow_html=True)
+                c3, c4 = st.columns(2)
+                with c3:
+                    show_simple_pie(piv_carac_plan_stat, "Répartition Caractérisé / Non Caractérisé")
+                with c4:
+                    show_carac_type_pie(piv_carac_plan_type, "Répartition par Type de Caractérisation")
 
+                # ===== STATUTS OT PAR POSTE =====
                 st.markdown('<div class="stl p">Statuts OT par Poste de Travail</div>',unsafe_allow_html=True)
                 
                 st.markdown('<div class="stl s">OT OMS par Poste et Statut OT</div>',unsafe_allow_html=True)
-                c_oms1, c_oms2 = st.columns([0.55, 0.45])
-                with c_oms1: st.markdown(html_statut_pivot(piv_oms,"omt"),unsafe_allow_html=True)
-                with c_oms2: show_pie_pair(piv_oms,"OT OMS")
+                c_oms1, c_oms2 = st.columns(2)
+                with c_oms1:
+                    st.markdown(html_statut_pivot(piv_oms,"omt"),unsafe_allow_html=True)
+                with c_oms2:
+                    show_pie_pair(piv_oms,"OT OMS")
                 
                 st.markdown('<div class="stl s">OT Thermographie par Poste et Statut OT</div>',unsafe_allow_html=True)
-                c_thm1, c_thm2 = st.columns([0.55, 0.45])
-                with c_thm1: st.markdown(html_statut_pivot(piv_thm,"tht"),unsafe_allow_html=True)
-                with c_thm2: show_pie_pair(piv_thm,"OT Thermographie")
+                c_thm1, c_thm2 = st.columns(2)
+                with c_thm1:
+                    st.markdown(html_statut_pivot(piv_thm,"tht"),unsafe_allow_html=True)
+                with c_thm2:
+                    show_pie_pair(piv_thm,"OT Thermographie")
                 
                 st.markdown('<div class="stl s">Tous les OT par Poste et Statut OT</div>',unsafe_allow_html=True)
-                c_all1, c_all2 = st.columns([0.55, 0.45])
-                with c_all1: st.markdown(html_statut_pivot(piv_all,"pt"),unsafe_allow_html=True)
-                with c_all2: show_pie_pair(piv_all,"Tous les OT")
+                c_all1, c_all2 = st.columns(2)
+                with c_all1:
+                    st.markdown(html_statut_pivot(piv_all,"pt"),unsafe_allow_html=True)
+                with c_all2:
+                    show_pie_pair(piv_all,"Tous les OT")
 
             with tabs[4]:
                 min_date = var_df["Date precedente"].min() if not var_df.empty else "?"
