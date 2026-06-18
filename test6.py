@@ -175,7 +175,6 @@ def prepare_data(ot_bytes, av_bytes, date_str):
             df[ac]=df[am].apply(cat_age)
         else: df[am]=np.nan; df[ac]="Inconnu"
         
-    # MODIFICATION 1 : OT CONFIME Equation
     df["OT CONFIME"]=np.where((df["Statut système"].str.contains("CLOT",na=False)|df["Statut système"].str.contains("TCLO",na=False))&~df["Statut système"].str.contains("CONF",na=False),"NON","OUI")
     
     df["Contient SOPL"]=df["Statut utilisateur"].str.contains("SOPL",na=False).map({True:1,False:0})
@@ -374,10 +373,10 @@ def inject_custom_css():
         top:-4px;
         bottom:-4px;
         width:3px;
-        background:#e53e3e;
+        background:#3182ce !important; /* Changé en bleu */
         z-index:20;
         transform:translateX(-50%);
-        box-shadow:0 0 6px rgba(229,62,62,.9),0 0 2px rgba(0,0,0,.4);
+        box-shadow:0 0 6px rgba(49,130,206,.9),0 0 2px rgba(0,0,0,.4);
         border-radius:2px;
     }
     .car .cav-out{font-size:12px;font-weight:800;color:#1a202c;min-width:55px;text-align:right;padding-left:6px}
@@ -386,16 +385,15 @@ def inject_custom_css():
     .gbr:last-child{border:none}
     .gbr-l{width:160px;font-weight:600;color:#1a202c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
     .gbr-g{display:flex;align-items:center;gap:4px;flex:1;position:relative}
-    .gbr-target{position:absolute;left:90%;top:-4px;bottom:-4px;width:3px;background:#e53e3e;z-index:10;box-shadow:0 0 6px rgba(229,62,62,.8);border-radius:2px}
-    .gbr-target-label{position:absolute;left:90%;top:-20px;transform:translateX(-50%);font-size:9px;font-weight:800;color:#fff;background:#e53e3e;padding:1px 5px;border-radius:3px;white-space:nowrap;z-index:11;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+    .gbr-target{position:absolute;left:90%;top:-4px;bottom:-4px;width:3px;background:#3182ce !important;z-index:10;box-shadow:0 0 6px rgba(49,130,206,.8);border-radius:2px}
+    .gbr-target-label{position:absolute;left:90%;top:-20px;transform:translateX(-50%);font-size:9px;font-weight:800;color:#fff;background:#3182ce !important;padding:1px 5px;border-radius:3px;white-space:nowrap;z-index:11;box-shadow:0 1px 3px rgba(0,0,0,.2)}
     .gbr-w{flex:1;height:22px;background:#edf2f7;border-radius:3px;overflow:hidden}
     .gbr-f{height:100%;border-radius:3px}
-    .gb-p{background:linear-gradient(90deg,#2b6cb0,#4299e1)}.gb-q{background:linear-gradient(90deg,#276749,#48bb78)}
     .gbr-v{font-size:11px;font-weight:800;min-width:48px;text-align:right;color:#1a202c}
     .gbr-legend{display:flex;gap:14px;margin-bottom:10px;font-size:12px;font-weight:700;align-items:center}
     .gbr-legend span{display:flex;align-items:center;gap:5px}
     .gbr-legend i{display:inline-block;width:14px;height:14px;border-radius:2px}
-    .gbr-legend .target-icon{display:inline-block;width:3px;height:14px;background:#e53e3e;border-radius:1px;box-shadow:0 0 3px rgba(229,62,62,.6)}
+    .gbr-legend .target-icon{display:inline-block;width:3px;height:14px;background:#3182ce !important;border-radius:1px;box-shadow:0 0 3px rgba(49,130,206,.6)}
     .cg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
     .cg>div{background:#fff;border-radius:var(--r);padding:8px 10px;border:1px solid var(--b)}
     .cg .ct{font-size:13px;font-weight:700;margin-bottom:4px;padding-bottom:3px;border-bottom:1px solid var(--b)}
@@ -560,7 +558,6 @@ def main():
         h+='</tr></tbody></table>'
         return h
         
-    # MODIFICATION 3 : Hauteur et typo des Pie Charts agrandis
     def show_pie_pair(piv_df, title_prefix):
         global_counts=piv_df[["CRÉÉ","LANC","CLOT","TCLO"]].sum()
         global_counts=global_counts[global_counts>0]
@@ -570,8 +567,8 @@ def main():
             fig1=px.pie(global_counts, names=global_counts.index, values=global_counts.values,
                 title="%s — Par Statut OT"%title_prefix,
                 color_discrete_sequence=["#e53e3e","#d69e2e","#38a169","#3182ce"])
-            fig1.update_traces(textposition='inside',textinfo='percent+value',textfont_size=12)
-            fig1.update_layout(margin=dict(t=40,b=10,l=10,r=10),height=380,legend=dict(font_size=11,orientation="h",yanchor="bottom",y=-0.1))
+            fig1.update_traces(textposition='inside',textinfo='percent+value',textfont_size=12, domain={'x': [0.15, 0.85], 'y': [0.15, 0.85]})
+            fig1.update_layout(margin=dict(t=40,b=10,l=10,r=10),height=380,legend=dict(font_size=11,orientation="h",yanchor="bottom",y=-0.1, x=0.5, xanchor="center"))
             st.plotly_chart(fig1,use_container_width=True)
         else:
             st.markdown('<div class="es">Aucune donnee</div>',unsafe_allow_html=True)
@@ -581,8 +578,8 @@ def main():
             fig2=px.pie(pie2_data, names="Statut", values="Nombre",
                 title="%s — Réalisés vs Non Réalisés"%title_prefix,
                 color="Statut", color_discrete_map={"Réalisés (CLOT+TCLO)":"#38a169","Non Réalisés":"#e53e3e"})
-            fig2.update_traces(textposition='inside',textinfo='percent+value',textfont_size=12)
-            fig2.update_layout(margin=dict(t=40,b=10,l=10,r=10),height=380,legend=dict(font_size=11,orientation="h",yanchor="bottom",y=-0.1))
+            fig2.update_traces(textposition='inside',textinfo='percent+value',textfont_size=12, domain={'x': [0.15, 0.85], 'y': [0.15, 0.85]})
+            fig2.update_layout(margin=dict(t=40,b=10,l=10,r=10),height=380,legend=dict(font_size=11,orientation="h",yanchor="bottom",y=-0.1, x=0.5, xanchor="center"))
             st.plotly_chart(fig2,use_container_width=True)
         else:
             st.markdown('<div class="es">Aucune donnee</div>',unsafe_allow_html=True)
@@ -603,9 +600,8 @@ def main():
                 color=counts.index,
                 color_discrete_map={k: v for k, v in zip(counts.index, colors)} if any(colors) else None
             )
-            fig.update_traces(textposition='inside', textinfo='percent+value', textfont_size=12)
-            fig.update_layout(margin=dict(t=40, b=10, l=10, r=10), height=350,
-                              legend=dict(font_size=11, orientation="h", yanchor="bottom", y=-0.1))
+            fig.update_traces(textposition='inside', textinfo='percent+value', textfont_size=12, domain={'x': [0.15, 0.85], 'y': [0.15, 0.85]})
+            fig.update_layout(margin=dict(t=40, b=10, l=10, r=10), height=350, legend=dict(font_size=11, orientation="h", yanchor="bottom", y=-0.1, x=0.5, xanchor="center"))
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.markdown('<div class="es">Aucune donnee</div>', unsafe_allow_html=True)
@@ -689,6 +685,42 @@ def main():
         })
         return res
 
+    def get_bar_color(kpi, val):
+        try: v = float(val)
+        except: return "#cbd5e0"
+        
+        if kpi in ["OT préparation <1 mois","OT planification <1 mois","OT exécution <1 mois"]:
+            if v>=80: return "#38a169"
+            elif v>=75: return "#d69e2e"
+            else: return "#e53e3e"
+        if kpi in ["OT préparation 1mois< <3mois","OT planification 1mois< <3mois","OT exécution 1mois< <3mois"]:
+            return "#38a169" if v<=15 else "#e53e3e"
+        if kpi in ["OT préparation >3 mois","OT planification >3 mois","OT exécution >3 mois"]:
+            return "#38a169" if v<=5 else "#e53e3e"
+        if kpi=="TAUX_REALISATION_CORRECTIF/PT":
+            if v>=85: return "#38a169"
+            elif v>=80: return "#d69e2e"
+            else: return "#e53e3e"
+        if kpi=="appel avis approuvé":
+            if v>=95: return "#38a169"
+            elif v>=90: return "#d69e2e"
+            else: return "#e53e3e"
+        if kpi in ["OT LANC ESTIME","Backlog préparation caractérisé","Backlog planification caractérisé","OT CONFIME","OT_COR_EGAL"]:
+            if v>=100: return "#38a169"
+            elif v>=95: return "#d69e2e"
+            else: return "#e53e3e"
+        if kpi in ["Performance Graissage","Performance Inspection","Performance Appels Systématiques"]:
+            if v>=95: return "#38a169"
+            elif v>90: return "#d69e2e"
+            else: return "#e53e3e"
+        if kpi in ["OT Fiabilité","Total Avis de Panne"]:
+            return "#38a169" if v>=100 else "#d69e2e"
+            
+        # Cas génériques (Scores Qualité/Performance)
+        if v>=90: return "#38a169"
+        elif v>=80: return "#d69e2e"
+        else: return "#e53e3e"
+
     def ks(v,c):
         try: val=float(v)
         except Exception: return ""
@@ -737,7 +769,6 @@ def main():
         
     def is_lb(k): return k in LOWER_BETTER
 
-    # MODIFICATION 2 : Coloration ligne Total (selon valeur) et ligne Cible (en bleu)
     def html_table(rows,cols,tc,sc_col=None):
         h='<table class="tw %s"><thead><tr>'%tc+''.join('<th>%s</th>'%c for c in cols)+'</tr></thead><tbody>'
         for r in rows:
@@ -811,7 +842,7 @@ def main():
             tv=targets.get(k,100)
             met=av<=tv if is_lb(k) else av>=tv
             bw=min(max(av,0),100)
-            bg=color_ok if met else color_fail
+            bg=get_bar_color(k, av)
             tv_pos=min(max(tv,0),100)
             h+=('<div class="car"><div class="cal">%s</div><div class="cab"><div class="caf" style="width:%s%%;background:%s"></div><div class="target-mark" style="left:%s%%"></div></div><div class="cav-out">%.1f%%</div><div class="cav-tgt">/%.0f%%</div></div>')%(k,bw,bg,tv_pos,av,tv)
         return h+'</div>'
@@ -822,8 +853,10 @@ def main():
         sorted_posts = sorted(posts,key=lambda x:(pscores.get(x,0)+qscores.get(x,0))/2,reverse=True)
         for idx,p in enumerate(sorted_posts):
             pv,qv=pscores.get(p,0),qscores.get(p,0)
+            p_color = get_bar_color(None, pv)
+            q_color = get_bar_color(None, qv)
             label_html = '<div class="gbr-target-label">90%%</div>' if idx==0 else ''
-            h+='<div class="gbr"><div class="gbr-l">%s</div><div class="gbr-g"><div class="gbr-target"></div>%s<div class="gbr-w"><div class="gbr-f gb-p" style="width:%s%%"></div></div><div class="gbr-v">%.1f%%</div><div class="gbr-w"><div class="gbr-f gb-q" style="width:%s%%"></div></div><div class="gbr-v">%.1f%%</div></div></div>'%(p,label_html,min(max(pv,0),100),pv,min(max(qv,0),100),qv)
+            h+='<div class="gbr"><div class="gbr-l">%s</div><div class="gbr-g"><div class="gbr-target"></div>%s<div class="gbr-w"><div class="gbr-f" style="width:%s%%;background:%s"></div></div><div class="gbr-v">%.1f%%</div><div class="gbr-w"><div class="gbr-f" style="width:%s%%;background:%s"></div></div><div class="gbr-v">%.1f%%</div></div></div>'%(p,label_html,min(max(pv,0),100),p_color,pv,min(max(qv,0),100),q_color,qv)
         return h+'</div>'
         
     def html_synthese_table(synth_data,kpi_list,posts):
@@ -1174,7 +1207,6 @@ def main():
             ot_cols = ["Ordre","Désignation","Poste technique","Désignation du poste technique","Poste travail princ.","Divis. planification","Statut système","Statut utilisateur","Date de début planifiée"]
             av_cols = ["Avis","Description","Poste technique","Poste travail princ.","Statut système","Statut utilisateur"]
             
-            # MODIFICATION 4 : Ajout colonne "OT à créer" dans export Avis
             export_anomaly_dfs = {}
             for kpi, df_anom in anomaly_dfs.items():
                 if not df_anom.empty:
