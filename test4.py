@@ -7,6 +7,7 @@ import io, locale, random, time, os, hashlib, json, base64
 from datetime import datetime
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots # Ajout pour Bar of Pie
 from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
@@ -352,17 +353,9 @@ def inject_custom_css():
     .car .cab{flex:1;height:26px;background:#edf2f7;border-radius:4px;overflow:visible;position:relative}
     .car .caf{height:100%;border-radius:4px;transition:width .3s}
     
-    /* TRAIT CIBLE BLEU CI-DESSOUS */
     .car .target-mark{
-        position:absolute;
-        top:-4px;
-        bottom:-4px;
-        width:3px;
-        background:#3182ce; /* BLEU */
-        z-index:20;
-        transform:translateX(-50%);
-        box-shadow:0 0 6px rgba(49,130,206,.9),0 0 2px rgba(0,0,0,.4);
-        border-radius:2px;
+        position:absolute;top:-4px;bottom:-4px;width:3px;background:#3182ce;z-index:20;transform:translateX(-50%);
+        box-shadow:0 0 6px rgba(49,130,206,.9),0 0 2px rgba(0,0,0,.4);border-radius:2px;
     }
     .car .cav-out{font-size:12px;font-weight:800;color:#1a202c;min-width:55px;text-align:right;padding-left:6px}
     .car .cav-tgt{font-size:10px;font-weight:700;color:#1a202c;min-width:42px;text-align:right;padding-left:4px;opacity:.7}
@@ -493,40 +486,49 @@ def main():
         h+='</tr></tbody></table>'
         return h
         
-    # REMPLACEMENT DES PIE CHARTS PAR STACKED BAR CHARTS
-    def show_statut_stacked_bar(piv_df, title_prefix):
-        if piv_df.empty:
-            st.markdown('<div class="es">Aucune donnee</div>', unsafe_allow_html=True)
-            return
-        fig = go.Figure()
+    # NOUVEAU : BAR OF PIE CHART POUR STATUTS
+    def show_statut_bar_of_pie(piv_df, title_prefix):
         statuses = ["CRÉÉ", "LANC", "CLOT", "TCLO"]
-        colors = ["#e53e3e", "#d69e2e", "#38a169", "#3182ce"]
-        for status, color in zip(statuses, colors):
+        pie_vals = [int(piv_df[s].sum()) if s in piv_df.columns else 0 for s in statuses]
+        pie_colors = ["#e53e3e", "#d69e2e", "#38a169", "#3182ce"]
+        
+        fig = make_subplots(rows=1, cols=2, column_widths=[0.45, 0.55], 
+                            specs=[[{'type': 'domain'}, {'type': 'xy'}]],
+                            subplot_titles=['Répartition Globale', 'Par Poste'])
+        
+        fig.add_trace(go.Pie(labels=statuses, values=pie_vals, marker_colors=pie_colors, hole=0.3, textinfo='percent+value', textfont_size=11), 1, 1)
+        
+        for status, color in zip(statuses, pie_colors):
             if status in piv_df.columns:
-                fig.add_trace(go.Bar(x=piv_df.index.astype(str), y=piv_df[status], name=status, marker_color=color))
-        fig.update_layout(title=f"{title_prefix} — Par Statut OT", barmode='stack', height=300, margin=dict(t=40, b=10, l=10, r=10))
+                fig.add_trace(go.Bar(x=piv_df.index.astype(str), y=piv_df[status], name=status, marker_color=color), 1, 2)
+        
+        fig.update_layout(title=f"{title_prefix} — Statuts OT", barmode='stack', showlegend=True, height=350, margin=dict(t=50, b=20, l=20, r=20))
         st.plotly_chart(fig, use_container_width=True)
-        
-        realised = piv_df.get("CLOT", pd.Series(0, index=piv_df.index)) + piv_df.get("TCLO", pd.Series(0, index=piv_df.index))
-        not_realised = piv_df.get("CRÉÉ", pd.Series(0, index=piv_df.index)) + piv_df.get("LANC", pd.Series(0, index=piv_df.index))
-        
-        fig2 = go.Figure()
-        fig2.add_trace(go.Bar(x=piv_df.index.astype(str), y=realised, name='Réalisés (CLOT+TCLO)', marker_color='#38a169'))
-        fig2.add_trace(go.Bar(x=piv_df.index.astype(str), y=not_realised, name='Non Réalisés', marker_color='#e53e3e'))
-        fig2.update_layout(title=f"{title_prefix} — Réalisés vs Non Réalisés", barmode='stack', height=300, margin=dict(t=40, b=10, l=10, r=10))
-        st.plotly_chart(fig2, use_container_width=True)
 
-    def show_carac_stacked_bar(piv_df, title, keep_non_carac=True):
-        if piv_df.empty:
-            st.markdown('<div class="es">Aucune donnee</div>', unsafe_allow_html=True)
-            return
-        fig = go.Figure()
-        for col in piv_df.columns:
-            if not keep_non_carac and col == "NON CARACTERISE":
-                continue
-            color = '#38a169' if col == 'CARACTERISE' else '#e53e3e' if col == 'NON CARACTERISE' else '#3182ce'
-            fig.add_trace(go.Bar(x=piv_df.index.astype(str), y=piv_df[col], name=col, marker_color=color))
-        fig.update_layout(title=title, barmode='stack', height=280, margin=dict(t=40, b=10, l=10, r=10))
+    # NOUVEAU : BAR OF PIE CHART POUR CARACTERISATION
+    def show_carac_bar_of_pie(piv_df, title, keep_non_carac=True):
+        fig = make_subplots(rows=1, cols=2, column_widths=[0.45, 0.55], 
+                            specs=[[{'type': 'domain'}, {'type': 'xy'}]],
+                            subplot_titles=['Répartition Globale', 'Par Poste'])
+        
+        cols_to_plot = piv_df.columns.tolist()
+        if not keep_non_carac and "NON CARACTERISE" in cols_to_plot:
+            cols_to_plot.remove("NON CARACTERISE")
+            
+        pie_vals = [int(piv_df[c].sum()) for c in cols_to_plot]
+        pie_colors = []
+        bar_colors = []
+        for c in cols_to_plot:
+            color = '#38a169' if c == 'CARACTERISE' else '#e53e3e' if c == 'NON CARACTERISE' else '#3182ce'
+            pie_colors.append(color)
+            bar_colors.append(color)
+            
+        fig.add_trace(go.Pie(labels=cols_to_plot, values=pie_vals, marker_colors=pie_colors, hole=0.3, textinfo='percent+value', textfont_size=11), 1, 1)
+        
+        for col, color in zip(cols_to_plot, bar_colors):
+            fig.add_trace(go.Bar(x=piv_df.index.astype(str), y=piv_df[col], name=col, marker_color=color), 1, 2)
+            
+        fig.update_layout(title=title, barmode='stack', showlegend=True, height=280, margin=dict(t=50, b=20, l=20, r=20))
         st.plotly_chart(fig, use_container_width=True)
 
     def calc_kpis(df_i, av_i, now_ts, posts):
@@ -631,14 +633,14 @@ def main():
         
     def get_bar_color(val, col_name):
         if col_name in ["Score Performance", "Score Qualite"]:
-            if val >= 90: return "#38a169" # Green
-            if val >= 80: return "#d69e2e" # Yellow
-            return "#e53e3e" # Red
+            if val >= 90: return "#38a169" 
+            if val >= 80: return "#d69e2e" 
+            return "#e53e3e" 
         style = ks(val, col_name)
-        if "background:#c6efce" in style: return "#38a169" # Green
-        if "background:#ffeb9c" in style: return "#d69e2e" # Yellow
-        if "background:#ffc7ce" in style: return "#e53e3e" # Red
-        return "#a0aec0" # Default grey
+        if "background:#c6efce" in style: return "#38a169" 
+        if "background:#ffeb9c" in style: return "#d69e2e" 
+        if "background:#ffc7ce" in style: return "#e53e3e" 
+        return "#a0aec0" 
         
     def cs(v):
         try: val=float(str(v).replace(' %','').strip())
@@ -667,7 +669,6 @@ def main():
         
     def is_lb(k): return k in LOWER_BETTER
 
-    # --- FONCTION TABLE HTML MODIFIEE POUR TOTAL COLORE ---
     def html_table(rows,cols,tc,sc_col=None):
         h='<table class="tw %s"><thead><tr>'%tc+''.join('<th>%s</th>'%c for c in cols)+'</tr></thead><tbody>'
         for r in rows:
@@ -707,7 +708,6 @@ def main():
             h+='</tr>'
         return h+'</tbody></table>'
 
-    # --- NOUVELLE FONCTION POUR KPI BARS AVEC COULEURS CONDITIONNELLES ET TRIAIT BLEU ---
     def html_kpi_bars(kpi_list,actuals,targets,title,color_ok,color_fail):
         h='<div class="ca"><div class="ct" style="color:#1e3a5f">%s</div>'%title
         h+='<div class="gbr-legend"><span><span class="target-icon" style="background:#3182ce"></span> Cible</span></div>'
@@ -716,26 +716,24 @@ def main():
             tv=targets.get(k,100)
             bw=min(max(av,0),100)
             tv_pos=min(max(tv,0),100)
-            
             color = get_bar_color(av, k)
-            
             h+=('<div class="car"><div class="cal">%s</div><div class="cab"><div class="caf" style="width:%s%%;background:%s"></div><div class="target-mark" style="left:%s%%"></div></div><div class="cav-out">%.1f%%</div><div class="cav-tgt">/%.0f%%</div></div>')%(k,bw,color,tv_pos,av,tv)
         return h+'</div>'
 
-    # --- NOUVELLE FONCTION POUR GROUPED BARS PLOTLY AVEC COULEURS ET LIGNE CIBLE BLEUE ---
-    def show_grouped_bars_plotly(posts, pscores, qscores, title):
-        p_vals = [pscores.get(p, 0) for p in posts]
-        q_vals = [qscores.get(p, 0) for p in posts]
-        
-        p_colors = [get_bar_color(v, "Score Performance") for v in p_vals]
-        q_colors = [get_bar_color(v, "Score Qualite") for v in q_vals]
-        
-        fig = go.Figure()
-        fig.add_trace(go.Bar(x=posts, y=p_vals, name='Performance', marker_color=p_colors))
-        fig.add_trace(go.Bar(x=posts, y=q_vals, name='Qualite', marker_color=q_colors))
-        
-        fig.add_hline(y=90, line_dash="dash", line_color="#3182ce", annotation_text="Cible 90%", annotation_position="top left")
-        fig.update_layout(title=title, barmode='group', yaxis=dict(title="Score (%)", range=[0, 110]), height=400, margin=dict(t=40, b=10, l=10, r=10))
+    # NOUVEAU : GRAPHIQUE SCORES HORIZONTAL COTE A COTE
+    def show_score_hbar(posts, scores, title, target=90):
+        vals = [scores.get(p, 0) for p in posts]
+        colors = [get_bar_color(v, "Score Performance") for v in vals]
+        fig = go.Figure(go.Bar(
+            x=vals,
+            y=posts,
+            orientation='h',
+            marker_color=colors,
+            text=[f"{v:.1f}%" for v in vals],
+            textposition='auto'
+        ))
+        fig.add_vline(x=target, line_dash="dash", line_color="#3182ce", annotation_text=f"Cible {target}%")
+        fig.update_layout(title=title, xaxis_range=[0, 110], height=max(400, len(posts)*40), margin=dict(t=40, b=20, l=20, r=20))
         st.plotly_chart(fig, use_container_width=True)
         
     def html_classement(scores,accent):
@@ -1201,13 +1199,16 @@ def main():
 
             with tabs[0]:
                 st.markdown('<div class="stl p">Scores globaux par poste</div>',unsafe_allow_html=True)
-                # REMPLACEMENT PAR GRAPHIQUE PLOTLY COLORE + LIGNE CIBLE BLEUE
-                show_grouped_bars_plotly(vp, pscores, qscores, "Comparaison Performance / Qualite par poste")
+                # SEPARATION PERFORMANCE ET QUALITE COTE A COTE AVEC BARRES HORIZONTALES
+                col_p, col_q = st.columns(2)
+                with col_p:
+                    show_score_hbar(vp, pscores, "Performance par Poste", target=90)
+                with col_q:
+                    show_score_hbar(vp, qscores, "Qualité par Poste", target=90)
                 
                 col1,col2=st.columns(2)
                 with col1:
                     st.markdown('<div class="stl p">Indicateurs de Performance</div>',unsafe_allow_html=True)
-                    # BARRES HORIZONTALES COLOREES VERT/JAUNE/ROUGE AVEC TRIAIT BLEU
                     st.markdown(html_kpi_bars(QK,pa,CIBLE,"Taux moyens — Performance","#38a169","#e53e3e"),unsafe_allow_html=True)
                 with col2:
                     st.markdown('<div class="stl q">Indicateurs de Qualite</div>',unsafe_allow_html=True)
@@ -1227,7 +1228,7 @@ def main():
 
             with tabs[2]:
                 st.markdown('<div class="stl q">Detail des indicateurs de Qualite</div>',unsafe_allow_html=True)
-                st.markdown(html_table(qrows,qcols,"qt",["Score Qualite"]),unsafe_allow_html=True)
+                st.markdown(html_table(qrows,qcols,"qt",["Score Qualite"]),unsafe_ask_html=True)
                 st.markdown('<div class="stl a">Nombre d\'anomalies par KPI et Poste (à traiter pour atteindre 100%)</div>',unsafe_allow_html=True)
                 st.markdown(html_anomaly_table(ano_q_rows,ano_q_cols,"at"),unsafe_allow_html=True)
                 st.markdown('<div class="stl a">Actions recommandees — Qualite</div>',unsafe_allow_html=True)
@@ -1239,34 +1240,34 @@ def main():
                 with c1:
                     st.markdown(html_generic_pivot(piv_carac_prep_stat, "omt", "Synthèse Caractérisé / Non Caractérisé"),unsafe_allow_html=True)
                 with c2:
-                    # REMPLACEMENT DES PIE CHARTS PAR STACKED BAR CHARTS
-                    show_carac_stacked_bar(piv_carac_prep_stat, "Répartition Globale Caractérisé / Non Caractérisé")
-                    show_carac_stacked_bar(piv_carac_prep_type, "Répartition par Type de Caractérisation", keep_non_carac=False)
+                    # REMPLACEMENT PAR BAR OF PIE
+                    show_carac_bar_of_pie(piv_carac_prep_stat, "Répartition Globale Caractérisé / Non Caractérisé")
+                    show_carac_bar_of_pie(piv_carac_prep_type, "Répartition par Type de Caractérisation", keep_non_carac=False)
 
                 st.markdown('<div class="stl c">Caractérisation Backlog Planification</div>',unsafe_allow_html=True)
                 c5, c6 = st.columns(2)
                 with c5:
                     st.markdown(html_generic_pivot(piv_carac_plan_stat, "omt", "Synthèse Caractérisé / Non Caractérisé"),unsafe_allow_html=True)
                 with c6:
-                    show_carac_stacked_bar(piv_carac_plan_stat, "Répartition Globale Caractérisé / Non Caractérisé")
-                    show_carac_stacked_bar(piv_carac_plan_type, "Répartition par Type de Caractérisation", keep_non_carac=False)
+                    show_carac_bar_of_pie(piv_carac_plan_stat, "Répartition Globale Caractérisé / Non Caractérisé")
+                    show_carac_bar_of_pie(piv_carac_plan_type, "Répartition par Type de Caractérisation", keep_non_carac=False)
 
                 st.markdown('<div class="stl p">Statuts OT par Poste de Travail</div>',unsafe_allow_html=True)
                 
                 st.markdown('<div class="stl s">OT OMS par Poste et Statut OT</div>',unsafe_allow_html=True)
                 c_oms1, c_oms2 = st.columns(2)
                 with c_oms1: st.markdown(html_statut_pivot(piv_oms,"omt"),unsafe_allow_html=True)
-                with c_oms2: show_statut_stacked_bar(piv_oms,"OT OMS")
+                with c_oms2: show_statut_bar_of_pie(piv_oms,"OT OMS")
                 
                 st.markdown('<div class="stl s">OT Thermographie par Poste et Statut OT</div>',unsafe_allow_html=True)
                 c_thm1, c_thm2 = st.columns(2)
                 with c_thm1: st.markdown(html_statut_pivot(piv_thm,"tht"),unsafe_allow_html=True)
-                with c_thm2: show_statut_stacked_bar(piv_thm,"OT Thermographie")
+                with c_thm2: show_statut_bar_of_pie(piv_thm,"OT Thermographie")
                 
                 st.markdown('<div class="stl s">Tous les OT par Poste et Statut OT</div>',unsafe_allow_html=True)
                 c_all1, c_all2 = st.columns(2)
                 with c_all1: st.markdown(html_statut_pivot(piv_all,"pt"),unsafe_allow_html=True)
-                with c_all2: show_statut_stacked_bar(piv_all,"Tous les OT")
+                with c_all2: show_statut_bar_of_pie(piv_all,"Tous les OT")
 
             with tabs[4]:
                 min_date = var_df["Date precedente"].min() if not var_df.empty else "?"
