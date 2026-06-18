@@ -7,7 +7,7 @@ import io, locale, random, time, os, hashlib, json, base64
 from datetime import datetime
 import plotly.express as px
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots # Ajout pour Bar of Pie
+from plotly.subplots import make_subplots # Ajout pour Bafr of Pie
 from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
@@ -570,31 +570,32 @@ def main():
         
         
         # ===== OT CONFIME =====
-         df_conf = df[
+                  # ===== OT CONFIME =====
+        df_conf = df[
             df["Statut système"].str.contains("CLOT|TCLO", na=False)
-                   ].copy()
+        ].copy()
 
-         pv_conf = pd.pivot_table(
-               df_conf,
-                index="Poste travail princ.",
-                 columns="OT CONFIME",
-                   values="Ordre",
-                    aggfunc="count",
-                      fill_value=0
-                        ).reindex(posts, fill_value=0)
+        pv_conf = pd.pivot_table(
+            df_conf,
+            index="Poste travail princ.",
+            columns="OT CONFIME",
+            values="Ordre",
+            aggfunc="count",
+            fill_value=0
+        ).reindex(posts, fill_value=0)
 
-          for c in ["OUI", "NON"]:
+        for c in ["OUI", "NON"]:
             pv_conf[c] = pv_conf.get(c, 0)
 
-            pv_conf["Total"] = pv_conf["OUI"] + pv_conf["NON"]
+        pv_conf["Total"] = pv_conf["OUI"] + pv_conf["NON"]
 
-            pv_conf["OT CONFIME"] = np.where(
+        pv_conf["OT CONFIME"] = np.where(
             pv_conf["Total"] == 0,
-             100,
-              (pv_conf["OUI"] / pv_conf["Total"]) * 100
-)
+            100,
+            (pv_conf["OUI"] / pv_conf["Total"]) * 100
+        )
 
-          res["ot_confime"] = pv_conf
+        res["ot_confime"] = pv_conf
 
 # ===== OT_COR_EGAL =====
 pv = pd.pivot_table(
