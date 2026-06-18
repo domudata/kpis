@@ -373,7 +373,7 @@ def inject_custom_css():
         top:-4px;
         bottom:-4px;
         width:3px;
-        background:#3182ce !important;
+        background:#3182ce !important; 
         z-index:20;
         transform:translateX(-50%);
         box-shadow:0 0 6px rgba(49,130,206,.9),0 0 2px rgba(0,0,0,.4);
@@ -558,7 +558,6 @@ def main():
         h+='</tr></tbody></table>'
         return h
         
-    # MODIFICATION : Taille des Pie charts agrandie (height=450, textfont_size=14)
     def show_pie_pair(piv_df, title_prefix):
         global_counts=piv_df[["CRÉÉ","LANC","CLOT","TCLO"]].sum()
         global_counts=global_counts[global_counts>0]
@@ -585,7 +584,6 @@ def main():
         else:
             st.markdown('<div class="es">Aucune donnee</div>',unsafe_allow_html=True)
 
-    # MODIFICATION : Taille des Pie charts agrandie (height=400, textfont_size=14)
     def show_simple_pie(piv_df, title, keep_non_carac=False):
         if not keep_non_carac and "NON CARACTERISE" in piv_df.columns:
             piv_df = piv_df.drop(columns=["NON CARACTERISE"])
@@ -835,7 +833,7 @@ def main():
         
     def html_kpi_bars(kpi_list,actuals,targets,title,color_ok,color_fail):
         h='<div class="ca"><div class="ct" style="color:%s">%s</div>'%(color_ok,title)
-        h+='<div class="gbr-legend"><span><span class="target-icon"></span> Cible</span></div>'
+        h+='<div class="gbr-legend"><span><span style="display:inline-block;width:3px;height:14px;background:#3182ce;border-radius:1px;box-shadow:0 0 3px rgba(49,130,206,.6);margin-right:5px;vertical-align:middle;"></span> Cible</span></div>'
         for k in kpi_list:
             av=actuals.get(k,0)
             tv=targets.get(k,100)
@@ -843,19 +841,29 @@ def main():
             bw=min(max(av,0),100)
             bg=get_bar_color(k, av)
             tv_pos=min(max(tv,0),100)
-            h+=('<div class="car"><div class="cal">%s</div><div class="cab"><div class="caf" style="width:%s%%;background:%s"></div><div class="target-mark" style="left:%s%%"></div></div><div class="cav-out">%.1f%%</div><div class="cav-tgt">/%.0f%%</div></div>')%(k,bw,bg,tv_pos,av,tv)
+            h+=('<div class="car"><div class="cal">%s</div><div class="cab"><div class="caf" style="width:%s%%;background:%s"></div><div class="target-mark" style="position:absolute;top:-5px;bottom:-5px;width:4px;background:#3182ce;z-index:20;left:%s%%;transform:translateX(-50%%);box-shadow:0 0 6px rgba(49,130,206,1);border-radius:2px;"></div></div><div class="cav-out">%.1f%%</div><div class="cav-tgt">/%.0f%%</div></div>')%(k,bw,bg,tv_pos,av,tv)
         return h+'</div>'
         
     def html_grouped_bars(posts,pscores,qscores,title):
         h='<div class="ca"><div class="ct" style="color:#1e3a5f">%s</div>'%title
-        h+='<div class="gbr-legend"><span><i style="background:linear-gradient(90deg,#2b6cb0,#4299e1)"></i> Performance</span><span><i style="background:linear-gradient(90deg,#276749,#48bb78)"></i> Qualite</span><span><span class="target-icon"></span> Cible 90%%</span></div>'
+        # Remplacement de la légende par les en-têtes Performance et Qualite
+        h+='<div style="display:flex;align-items:center;padding-bottom:6px;margin-bottom:6px;border-bottom:1px solid #e2e8f0;font-size:13px;font-weight:800;">'
+        h+='<div class="gbr-l"></div>'
+        h+='<div class="gbr-g">'
+        h+='<div style="flex:1;text-align:center;color:#2b6cb0;">Performance</div>'
+        h+='<div style="min-width:48px;"></div>'
+        h+='<div style="flex:1;text-align:center;color:#276749;">Qualite</div>'
+        h+='<div style="min-width:48px;"></div>'
+        h+='</div></div>'
+        
         sorted_posts = sorted(posts,key=lambda x:(pscores.get(x,0)+qscores.get(x,0))/2,reverse=True)
         for idx,p in enumerate(sorted_posts):
             pv,qv=pscores.get(p,0),qscores.get(p,0)
             p_color = get_bar_color(None, pv)
             q_color = get_bar_color(None, qv)
-            label_html = '<div class="gbr-target-label">90%%</div>' if idx==0 else ''
-            h+='<div class="gbr"><div class="gbr-l">%s</div><div class="gbr-g"><div class="gbr-target"></div>%s<div class="gbr-w"><div class="gbr-f" style="width:%s%%;background:%s"></div></div><div class="gbr-v">%.1f%%</div><div class="gbr-w"><div class="gbr-f" style="width:%s%%;background:%s"></div></div><div class="gbr-v">%.1f%%</div></div></div>'%(p,label_html,min(max(pv,0),100),p_color,pv,min(max(qv,0),100),q_color,qv)
+            label_html = '<div style="position:absolute;left:90%%;top:-20px;transform:translateX(-50%%);font-size:9px;font-weight:800;color:#fff;background:#1e3a5f;padding:1px 5px;border-radius:3px;white-space:nowrap;z-index:11;box-shadow:0 1px 3px rgba(0,0,0,.2);">90%%</div>' if idx==0 else ''
+            target_line_html = '<div style="position:absolute;left:90%%;top:-4px;bottom:-4px;width:3px;background:#1e3a5f;z-index:10;box-shadow:0 0 6px rgba(30,58,95,.8);border-radius:2px;"></div>'
+            h+='<div class="gbr"><div class="gbr-l">%s</div><div class="gbr-g">%s%s<div class="gbr-w"><div class="gbr-f" style="width:%s%%;background:%s"></div></div><div class="gbr-v">%.1f%%</div><div class="gbr-w"><div class="gbr-f" style="width:%s%%;background:%s"></div></div><div class="gbr-v">%.1f%%</div></div></div>'%(p,label_html,target_line_html,min(max(pv,0),100),p_color,pv,min(max(qv,0),100),q_color,qv)
         return h+'</div>'
         
     def html_synthese_table(synth_data,kpi_list,posts):
