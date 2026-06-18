@@ -373,7 +373,7 @@ def inject_custom_css():
         top:-4px;
         bottom:-4px;
         width:3px;
-        background:#3182ce !important; /* Changé en bleu */
+        background:#3182ce !important;
         z-index:20;
         transform:translateX(-50%);
         box-shadow:0 0 6px rgba(49,130,206,.9),0 0 2px rgba(0,0,0,.4);
@@ -385,15 +385,15 @@ def inject_custom_css():
     .gbr:last-child{border:none}
     .gbr-l{width:160px;font-weight:600;color:#1a202c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
     .gbr-g{display:flex;align-items:center;gap:4px;flex:1;position:relative}
-    .gbr-target{position:absolute;left:90%;top:-4px;bottom:-4px;width:3px;background:#3182ce !important;z-index:10;box-shadow:0 0 6px rgba(49,130,206,.8);border-radius:2px}
-    .gbr-target-label{position:absolute;left:90%;top:-20px;transform:translateX(-50%);font-size:9px;font-weight:800;color:#fff;background:#3182ce !important;padding:1px 5px;border-radius:3px;white-space:nowrap;z-index:11;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+    .gbr-target{position:absolute;left:90%;top:-4px;bottom:-4px;width:3px;background:#1e3a5f !important;z-index:10;box-shadow:0 0 6px rgba(30,58,95,.8);border-radius:2px}
+    .gbr-target-label{position:absolute;left:90%;top:-20px;transform:translateX(-50%);font-size:9px;font-weight:800;color:#fff;background:#1e3a5f !important;padding:1px 5px;border-radius:3px;white-space:nowrap;z-index:11;box-shadow:0 1px 3px rgba(0,0,0,.2)}
     .gbr-w{flex:1;height:22px;background:#edf2f7;border-radius:3px;overflow:hidden}
     .gbr-f{height:100%;border-radius:3px}
     .gbr-v{font-size:11px;font-weight:800;min-width:48px;text-align:right;color:#1a202c}
     .gbr-legend{display:flex;gap:14px;margin-bottom:10px;font-size:12px;font-weight:700;align-items:center}
     .gbr-legend span{display:flex;align-items:center;gap:5px}
     .gbr-legend i{display:inline-block;width:14px;height:14px;border-radius:2px}
-    .gbr-legend .target-icon{display:inline-block;width:3px;height:14px;background:#3182ce !important;border-radius:1px;box-shadow:0 0 3px rgba(49,130,206,.6)}
+    .gbr-legend .target-icon{display:inline-block;width:3px;height:14px;background:#1e3a5f !important;border-radius:1px;box-shadow:0 0 3px rgba(30,58,95,.6)}
     .cg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
     .cg>div{background:#fff;border-radius:var(--r);padding:8px 10px;border:1px solid var(--b)}
     .cg .ct{font-size:13px;font-weight:700;margin-bottom:4px;padding-bottom:3px;border-bottom:1px solid var(--b)}
@@ -558,6 +558,7 @@ def main():
         h+='</tr></tbody></table>'
         return h
         
+    # MODIFICATION : Taille des Pie charts agrandie (height=450, textfont_size=14)
     def show_pie_pair(piv_df, title_prefix):
         global_counts=piv_df[["CRÉÉ","LANC","CLOT","TCLO"]].sum()
         global_counts=global_counts[global_counts>0]
@@ -567,8 +568,8 @@ def main():
             fig1=px.pie(global_counts, names=global_counts.index, values=global_counts.values,
                 title="%s — Par Statut OT"%title_prefix,
                 color_discrete_sequence=["#e53e3e","#d69e2e","#38a169","#3182ce"])
-            fig1.update_traces(textposition='inside',textinfo='percent+value',textfont_size=12, domain={'x': [0.15, 0.85], 'y': [0.15, 0.85]})
-            fig1.update_layout(margin=dict(t=40,b=10,l=10,r=10),height=380,legend=dict(font_size=11,orientation="h",yanchor="bottom",y=-0.1, x=0.5, xanchor="center"))
+            fig1.update_traces(textposition='inside',textinfo='percent+value',textfont_size=14, domain={'x': [0.15, 0.85], 'y': [0.15, 0.85]})
+            fig1.update_layout(margin=dict(t=40,b=10,l=10,r=10),height=450,legend=dict(font_size=12,orientation="h",yanchor="bottom",y=-0.1, x=0.5, xanchor="center"))
             st.plotly_chart(fig1,use_container_width=True)
         else:
             st.markdown('<div class="es">Aucune donnee</div>',unsafe_allow_html=True)
@@ -578,12 +579,13 @@ def main():
             fig2=px.pie(pie2_data, names="Statut", values="Nombre",
                 title="%s — Réalisés vs Non Réalisés"%title_prefix,
                 color="Statut", color_discrete_map={"Réalisés (CLOT+TCLO)":"#38a169","Non Réalisés":"#e53e3e"})
-            fig2.update_traces(textposition='inside',textinfo='percent+value',textfont_size=12, domain={'x': [0.15, 0.85], 'y': [0.15, 0.85]})
-            fig2.update_layout(margin=dict(t=40,b=10,l=10,r=10),height=380,legend=dict(font_size=11,orientation="h",yanchor="bottom",y=-0.1, x=0.5, xanchor="center"))
+            fig2.update_traces(textposition='inside',textinfo='percent+value',textfont_size=14, domain={'x': [0.15, 0.85], 'y': [0.15, 0.85]})
+            fig2.update_layout(margin=dict(t=40,b=10,l=10,r=10),height=450,legend=dict(font_size=12,orientation="h",yanchor="bottom",y=-0.1, x=0.5, xanchor="center"))
             st.plotly_chart(fig2,use_container_width=True)
         else:
             st.markdown('<div class="es">Aucune donnee</div>',unsafe_allow_html=True)
 
+    # MODIFICATION : Taille des Pie charts agrandie (height=400, textfont_size=14)
     def show_simple_pie(piv_df, title, keep_non_carac=False):
         if not keep_non_carac and "NON CARACTERISE" in piv_df.columns:
             piv_df = piv_df.drop(columns=["NON CARACTERISE"])
@@ -600,8 +602,8 @@ def main():
                 color=counts.index,
                 color_discrete_map={k: v for k, v in zip(counts.index, colors)} if any(colors) else None
             )
-            fig.update_traces(textposition='inside', textinfo='percent+value', textfont_size=12, domain={'x': [0.15, 0.85], 'y': [0.15, 0.85]})
-            fig.update_layout(margin=dict(t=40, b=10, l=10, r=10), height=350, legend=dict(font_size=11, orientation="h", yanchor="bottom", y=-0.1, x=0.5, xanchor="center"))
+            fig.update_traces(textposition='inside', textinfo='percent+value', textfont_size=14, domain={'x': [0.15, 0.85], 'y': [0.15, 0.85]})
+            fig.update_layout(margin=dict(t=40, b=10, l=10, r=10), height=400, legend=dict(font_size=12, orientation="h", yanchor="bottom", y=-0.1, x=0.5, xanchor="center"))
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.markdown('<div class="es">Aucune donnee</div>', unsafe_allow_html=True)
@@ -688,7 +690,6 @@ def main():
     def get_bar_color(kpi, val):
         try: v = float(val)
         except: return "#cbd5e0"
-        
         if kpi in ["OT préparation <1 mois","OT planification <1 mois","OT exécution <1 mois"]:
             if v>=80: return "#38a169"
             elif v>=75: return "#d69e2e"
@@ -715,8 +716,6 @@ def main():
             else: return "#e53e3e"
         if kpi in ["OT Fiabilité","Total Avis de Panne"]:
             return "#38a169" if v>=100 else "#d69e2e"
-            
-        # Cas génériques (Scores Qualité/Performance)
         if v>=90: return "#38a169"
         elif v>=80: return "#d69e2e"
         else: return "#e53e3e"
@@ -1204,21 +1203,19 @@ def main():
             anomaly_dfs["OT CONFIME"] = dfp[dfp["OT CONFIME"]=="NON"].copy()
             anomaly_dfs["OT_COR_EGAL"] = dfp[dfp["OT_COR_EGAL"]=="NON"].copy()
             
+            # MODIFICATION : Ajout de "Créé le" dans l'export Excel des Avis
             ot_cols = ["Ordre","Désignation","Poste technique","Désignation du poste technique","Poste travail princ.","Divis. planification","Statut système","Statut utilisateur","Date de début planifiée"]
-            av_cols = ["Avis","Description","Poste technique","Poste travail princ.","Statut système","Statut utilisateur"]
+            av_cols = ["Avis", "Créé le", "Description", "Poste technique", "Poste travail princ.", "Statut système", "Statut utilisateur"]
             
             export_anomaly_dfs = {}
             for kpi, df_anom in anomaly_dfs.items():
                 if not df_anom.empty:
-                    if "Ordre" in df_anom.columns:
-                        cols_exist = [c for c in ot_cols if c in df_anom.columns]
-                        df_anom = df_anom[cols_exist].copy()
-                    else:
+                    if "Avis" in df_anom.columns:
                         cols_exist = [c for c in av_cols if c in df_anom.columns]
                         df_anom = df_anom[cols_exist].copy()
-                        if "Avis" in df_anom.columns:
-                            avis_idx = df_anom.columns.get_loc("Avis")
-                            df_anom.insert(avis_idx + 1, "OT à créer", "")
+                    else:
+                        cols_exist = [c for c in ot_cols if c in df_anom.columns]
+                        df_anom = df_anom[cols_exist].copy()
                     df_anom["kpi action"] = ACT_MAP.get(kpi, "")
                     export_anomaly_dfs[kpi] = df_anom
             
