@@ -568,24 +568,11 @@ def main():
         for c in ["CARACTERISE","NON CARACTERISE"]: plc[c]=plc.get(c,0)
         plc["Total"]=plc["CARACTERISE"]+plc["NON CARACTERISE"]; plc["Backlog planification caractérisé"]=ckpi(plc["CARACTERISE"],plc["Total"])
         
-        # --- MODIFICATION : Filtrer uniquement les OT clôturés pour OT CONFIME et OT_COR_EGAL ---
-        df_clos = df[df["Statut OT"].isin(["CLOT", "TCLO"])].copy()
-        
-        # Calcul OT CONFIME
-        pv_conf = pd.pivot_table(df_clos, index="Poste travail princ.", columns="OT CONFIME", values="Ordre", aggfunc="count", fill_value=0).reindex(posts, fill_value=0)
-        for c in ["OUI","NON"]: pv_conf[c]=pv_conf.get(c,0)
-        pv_conf["Total"]=pv_conf["OUI"]+pv_conf["NON"]; 
-        pv_conf["OT CONFIME"]=ckpi(pv_conf["OUI"],pv_conf["Total"])
-        res['ot_confime'] = pv_conf
-        
-        # Calcul OT_COR_EGAL
-        pv_cor = pd.pivot_table(df_clos, index="Poste travail princ.", columns="OT_COR_EGAL", values="Ordre", aggfunc="count", fill_value=0).reindex(posts, fill_value=0)
-        for c in ["OUI","NON"]: pv_cor[c]=pv_cor.get(c,0)
-        pv_cor["Total"]=pv_cor["OUI"]+pv_cor["NON"]; 
-        pv_cor["OT_COR_EGAL"]=ckpi(pv_cor["OUI"],pv_cor["Total"])
-        res['ot_cor_egal'] = pv_cor
-        # ----------------------------------------------------------------------------------------
-        
+        for kn,cn in [("OT CONFIME","OT CONFIME"),("OT_COR_EGAL","OT_COR_EGAL")]:
+            pv=pd.pivot_table(df,index="Poste travail princ.",columns=cn,values="Ordre",aggfunc="count",fill_value=0).reindex(posts,fill_value=0)
+            for c in ["OUI","NON"]: pv[c]=pv.get(c,0)
+            pv["Total"]=pv["OUI"]+pv["NON"]; pv[cn]=ckpi(pv["OUI"],pv["Total"]); res[kn.lower().replace(" ","_")]=pv
+            
         avf=av.copy(); res['avf']=avf
         tca=pd.pivot_table(avf,index="Poste travail princ.",columns="Statut utilisateur",values="Avis",aggfunc="count",fill_value=0).reindex(posts,fill_value=0)
         for c in ["APRQ","APRV","APRV AVAU","REJT"]: tca[c]=tca.get(c,0)
@@ -967,11 +954,8 @@ def main():
             ano_map["OT LANC ESTIME"] = dfp[(dfp["Statut OT"]=="LANC")&(dfp["OT LANC ESTIME"]=="NON")].groupby("Poste travail princ.")["Ordre"].count()
             ano_map["Backlog préparation caractérisé"] = dfp[(dfp["Statut OT"]=="CRÉÉ")&(dfp["Backlog preparation"]=="NON CARACTERISE")].groupby("Poste travail princ.")["Ordre"].count()
             ano_map["Backlog planification caractérisé"] = dfp[(dfp["Statut OT"]=="LANC")&(dfp["Backlog planification"]=="NON CARACTERISE")].groupby("Poste travail princ.")["Ordre"].count()
-            
-            # --- MODIFICATION : Filtrer les OT clôturés pour les anomalies OT CONFIME et OT_COR_EGAL ---
-            ano_map["OT CONFIME"] = dfp[(dfp["Statut OT"].isin(["CLOT","TCLO"])) & (dfp["OT CONFIME"]=="NON")].groupby("Poste travail princ.")["Ordre"].count()
-            ano_map["OT_COR_EGAL"] = dfp[(dfp["Statut OT"].isin(["CLOT","TCLO"])) & (dfp["OT_COR_EGAL"]=="NON")].groupby("Poste travail princ.")["Ordre"].count()
-            # ------------------------------------------------------------------------------------------------
+            ano_map["OT CONFIME"] = dfp[dfp["OT CONFIME"]=="NON"].groupby("Poste travail princ.")["Ordre"].count()
+            ano_map["OT_COR_EGAL"] = dfp[dfp["OT_COR_EGAL"]=="NON"].groupby("Poste travail princ.")["Ordre"].count()
             
             ano_p_rows = []
             for poste in vp:
@@ -1120,16 +1104,11 @@ def main():
             anomaly_dfs["OT LANC ESTIME"] = dfp[(dfp["Statut OT"]=="LANC")&(dfp["OT LANC ESTIME"]=="NON")].copy()
             anomaly_dfs["Backlog préparation caractérisé"] = dfp[(dfp["Statut OT"]=="CRÉÉ")&(dfp["Backlog preparation"]=="NON CARACTERISE")].copy()
             anomaly_dfs["Backlog planification caractérisé"] = dfp[(dfp["Statut OT"]=="LANC")&(dfp["Backlog planification"]=="NON CARACTERISE")].copy()
+            anomaly_dfs["OT CONFIME"] = dfp[dfp["OT CONFIME"]=="NON"].copy()
+            anomaly_dfs["OT_COR_EGAL"] = dfp[dfp["OT_COR_EGAL"]=="NON"].copy()
             
-            # --- MODIFICATION : Filtrer les OT clôturés pour l'export Excel détaillé de OT CONFIME et OT_COR_EGAL ---
-            anomaly_dfs["OT CONFIME"] = dfp[(dfp["Statut OT"].isin(["CLOT","TCLO"])) & (dfp["OT CONFIME"]=="NON")].copy()
-            anomaly_dfs["OT_COR_EGAL"] = dfp[(dfp["Statut OT"].isin(["CLOT","TCLO"])) & (dfp["OT_COR_EGAL"]=="NON")].copy()
-            # ------------------------------------------------------------------------------------------------------
-            
-            # --- MODIFICATION : Ajout de "Créé le" dans l'export Excel détaillé des avis ---
             ot_cols = ["Ordre","Désignation","Poste technique","Désignation du poste technique","Poste travail princ.","Divis. planification","Statut système","Statut utilisateur","Date de début planifiée"]
-            av_cols = ["Avis","Créé le","Description","Poste technique","Poste travail princ.","Statut système","Statut utilisateur"]
-            # -------------------------------------------------------------------------------
+            av_cols = ["Avis","Description","Poste technique","Poste travail princ.","Statut système","Statut utilisateur"]
             
             export_anomaly_dfs = {}
             for kpi, df_anom in anomaly_dfs.items():
@@ -1249,9 +1228,7 @@ def main():
 
             with tabs[2]:
                 st.markdown('<div class="stl q">Detail des indicateurs de Qualite</div>',unsafe_allow_html=True)
-                # --- MODIFICATION : Correction de l'erreur unsafe_ask_html ---
-                st.markdown(html_table(qrows,qcols,"qt",["Score Qualite"]),unsafe_allow_html=True)
-                # -------------------------------------------------------------
+                st.markdown(html_table(qrows,qcols,"qt",["Score Qualite"]),unsafe_ask_html=True)
                 st.markdown('<div class="stl a">Nombre d\'anomalies par KPI et Poste (à traiter pour atteindre 100%)</div>',unsafe_allow_html=True)
                 st.markdown(html_anomaly_table(ano_q_rows,ano_q_cols,"at"),unsafe_allow_html=True)
                 st.markdown('<div class="stl a">Actions recommandees — Qualite</div>',unsafe_allow_html=True)
