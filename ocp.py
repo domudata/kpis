@@ -819,8 +819,8 @@ def main():
     sp_mean = ckdf["Score Performance"].mean()
     sq_mean = ckdf["Score Qualite"].mean()
     sg_mean = ckdf["Score Global"].mean()
-    nb_anom_p = sum(1 for k in QK if k in ckdf.columns and any(ckdf[k] < CIBLE.get(k,0) for _ in [1]))
-    nb_anom_q = sum(1 for k in PK if k in ckdf.columns and any(ckdf[k] < CIBLE.get(k,0) for _ in [1]))
+    nb_anom_p = sum(1 for k in QK if k in ckdf.columns and (ckdf[k] < CIBLE.get(k,0)).any())
+    nb_anom_q = sum(1 for k in PK if k in ckdf.columns and (ckdf[k] < CIBLE.get(k,0)).any())
 
     # ============================================================
     # HEADER
