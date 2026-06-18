@@ -1119,9 +1119,21 @@ def main():
             file_name="plan_actions_%s.xlsx" % fichier_date.replace("/","-"), mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
     # Bouton imprimer
-    st.sidebar.button("🖨️ Imprimer / PDF", on_click=lambda: st.components.v1.html("""
-        <script>window.print();</script>
-    """, height=0)
+     # Bouton imprimer
+    st.sidebar.markdown("""
+    <button onclick="window.print()" style="
+        width: 100%;
+        background: linear-gradient(135deg, #1e3a5f, #2c5282);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 8px 14px;
+        font-weight: 700;
+        font-size: 15px;
+        cursor: pointer;
+        margin-top: 5px;
+    ">🖨️ Imprimer / PDF</button>
+    """, unsafe_allow_html=True)
 
     # ============================================================
     # FOOTER
