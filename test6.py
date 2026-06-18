@@ -569,9 +569,12 @@ def main():
         plc["Total"]=plc["CARACTERISE"]+plc["NON CARACTERISE"]; plc["Backlog planification caractérisé"]=ckpi(plc["CARACTERISE"],plc["Total"])
         
         for kn,cn in [("OT CONFIME","OT CONFIME"),("OT_COR_EGAL","OT_COR_EGAL")]:
-            pv=pd.pivot_table(df,index="Poste travail princ.",columns=cn,values="Ordre",aggfunc="count",fill_value=0).reindex(posts,fill_value=0)
-            for c in ["OUI","NON"]: pv[c]=pv.get(c,0)
-            pv["Total"]=pv["OUI"]+pv["NON"]; pv[cn]=ckpi(pv["OUI"],pv["Total"]); res[kn.lower().replace(" ","_")]=pv
+            # CORRECTION : On ne calcule la confirmation et l'égalité des coûts QUE sur les OT clôturés
+            df_closed = df[df["Statut OT"].isin(["CLOT", "TCLO"])].copy()
+            
+             pv=pd.pivot_table(df_closed,index="Poste travail princ.",columns=cn,values="Ordre",aggfunc="count",fill_value=0).reindex(posts,fill_value=0)
+             for c in ["OUI","NON"]: pv[c]=pv.get(c,0)
+             pv["Total"]=pv["OUI"]+pv["NON"]; pv[cn]=ckpi(pv["OUI"],pv["Total"]); res[kn.lower().replace(" ","_")]=pv
             
         avf=av.copy(); res['avf']=avf
         tca=pd.pivot_table(avf,index="Poste travail princ.",columns="Statut utilisateur",values="Avis",aggfunc="count",fill_value=0).reindex(posts,fill_value=0)
