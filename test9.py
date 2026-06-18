@@ -383,7 +383,7 @@ def inject_custom_css():
     .car .cav-tgt{font-size:10px;font-weight:700;color:#1a202c;min-width:42px;text-align:right;padding-left:4px;opacity:.7}
     .gbr{display:flex;align-items:center;padding:3px 0;font-size:12px;border-bottom:1px solid #f7fafc}
     .gbr:last-child{border:none}
-    .gbr-l{width:160px;font-weight:600;color:#1a202c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
+    .gbr-l{width:160px;font-weight:600;color:#1a202c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;padding-right:10px;}
     .gbr-g{display:flex;align-items:center;gap:4px;flex:1;position:relative}
     .gbr-target{position:absolute;left:90%;top:-4px;bottom:-4px;width:3px;background:#1e3a5f !important;z-index:10;box-shadow:0 0 6px rgba(30,58,95,.8);border-radius:2px}
     .gbr-target-label{position:absolute;left:90%;top:-20px;transform:translateX(-50%);font-size:9px;font-weight:800;color:#fff;background:#1e3a5f !important;padding:1px 5px;border-radius:3px;white-space:nowrap;z-index:11;box-shadow:0 1px 3px rgba(0,0,0,.2)}
@@ -846,9 +846,7 @@ def main():
         
     def html_grouped_bars(posts,pscores,qscores,title):
         h='<div class="ca"><div class="ct" style="color:#1e3a5f">%s</div>'%title
-        # Pas de légende (no key)
-        
-        # Ajout de l'en-tête Performance / Qualite
+        # En-tête Performance / Qualite
         h+='<div style="display:flex;align-items:center;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid #e2e8f0;">'
         h+='<div class="gbr-l"></div>'
         h+='<div class="gbr-g">'
@@ -859,13 +857,12 @@ def main():
         h+='</div></div>'
         
         sorted_posts = sorted(posts,key=lambda x:(pscores.get(x,0)+qscores.get(x,0))/2,reverse=True)
-        for idx,p in enumerate(sorted_posts):
+        for p in sorted_posts:
             pv,qv=pscores.get(p,0),qscores.get(p,0)
             p_color = get_bar_color(None, pv)
             q_color = get_bar_color(None, qv)
-            label_html = '<div style="position:absolute;left:90%%;top:-20px;transform:translateX(-50%%);font-size:9px;font-weight:800;color:#fff;background:#1e3a5f;padding:1px 5px;border-radius:3px;white-space:nowrap;z-index:11;box-shadow:0 1px 3px rgba(0,0,0,.2);">90%%</div>' if idx==0 else ''
-            target_line_html = '<div style="position:absolute;left:90%%;top:-4px;bottom:-4px;width:3px;background:#1e3a5f;z-index:10;box-shadow:0 0 6px rgba(30,58,95,.8);border-radius:2px;"></div>'
-            h+='<div class="gbr"><div class="gbr-l">%s</div><div class="gbr-g">%s%s<div class="gbr-w"><div class="gbr-f" style="width:%s%%;background:%s"></div></div><div class="gbr-v">%.1f%%</div><div class="gbr-w"><div class="gbr-f" style="width:%s%%;background:%s"></div></div><div class="gbr-v">%.1f%%</div></div></div>'%(p,label_html,target_line_html,min(max(pv,0),100),p_color,pv,min(max(qv,0),100),q_color,qv)
+            # Cible supprimée (plus de target_line_html ni label_html)
+            h+='<div class="gbr"><div class="gbr-l">%s</div><div class="gbr-g"><div class="gbr-w"><div class="gbr-f" style="width:%s%%;background:%s"></div></div><div class="gbr-v">%.1f%%</div><div class="gbr-w"><div class="gbr-f" style="width:%s%%;background:%s"></div></div><div class="gbr-v">%.1f%%</div></div></div>'%(p,min(max(pv,0),100),p_color,pv,min(max(qv,0),100),q_color,qv)
         return h+'</div>'
         
     def html_synthese_table(synth_data,kpi_list,posts):
