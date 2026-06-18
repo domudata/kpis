@@ -29,7 +29,7 @@ CIBLE = {"TAUX_REALISATION_CORRECTIF/PT":85,"OT préparation <1 mois":80,"OT pr�
          "OT planification 1mois< <3mois":15,"OT exécution <1 mois":80,"OT exécution >3 mois":5,
          "OT exécution 1mois< <3mois":15,"appel avis approuvé":95,"OT LANC ESTIME":100,
          "Backlog préparation caractérisé":100,"Backlog planification caractérisé":100,
-         "OT CONFIME":100,"OT_COR_EGAL":100,
+         "OT CONFIME":100,"OT_COR_EGAL":100,f
          "Performance Graissage":95,"Performance Inspection":95,"Performance Appels Systématiques":95,
          "OT Fiabilité":100,"Total Avis de Panne":100}
 
@@ -967,7 +967,7 @@ def main():
             st.markdown("---"); st.markdown("**🎯 Postes**")
             sp=st.multiselect("Poste",["All"]+apm,["All"],key="sp")
             st.markdown("**🏭 Atelier**")
-            sa=st.multiselect("Atelier",["All","Sulfurique (PS)","Phosphorique (PP)","Engrais (TSP/REX)","Feed (MCP/DCP)"],["All"],key="sa")
+            sa=st.multiselect("Atelier",["All","Sulfurique (PS)","Phosphorique (PP)","Centrale (CU)","Engrais (TSP/REX)","Feed (MCP/DCP)"],["All"],key="sa")
             st.markdown("**🏢 Division**")
             sd=st.multiselect("Division",["All","SF1","SF2"],["All"],key="sd")
             st.markdown("---"); st.markdown("**📅 Periode**")
@@ -996,6 +996,7 @@ def main():
                     if "Phosphorique (PP)" in sa and "PP" in p: m=True
                     if "Engrais (TSP/REX)" in sa and ("TSP" in p or "REX" in p): m=True
                     if "Feed (MCP/DCP)" in sa and ("MCP" in p or "DCP" in p): m=True
+                    if "Centrale (CU)" in sa and "CU" in p: m=True
                     if not m: return False
                 if "All" not in sd:
                     m=False
