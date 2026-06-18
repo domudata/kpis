@@ -748,23 +748,49 @@ def main():
     # ============================================================
     # CHARGEMENT FICHIERS
     # ============================================================
-    st.sidebar.markdown("### 📁 Fichiers de donnees")
-    ot_file = st.sidebar.file_uploader("Fichier OT (Excel)", type=["xlsx","xls"], key="ot_up")
-    av_file = st.sidebar.file_uploader("Fichier Avis (Excel)", type=["xlsx","xls"], key="av_up")
+        # ============================================================
+    # CHARGEMENT FICHIERS (Automatique depuis ot.xlsx et avis.xlsx)
+    # ============================================================
+    ot_data = None
+    av_data = None
 
-    if not ot_file or not av_file:
-        st.markdown("""<div style="min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center">
-        <div style="font-size:80px;margin-bottom:20px">📂</div>
-        <h2 style="color:#1e3a5f;font-size:32px;font-weight:800">Chargement des donnees</h2>
-        <p style="color:#718096;font-size:18px;margin-top:10px">Veuillez charger les fichiers Excel OT et Avis depuis la barre laterale.</p>
-        </div>""", unsafe_allow_html=True)
-        st.stop()
+    # 1. Tentative de chargement automatique depuis les fichiers locaux
+    if os.path.exists("ot.xlsx") and os.path.exists("avis.xlsx"):
+        try:
+            with open("ot.xlsx", "rb") as f:
+                ot_data = f.read()
+            with open("avis.xlsx", "rb") as f:
+                av_data = f.read()
+        except Exception as e:
+            ot_data = None
+            av_data = None
 
-    df, avf, apm, now_ts = prepare_data(ot_file.read(), av_file.read(), fichier_date)
+    # 2. Si les fichiers locaux n'existent pas, proposer l'upload manuel
+    if ot_data is None or av_data is None:
+        st.sidebar.markdown("### 📁 Fichiers de donnees")
+        st.sidebar.warning("Fichiers ot.xlsx / avis.xlsx non trouves. Chargez-les manuellement :")
+        ot_file = st.sidebar.file_uploader("Fichier OT (Excel)", type=["xlsx","xls"], key="ot_up")
+        av_file = st.sidebar.file_uploader("Fichier Avis (Excel)", type=["xlsx","xls"], key="av_up")
 
-    if not apm:
-        st.markdown('<div class="es">Aucun poste de travail trouve (SF1/SF2).</div>', unsafe_allow_html=True)
-        st.stop()
+        if not ot_file or not av_file:
+            st.markdown("""<div style="min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center">
+            <div style="font-size:80px;margin-bottom:20px">📂</div>
+            <h2 style="color:#1e3a5f;font-size:32px;font-weight:800">Chargement des donnees</h2>
+            <p style="color:#718096;font-size:18px;margin-top:10px">Veuillez charger les fichiers Excel OT et Avis depuis la barre laterale.</p>
+            </div>""", unsafe_allow_html=True)
+            st.stop()
+        ot_data = ot_file.read()
+        av_data = av_file.read()
+    else:
+        # Optionnel : upload pour forcer un autre fichier si besoin
+        with st.sidebar.expander("🔄 Changer les fichiers (optionnel)"):
+            ot_file = st.sidebar.file_uploader("Nouveau fichier OT", type=["xlsx","xls"], key="ot_up2")
+            av_file = st.sidebar.file_uploader("Nouveau fichier Avis", type=["xlsx","xls"], key="av_up2")
+            if ot_file and av_file:
+                ot_data = ot_file.read()
+                av_data = av_file.read()
+
+    df, avf, apm, now_ts = prepare_data(ot_data, av_data, fichier_date)
 
     # ============================================================
     # SIDEBAR - FILTRES
