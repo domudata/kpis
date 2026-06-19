@@ -29,7 +29,7 @@ CIBLE = {"TAUX_REALISATION_CORRECTIF/PT":85,"OT préparation <1 mois":80,"OT pr�
          "OT planification 1mois< <3mois":15,"OT exécution <1 mois":80,"OT exécution >3 mois":5,
          "OT exécution 1mois< <3mois":15,"appel avis approuvé":95,"OT LANC ESTIME":100,
          "Backlog préparation caractérisé":100,"Backlog planification caractérisé":100,
-         "OT CONFIME":100,"OT_COR_EGAL":100,f
+         "OT CONFIME":100,"OT_COR_EGAL":100,
          "Performance Graissage":95,"Performance Inspection":95,"Performance Appels Systématiques":95,
          "OT Fiabilité":100,"Total Avis de Panne":100}
 
