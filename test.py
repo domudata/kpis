@@ -98,7 +98,7 @@ CONSIGNES_HSE = [
     "Verifier la bonne ventilation des zones de travail.","Respecter les regles des espaces confines.",
     "Controler l'atmosphere avant d'entrer dans un espace confine.","Utiliser les points d'ancrage pour les travaux en hauteur.",
     "Verifier l'etat des echafaudages avant utilisation.","Securiser les outils lors des travaux en hauteur.",
-    "Ne pas travailler seul lors d'operations a risque.","Controler les elingues avant chaque levage.",
+    "Ne pas travailler seul lors des operations a risque.","Controler les elingues avant chaque levage.",
     "Respecter les limites de charge des equipements.","Verifier l'etat des appareils de levage.",
     "Maintenir les voies de circulation degagees.","Respecter la signalisation de securite.",
     "Verifier les extincteurs a proximite du chantier.","Connaitre les issues de secours les plus proches.",
@@ -559,19 +559,31 @@ def main():
         return h
         
     def show_pie_pair(piv_df, title_prefix):
-        global_counts = piv_df[["CRÉÉ","LANC","CLOT","TCLO"]].sum()
-    global_counts = global_counts[global_counts > 0]
-    realised = global_counts.get("CLOT", 0) + global_counts.get("TCLO", 0)
-    not_realised = global_counts.sum() - realised
-    if global_counts.empty:
-        st.markdown('
+        global_counts=piv_df[["CRÉÉ","LANC","CLOT","TCLO"]].sum()
+        global_counts=global_counts[global_counts>0]
+        realised=global_counts.get("CLOT",0)+global_counts.get("TCLO",0)
+        not_realised=global_counts.sum()-realised
+        if not global_counts.empty:
+            fig1=px.pie(global_counts, names=global_counts.index, values=global_counts.values,
+                title="%s — Par Statut OT"%title_prefix,
+                color_discrete_sequence=["#e53e3e","#d69e2e","#38a169","#3182ce"])
+            fig1.update_traces(textposition='inside',textinfo='percent+value',textfont_size=14, domain={'x': [0.15, 0.85], 'y': [0.15, 0.85]})
+            fig1.update_layout(margin=dict(t=40,b=10,l=10,r=10),height=450,legend=dict(font_size=12,orientation="h",yanchor="bottom",y=-0.1, x=0.5, xanchor="center"))
+            st.plotly_chart(fig1,use_container_width=True)
+        else:
+            st.markdown('<div class="es">Aucune donnee</div>',unsafe_allow_html=True)
+            
+        if global_counts.sum()>0:
+            pie2_data=pd.DataFrame({"Statut":["Réalisés (CLOT+TCLO)","Non Réalisés"],"Nombre":[realised,not_realised]})
+            fig2=px.pie(pie2_data, names="Statut", values="Nombre",
+                title="%s — Réalisés vs Non Réalisés"%title_prefix,
+                color="Statut", color_discrete_map={"Réalisés (CLOT+TCLO)":"#38a169","Non Réalisés":"#e53e3e"})
+            fig2.update_traces(textposition='inside',textinfo='percent+value',textfont_size=14, domain={'x': [0.15, 0.85], 'y': [0.15, 0.85]})
+            fig2.update_layout(margin=dict(t=40,b=10,l=10,r=10),height=450,legend=dict(font_size=12,orientation="h",yanchor="bottom",y=-0.1, x=0.5, xanchor="center"))
+            st.plotly_chart(fig2,use_container_width=True)
+        else:
+            st.markdown('<div class="es">Aucune donnee</div>',unsafe_allow_html=True)
 
-Aucune donnee
-', unsafe_allow_html=True) return colors = ["#e53e3e", "#d69e2e", "#38a169", "#3182ce"] fig = make_subplots(rows=1, cols=2, specs=[[{"type":"domain"},{"type":"domain"}]], subplot_titles=(f"{title_prefix} — Par Statut OT", f"{title_prefix} — Réalisés vs Non Réalisés")) fig.add_trace(go.Pie(labels=global_counts.index, values=global_counts.values, hole=0.45, textinfo='percent+label', texttemplate='%{label}
-%{percent:.1%}
-(%{value})', marker=dict(colors=colors, line=dict(color='#FFFFFF', width=1))), 1, 1) pie2_data = pd.Series([realised, not_realised], index=["Réalisés (CLOT+TCLO)", "Non Réalisés"]) fig.add_trace(go.Pie(labels=pie2_data.index, values=pie2_data.values, hole=0.55, textinfo='percent+label', texttemplate='%{label}
-%{percent:.1%}
-(%{value})', marker=dict(colors=["#38a169", "#e53e3e"], line=dict(color='#FFFFFF', width=1))), 1, 2) fig.update_layout(margin=dict(t=50, b=10, l=10, r=10), height=420, legend=dict(orientation="h", yanchor="bottom", y=-0.12, x=0.5, xanchor="center"), annotations=[dict(text=title_prefix, x=0.5, y=1.06, xref="paper", yref="paper", showarrow=False, font=dict(size=14))]) st.plotly_chart(fig, use_container_width=True)
     def show_simple_pie(piv_df, title, keep_non_carac=False):
         if not keep_non_carac and "NON CARACTERISE" in piv_df.columns:
             piv_df = piv_df.drop(columns=["NON CARACTERISE"])
@@ -804,6 +816,80 @@ Aucune donnee
             action="Objectif atteint" if met else act_map.get(k,"")
             h+='<tr><td style="font-weight:600">%s</td><td>%.1f%%</td><td>%.0f%%</td><td style="color:%s;font-weight:700">%+.1f%%</td><td style="%s">%s</td><td style="color:#4a5568">%s</td></tr>'%(k,av,tv,ec_clr,diff,st_s,status,action)
         return h+'</tbody></table>'
+        
+    def html_plan_actions_table(rows, title, accent_color):
+        """Tableau HTML professionnel avec fusion des cellules Poste de travail"""
+        if not rows:
+            return '<div class="ca" style="margin-bottom:10px;"><div class="ct" style="color:%s;border-bottom:2px solid %s;">%s</div><div class="es" style="padding:20px;">✅ Aucune action requise — Tous les KPIs sont conformes !</div></div>' % (accent_color, accent_color, title)
+
+        rows_sorted = sorted(rows, key=lambda x: (x["poste"], -abs(x["ecart"])))
+
+        from itertools import groupby
+        grouped = [(k, list(g)) for k, g in groupby(rows_sorted, key=lambda x: x["poste"])]
+
+        h = '<div class="ca" style="margin-bottom:12px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">'
+        h += '<div style="background:linear-gradient(135deg,%s,%s);padding:10px 14px;color:#fff;font-size:15px;font-weight:800;display:flex;justify-content:space-between;align-items:center;">' % (accent_color, accent_color)
+        h += '<span>%s</span><span style="background:rgba(255,255,255,0.2);padding:3px 12px;border-radius:14px;font-size:13px;">%d action(s)</span></div>' % (title, len(rows))
+
+        h += '<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif;font-size:12px;">'
+        h += '<thead><tr style="background:#1e3a5f;">'
+        headers = ["Poste de travail","KPI","Nécessite Action","Écart","Nb Anomalies","Responsable","Action Recommandée","Délai"]
+        for hdr in headers:
+            h += '<th style="padding:8px 6px;color:#fff;font-weight:700;text-transform:uppercase;font-size:10px;letter-spacing:0.5px;text-align:center;border-right:1px solid rgba(255,255,255,0.1);">%s</th>' % hdr
+        h += '</tr></thead><tbody>'
+
+        row_idx = 0
+        for poste, group_rows in grouped:
+            rowspan = len(group_rows)
+            first = True
+            for r in group_rows:
+                bg = "#ffffff" if row_idx % 2 == 0 else "#f7fafc"
+                h += '<tr style="background:%s;">' % bg
+
+                if first:
+                    poste_bg = "#ebf4ff" if accent_color == "#2b6cb0" else "#f0fff4"
+                    h += '<td rowspan="%d" style="font-weight:800;vertical-align:top;padding:10px 8px;font-size:13px;color:%s;background:%s;border-right:3px solid %s;border-bottom:1px solid #e2e8f0;">%s</td>' % (
+                        rowspan, accent_color, poste_bg, accent_color, poste)
+                    first = False
+
+                # KPI
+                h += '<td style="padding:6px 8px;font-weight:600;font-size:11px;color:#2d3748;border-bottom:1px solid #edf2f7;">%s</td>' % r["kpi"]
+
+                # Nécessite Action
+                if r["needs_action"]:
+                    h += '<td style="padding:6px;text-align:center;border-bottom:1px solid #edf2f7;"><span style="background:#e53e3e;color:#fff;padding:2px 10px;border-radius:12px;font-size:10px;font-weight:700;">OUI</span></td>'
+                else:
+                    h += '<td style="padding:6px;text-align:center;border-bottom:1px solid #edf2f7;"><span style="background:#38a169;color:#fff;padding:2px 10px;border-radius:12px;font-size:10px;font-weight:700;">NON</span></td>'
+
+                # Écart
+                ecart = r["ecart"]
+                lower = r["kpi"] in LOWER_BETTER
+                is_bad = (ecart < 0 and not lower) or (ecart > 0 and lower)
+                ec_clr = "#c53030" if is_bad else "#276749"
+                h += '<td style="padding:6px;text-align:center;font-weight:800;color:%s;font-size:13px;border-bottom:1px solid #edf2f7;">%+.1f%%</td>' % (ec_clr, ecart)
+
+                # Nb Anomalies
+                nb = r["nb_anom"]
+                if nb == 0:   nb_bg, nb_clr = "#c6efce", "#006100"
+                elif nb <= 3:  nb_bg, nb_clr = "#ffeb9c", "#9c6500"
+                elif nb <= 10: nb_bg, nb_clr = "#fed7d7", "#c53030"
+                else:          nb_bg, nb_clr = "#fc8181", "#742a2a"
+                h += '<td style="padding:6px;text-align:center;font-weight:800;background:%s;color:%s;font-size:14px;border-bottom:1px solid #edf2f7;">%d</td>' % (nb_bg, nb_clr, nb)
+
+                # Responsable
+                h += '<td style="padding:6px 8px;font-weight:600;font-size:11px;text-align:center;color:#4a5568;border-bottom:1px solid #edf2f7;">%s</td>' % r["responsable"]
+
+                # Action
+                h += '<td style="padding:6px 8px;font-size:11px;color:#4a5568;border-bottom:1px solid #edf2f7;">%s</td>' % r["action"]
+
+                # Délai
+                h += '<td style="padding:6px;text-align:center;border-bottom:1px solid #edf2f7;color:#a0aec0;font-size:11px;">—</td>'
+
+                h += '</tr>'
+                row_idx += 1
+
+        h += '</tbody></table></div>'
+        return h
         
     def html_classement(scores,accent):
         sp=sorted(scores.items(),key=lambda x:x[1],reverse=True)
@@ -1255,25 +1341,42 @@ Aucune donnee
                             synth_qual[poste][kpi]={"diff":"—"}
 
 
-            # Construction des données pour le tableau de recommandations
-            plan_actions_data = []
-            for kpi, df_anom in anomaly_dfs.items():
-                if not df_anom.empty and "Poste travail princ." in df_anom.columns:
-                    postes = df_anom["Poste travail princ."].dropna().unique().tolist()
-                    postes_str = ", ".join(postes)
-                    mapping_resp = KPI_RESP_MAP.get(kpi, "Non assigné")
-                    action_text = ACT_MAP.get(kpi, "Vérifier le KPI manuellement")
-                    plan_actions_data.append({
-                        "KPI en anomalie": kpi,
-                        "Poste(s) de travail concerné(s)": postes_str,
-                        "Responsable": mapping_resp,
-                        "Action recommandée": action_text,
-                        "Délai": ""
-                    })
-            
-            df_plan_actions = pd.DataFrame(plan_actions_data)
-            if not df_plan_actions.empty:
-                df_plan_actions = df_plan_actions[["KPI en anomalie", "Poste(s) de travail concerné(s)", "Responsable", "Action recommandée", "Délai"]]
+            # ==========================================
+            # CONSTRUCTION DONNÉES PLAN D'ACTIONS (1 ligne par Poste + KPI)
+            # ==========================================
+            plan_actions_rows = []
+            for poste in vp:
+                if poste not in ckdf.index:
+                    continue
+                poste_data = ckdf.loc[poste]
+
+                for kpi in ALL_KPI:
+                    actual = float(poste_data.get(kpi, 100))
+                    target = CIBLE.get(kpi, 100)
+                    lower  = is_lb(kpi)
+
+                    if lower:
+                        needs_action = actual > target
+                    else:
+                        needs_action = actual < target
+                    ecart = actual - target
+
+                    nb_anom = int(ano_map.get(kpi, pd.Series()).get(poste, 0))
+
+                    if needs_action or nb_anom > 0:
+                        plan_actions_rows.append({
+                            "poste": poste,
+                            "kpi": kpi,
+                            "needs_action": needs_action,
+                            "ecart": ecart,
+                            "nb_anom": nb_anom,
+                            "responsable": KPI_RESP_MAP.get(kpi, "Non assigné"),
+                            "action": ACT_MAP.get(kpi, ""),
+                            "delai": ""
+                        })
+
+            sf1_rows = [r for r in plan_actions_rows if str(r["poste"]).startswith("SF1")]
+            sf2_rows = [r for r in plan_actions_rows if str(r["poste"]).startswith("SF2")]
 
 
             # RENDER
@@ -1392,49 +1495,71 @@ Aucune donnee
                         st.dataframe(bot5_df,use_container_width=True)
 
             with tabs[5]:
-                st.markdown('<div class="stl a">Recommandations et Plan d\'Actions</div>',unsafe_allow_html=True)
-                if not df_plan_actions.empty:
-                    col_m1, col_m2 = st.columns([1, 4])
-                    with col_m1:
-                        st.metric(label="🔔 Recommandations Ouvertes", value=len(df_plan_actions))
-                    
-                    st.write("")
-                    
-                    edited_plan_df = st.data_editor(
-                        df_plan_actions,
+                st.markdown('<div class="stl a">📋 Recommandations et Plan d\'Actions</div>', unsafe_allow_html=True)
+
+                # ── Métriques synthétiques ──
+                mc1, mc2, mc3 = st.columns(3)
+                with mc1: st.metric("🔔 Total Actions Requises", len(plan_actions_rows))
+                with mc2: st.metric("🏭 Actions SF1", len(sf1_rows))
+                with mc3: st.metric("🏭 Actions SF2", len(sf2_rows))
+
+                st.write("")
+
+                # ── Tableaux HTML professionnels (SF1 / SF2 séparés) ──
+                st.markdown(html_plan_actions_table(sf1_rows, "SF1 — Plan d'Actions", "#2b6cb0"), unsafe_allow_html=True)
+                st.markdown(html_plan_actions_table(sf2_rows, "SF2 — Plan d'Actions", "#276749"), unsafe_allow_html=True)
+
+                # ── Section éditable pour renseigner les délais ──
+                if plan_actions_rows:
+                    df_edit = pd.DataFrame([{
+                        "Poste de travail": r["poste"],
+                        "KPI": r["kpi"],
+                        "Nécessite Action": "Oui" if r["needs_action"] else "Non",
+                        "Écart": f"{r['ecart']:+.1f}%",
+                        "Nb Anomalies": r["nb_anom"],
+                        "Responsable": r["responsable"],
+                        "Action Recommandée": r["action"],
+                        "Délai": r["delai"]
+                    } for r in plan_actions_rows])
+
+                    st.markdown('<div class="stl a">✏️ Renseigner les délais (tableau modifiable)</div>', unsafe_allow_html=True)
+                    edited_df = st.data_editor(
+                        df_edit,
                         column_config={
                             "Délai": st.column_config.TextColumn(
                                 "Délai",
-                                help="Renseignez le délai de traitement (ex: 15 jours, 30/06/2026)",
+                                help="Ex: 15 jours, 30/06/2026, ASAP...",
                                 required=False
                             )
                         },
                         use_container_width=True,
                         hide_index=True,
                         num_rows="fixed",
-                        height=1000
+                        height=600
                     )
-                    
+
                     st.write("")
-                    
-                    def to_excel_plan(df):
+
+                    # ── Export Excel (SF1 & SF2 séparés en feuilles distinctes) ──
+                    def to_excel_plan_split(df):
                         output = io.BytesIO()
-                        writer = pd.ExcelWriter(output, engine='openpyxl')
-                        df.to_excel(writer, index=False, sheet_name='Plan d actions')
-                        writer.close()
+                        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                            df_sf1 = df[df["Poste de travail"].str.startswith("SF1")].copy()
+                            df_sf2 = df[df["Poste de travail"].str.startswith("SF2")].copy()
+                            df_sf1.to_excel(writer, sheet_name="SF1 - Plan d'Actions", index=False)
+                            df_sf2.to_excel(writer, sheet_name="SF2 - Plan d'Actions", index=False)
                         return output.getvalue()
-                    
-                    excel_data_plan = to_excel_plan(edited_plan_df)
-                    
+
+                    excel_data_plan = to_excel_plan_split(edited_df)
                     st.download_button(
-                        label="📥 Exporter le plan d'actions en Excel",
+                        label="📥 Exporter le Plan d'Actions (Excel — SF1 & SF2 séparés)",
                         data=excel_data_plan,
-                        file_name='plan_d_actions_kpis.xlsx',
-                        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                        file_name="plan_d_actions_kpis.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         use_container_width=True
                     )
                 else:
-                    st.markdown('<div class="es">Aucune anomalie détectée. Tous les KPIs sont aux normes ! 🎉</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="es">🎉 Aucune anomalie détectée. Tous les KPIs sont aux normes !</div>', unsafe_allow_html=True)
 
         except Exception as e:
             st.error("Erreur lors du chargement des donnees : %s"%str(e))
