@@ -7,6 +7,7 @@ import io, locale, random, time, os, hashlib, json, base64
 from datetime import datetime
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
@@ -167,7 +168,8 @@ def prepare_data(ot_bytes, av_bytes, date_str):
     df["Backlog preparation"]=np.where(df["Statut utilisateur"].apply(lambda x:contient_mot(x,MP_KW)),"CARACTERISE","NON CARACTERISE")
     df["Backlog planification"]=np.where(df["Statut utilisateur"].apply(lambda x:contient_mot(x,MPLAN_KW)),"CARACTERISE","NON CARACTERISE")
     df["Type Carac Prep"]=df["Statut utilisateur"].apply(lambda x: next((kw for kw in MP_KW if kw in str(x)), "NON CARACTERISE"))
-    df["Type Carac Plan"]=df["Statut utilisateur"].apply(lambda x: next((kw for kw in MPLAN_KW if kw in str(x)), "NON CARACTERISE"))
+    # Utiliser uniquement le préfixe (avant l'espace) pour la planification
+    df["Type Carac Plan"]=df["Statut utilisateur"].apply(lambda x: next((kw.split()[0] for kw in MPLAN_KW if kw in str(x)), "NON CARACTERISE"))
     
     for dc,am,ac in [('Créé le',"amp","ap"),('Date de début planifiée',"amlp","alp"),('Date de début planifiée',"amex","aex")]:
         if dc in df.columns:
@@ -544,67 +546,83 @@ def main():
         
     def html_statut_pivot(piv_df, table_class):
         cols=["Poste de travail","CRÉÉ","LANC","CLOT","TCLO","Total"]
+        statut_colors = {
+            "CRÉÉ": "background:#fef3c7;color:#92400e;font-weight:600;",
+            "LANC": "background:#dbeafe;color:#1e40af;font-weight:600;",
+            "CLOT": "background:#d1fae5;color:#065f46;font-weight:600;",
+            "TCLO": "background:#a7f3d0;color:#064e3b;font-weight:600;",
+            "Total": "background:#e9d8fd;color:#5b21b6;font-weight:700;"
+        }
         h='<table class="tw %s"><thead><tr>'%table_class+''.join('<th>%s</th>'%c for c in cols)+'</tr></thead><tbody>'
         for poste,row in piv_df.iterrows():
-            h+='<tr><td style="font-weight:600">%s</td>'%poste
+            h+='<tr><td style="font-weight:700">%s</td>'%poste
             for c in ["CRÉÉ","LANC","CLOT","TCLO"]:
-                h+='<td style="text-align:center">%d</td>'%int(row.get(c,0))
-            h+='<td style="text-align:center;font-weight:800">%d</td>'%int(row.get("Total",0))
+                h+='<td style="text-align:center;%s">%d</td>'%(statut_colors[c], int(row.get(c,0)))
+            h+='<td style="text-align:center;%s">%d</td>'%(statut_colors["Total"], int(row.get("Total",0)))
             h+='</tr>'
-        h+='<tr class="tr"><td>Total</td>'
+        h+='<tr class="tr"><td style="font-weight:800">Total</td>'
         for c in ["CRÉÉ","LANC","CLOT","TCLO"]:
-            h+='<td style="text-align:center">%d</td>'%int(piv_df[c].sum())
-        h+='<td style="text-align:center">%d</td>'%int(piv_df["Total"].sum())
+            h+='<td style="text-align:center;font-weight:800;%s">%d</td>'%(statut_colors[c], int(piv_df[c].sum()))
+        h+='<td style="text-align:center;font-weight:800;%s">%d</td>'%(statut_colors["Total"], int(piv_df["Total"].sum()))
         h+='</tr></tbody></table>'
         return h
         
     def show_pie_pair(piv_df, title_prefix):
-        global_counts=piv_df[["CRÉÉ","LANC","CLOT","TCLO"]].sum()
-        global_counts=global_counts[global_counts>0]
-        realised=global_counts.get("CLOT",0)+global_counts.get("TCLO",0)
-        not_realised=global_counts.sum()-realised
-        if not global_counts.empty:
-            fig1=px.pie(global_counts, names=global_counts.index, values=global_counts.values,
-                title="%s — Par Statut OT"%title_prefix,
-                color_discrete_sequence=["#e53e3e","#d69e2e","#38a169","#3182ce"])
-            fig1.update_traces(textposition='inside',textinfo='percent+value',textfont_size=14, domain={'x': [0.15, 0.85], 'y': [0.15, 0.85]})
-            fig1.update_layout(margin=dict(t=40,b=10,l=10,r=10),height=450,legend=dict(font_size=12,orientation="h",yanchor="bottom",y=-0.1, x=0.5, xanchor="center"))
-            st.plotly_chart(fig1,use_container_width=True)
-        else:
-            st.markdown('<div class="es">Aucune donnee</div>',unsafe_allow_html=True)
+        global_counts = piv_df[["CRÉÉ","LANC","CLOT","TCLO"]].sum()
+        global_counts = global_counts[global_counts > 0]
+        realised = global_counts.get("CLOT", 0) + global_counts.get("TCLO", 0)
+        not_realised = global_counts.sum() - realised
+        
+        if global_counts.empty:
+            st.markdown('<div class="es">Aucune donnee</div>', unsafe_allow_html=True)
+            return
             
-        if global_counts.sum()>0:
-            pie2_data=pd.DataFrame({"Statut":["Réalisés (CLOT+TCLO)","Non Réalisés"],"Nombre":[realised,not_realised]})
-            fig2=px.pie(pie2_data, names="Statut", values="Nombre",
-                title="%s — Réalisés vs Non Réalisés"%title_prefix,
-                color="Statut", color_discrete_map={"Réalisés (CLOT+TCLO)":"#38a169","Non Réalisés":"#e53e3e"})
-            fig2.update_traces(textposition='inside',textinfo='percent+value',textfont_size=14, domain={'x': [0.15, 0.85], 'y': [0.15, 0.85]})
-            fig2.update_layout(margin=dict(t=40,b=10,l=10,r=10),height=450,legend=dict(font_size=12,orientation="h",yanchor="bottom",y=-0.1, x=0.5, xanchor="center"))
-            st.plotly_chart(fig2,use_container_width=True)
-        else:
-            st.markdown('<div class="es">Aucune donnee</div>',unsafe_allow_html=True)
+        colors = ["#e53e3e", "#d69e2e", "#38a169", "#3182ce"]
+        fig = make_subplots(rows=1, cols=2, specs=[[{"type":"domain"},{"type":"domain"}]], 
+                            subplot_titles=(f"{title_prefix} — Par Statut OT", f"{title_prefix} — Réalisés vs Non Réalisés"))
+        
+        fig.add_trace(go.Pie(labels=global_counts.index, values=global_counts.values, hole=0.45, 
+                             textinfo='percent+label', 
+                             texttemplate='%{label}<br>%{percent:.1%}<br>(%{value})', 
+                             marker=dict(colors=colors, line=dict(color='#FFFFFF', width=1))), 1, 1)
+                             
+        pie2_data = pd.Series([realised, not_realised], index=["Réalisés (CLOT+TCLO)", "Non Réalisés"])
+        
+        fig.add_trace(go.Pie(labels=pie2_data.index, values=pie2_data.values, hole=0.55, 
+                             textinfo='percent+label', 
+                             texttemplate='%{label}<br>%{percent:.1%}<br>(%{value})', 
+                             marker=dict(colors=["#38a169", "#e53e3e"], line=dict(color='#FFFFFF', width=1))), 1, 2)
+                             
+        fig.update_layout(margin=dict(t=50, b=10, l=10, r=10), height=420, 
+                          legend=dict(orientation="h", yanchor="bottom", y=-0.12, x=0.5, xanchor="center"), 
+                          annotations=[dict(text=title_prefix, x=0.5, y=1.06, xref="paper", yref="paper", showarrow=False, font=dict(size=14))])
+                          
+        st.plotly_chart(fig, use_container_width=True)
 
     def show_simple_pie(piv_df, title, keep_non_carac=False):
         if not keep_non_carac and "NON CARACTERISE" in piv_df.columns:
             piv_df = piv_df.drop(columns=["NON CARACTERISE"])
+            
         counts = piv_df.sum()
         counts = counts[counts > 0]
-        if not counts.empty:
-            color_map = {
-                "CARACTERISE": "#38a169",
-                "NON CARACTERISE": "#e53e3e"
-            }
-            colors = [color_map.get(str(c), None) for c in counts.index]
-            fig = px.pie(
-                counts, names=counts.index, values=counts.values, title=title,
-                color=counts.index,
-                color_discrete_map={k: v for k, v in zip(counts.index, colors)} if any(colors) else None
-            )
-            fig.update_traces(textposition='inside', textinfo='percent+value', textfont_size=14, domain={'x': [0.15, 0.85], 'y': [0.15, 0.85]})
-            fig.update_layout(margin=dict(t=40, b=10, l=10, r=10), height=400, legend=dict(font_size=12, orientation="h", yanchor="bottom", y=-0.1, x=0.5, xanchor="center"))
-            st.plotly_chart(fig, use_container_width=True)
-        else:
+        
+        if counts.empty:
             st.markdown('<div class="es">Aucune donnee</div>', unsafe_allow_html=True)
+            return
+            
+        color_map = {"CARACTERISE": "#38a169", "NON CARACTERISE": "#e53e3e"}
+        colors = [color_map.get(str(c), "#3182ce") for c in counts.index]
+        
+        fig = go.Figure(data=[go.Pie(labels=counts.index, values=counts.values, hole=0.45, 
+                                     textinfo='percent+label', 
+                                     texttemplate='%{label}<br>%{percent:.1%}<br>(%{value})', 
+                                     marker=dict(colors=colors, line=dict(color='#FFFFFF', width=1)))])
+                                     
+        fig.update_traces(sort=False)
+        fig.update_layout(title=title, margin=dict(t=40, b=10, l=10, r=10), height=420, 
+                          legend=dict(orientation="h", yanchor="bottom", y=-0.12, x=0.5, xanchor="center"))
+                          
+        st.plotly_chart(fig, use_container_width=True)
 
     def calc_kpis(df_i, av_i, now_ts, posts):
         res={}; df=df_i.copy(); av=av_i.copy()
@@ -935,7 +953,6 @@ def main():
             pv,qv=pscores.get(p,0),qscores.get(p,0)
             p_color = get_bar_color(None, pv)
             q_color = get_bar_color(None, qv)
-            # Cible supprimée (plus de target_line_html ni label_html)
             h+='<div class="gbr"><div class="gbr-l">%s</div><div class="gbr-g"><div class="gbr-w"><div class="gbr-f" style="width:%s%%;background:%s"></div></div><div class="gbr-v">%.1f%%</div><div class="gbr-w"><div class="gbr-f" style="width:%s%%;background:%s"></div></div><div class="gbr-v">%.1f%%</div></div></div>'%(p,min(max(pv,0),100),p_color,pv,min(max(qv,0),100),q_color,qv)
         return h+'</div>'
         
@@ -973,14 +990,21 @@ def main():
         cols = ["Poste de travail"] + [str(c) for c in piv_df.columns]
         h='<div class="ca"><div class="ct" style="color:#1e3a5f">%s</div>'%title
         h+='<table class="tw %s"><thead><tr>'%table_class+''.join('<th>%s</th>'%c for c in cols)+'</tr></thead><tbody>'
+        
+        def get_style(col_name):
+            if col_name == "CARACTERISE": return "background:#d1fae5;color:#065f46;font-weight:600;"
+            if col_name == "NON CARACTERISE": return "background:#fee2e2;color:#991b1b;font-weight:600;"
+            if col_name == "Total": return "background:#e9d8fd;color:#5b21b6;font-weight:700;"
+            return "background:#f7fafc;color:#1a202c;font-weight:600;"
+            
         for poste,row in piv_df.iterrows():
-            h+='<tr><td style="font-weight:600">%s</td>'%poste
+            h+='<tr><td style="font-weight:700">%s</td>'%poste
             for c in piv_df.columns:
-                h+='<td style="text-align:center">%d</td>'%int(row.get(c,0))
+                h+='<td style="text-align:center;%s">%d</td>'%(get_style(c), int(row.get(c,0)))
             h+='</tr>'
-        h+='<tr class="tr"><td>Total</td>'
+        h+='<tr class="tr"><td style="font-weight:800">Total</td>'
         for c in piv_df.columns:
-            h+='<td style="text-align:center">%d</td>'%int(piv_df[c].sum())
+            h+='<td style="text-align:center;font-weight:800;%s">%d</td>'%(get_style(c), int(piv_df[c].sum()))
         h+='</tr></tbody></table></div>'
         return h
 
@@ -1285,7 +1309,6 @@ def main():
             anomaly_dfs["OT CONFIME"] = dfp[dfp["OT CONFIME"]=="NON"].copy()
             anomaly_dfs["OT_COR_EGAL"] = dfp[dfp["OT_COR_EGAL"]=="NON"].copy()
             
-            # MODIFICATION : Ajout de "Créé le" dans l'export Excel des Avis
             ot_cols = ["Ordre","Désignation","Poste technique","Désignation du poste technique","Poste travail princ.","Divis. planification","Statut système","Statut utilisateur","Date de début planifiée"]
             av_cols = ["Avis", "Créé le", "Description", "Poste technique", "Poste travail princ.", "Statut système", "Statut utilisateur"]
             
@@ -1395,7 +1418,7 @@ def main():
             st.markdown('<div class="cr"><div class="cc c1"><div class="cv">%d</div><div class="cl">OT Analyses</div></div><div class="cc c2"><div class="cv">%.1f%%</div><div class="cl">Score Performance Global</div></div><div class="cc c3"><div class="cv">%.1f%%</div><div class="cl">Score Qualite Global</div></div><div class="cc c4"><div class="cv">%d</div><div class="cl">Anomalies Totales</div></div></div>'%(total_ot,avg_p_score,avg_q_score,total_ano_p+total_ano_q),unsafe_allow_html=True)
             st.markdown('<div class="cr"><div class="cc c5"><div class="cv">%.1f%%</div><div class="cl">Performance SF1</div></div><div class="cc c6"><div class="cv">%.1f%%</div><div class="cl">Qualite SF1</div></div><div class="cc c7"><div class="cv">%.1f%%</div><div class="cl">Performance SF2</div></div><div class="cc c8"><div class="cv">%.1f%%</div><div class="cl">Qualite SF2</div></div></div>'%(sf1_p_score,sf1_q_score,sf2_p_score,sf2_q_score),unsafe_allow_html=True)
 
-            tabs=st.tabs(["🏠 Tableau de Bord","📈 Performance","✅ Qualite","📂 Backlog","📋 Suivi & Evolution","🎯 Recommandations et Plan d'Actions"])
+            tabs=st.tabs(["🏠 Tableau de Bord","📈 Performance","✅ Qualite","📂 Backlog","📋 Suivi & Evolution","🎯 Plan d'action"])
 
             with tabs[0]:
                 st.markdown('<div class="stl p">Scores globaux par poste</div>',unsafe_allow_html=True)
@@ -1430,7 +1453,7 @@ def main():
 
             with tabs[3]:
                 st.markdown('<div class="stl c">Caractérisation Backlog Préparation</div>',unsafe_allow_html=True)
-                c1, c2 = st.columns([0.5, 0.5])
+                c1, c2 = st.columns([0.5, 0.5], vertical_alignment="center")
                 with c1:
                     st.markdown(html_generic_pivot(piv_carac_prep_stat, "omt", "Synthèse Caractérisé / Non Caractérisé"),unsafe_allow_html=True)
                 with c2:
@@ -1438,7 +1461,7 @@ def main():
                     show_simple_pie(piv_carac_prep_type, "Répartition par Type de Caractérisation", keep_non_carac=False)
 
                 st.markdown('<div class="stl c">Caractérisation Backlog Planification</div>',unsafe_allow_html=True)
-                c5, c6 = st.columns([0.5, 0.5])
+                c5, c6 = st.columns([0.5, 0.5], vertical_alignment="center")
                 with c5:
                     st.markdown(html_generic_pivot(piv_carac_plan_stat, "omt", "Synthèse Caractérisé / Non Caractérisé"),unsafe_allow_html=True)
                 with c6:
@@ -1448,17 +1471,17 @@ def main():
                 st.markdown('<div class="stl p">Statuts OT par Poste de Travail</div>',unsafe_allow_html=True)
                 
                 st.markdown('<div class="stl s">OT OMS par Poste et Statut OT</div>',unsafe_allow_html=True)
-                c_oms1, c_oms2 = st.columns([0.5, 0.5])
+                c_oms1, c_oms2 = st.columns([0.5, 0.5], vertical_alignment="center")
                 with c_oms1: st.markdown(html_statut_pivot(piv_oms,"omt"),unsafe_allow_html=True)
                 with c_oms2: show_pie_pair(piv_oms,"OT OMS")
                 
                 st.markdown('<div class="stl s">OT Thermographie par Poste et Statut OT</div>',unsafe_allow_html=True)
-                c_thm1, c_thm2 = st.columns([0.5, 0.5])
+                c_thm1, c_thm2 = st.columns([0.5, 0.5], vertical_alignment="center")
                 with c_thm1: st.markdown(html_statut_pivot(piv_thm,"tht"),unsafe_allow_html=True)
                 with c_thm2: show_pie_pair(piv_thm,"OT Thermographie")
                 
                 st.markdown('<div class="stl s">Tous les OT par Poste et Statut OT</div>',unsafe_allow_html=True)
-                c_all1, c_all2 = st.columns([0.5, 0.5])
+                c_all1, c_all2 = st.columns([0.5, 0.5], vertical_alignment="center")
                 with c_all1: st.markdown(html_statut_pivot(piv_all,"pt"),unsafe_allow_html=True)
                 with c_all2: show_pie_pair(piv_all,"Tous les OT")
 
@@ -1495,7 +1518,7 @@ def main():
                         st.dataframe(bot5_df,use_container_width=True)
 
             with tabs[5]:
-                st.markdown('<div class="stl a">📋 Recommandations et Plan d\'Actions</div>', unsafe_allow_html=True)
+                st.markdown('<div class="stl a">📋 Plan d\'action</div>', unsafe_allow_html=True)
 
                 # ── Métriques synthétiques ──
                 mc1, mc2, mc3 = st.columns(3)
@@ -1509,56 +1532,7 @@ def main():
                 st.markdown(html_plan_actions_table(sf1_rows, "SF1 — Plan d'Actions", "#2b6cb0"), unsafe_allow_html=True)
                 st.markdown(html_plan_actions_table(sf2_rows, "SF2 — Plan d'Actions", "#276749"), unsafe_allow_html=True)
 
-                # ── Section éditable pour renseigner les délais ──
-                if plan_actions_rows:
-                    df_edit = pd.DataFrame([{
-                        "Poste de travail": r["poste"],
-                        "KPI": r["kpi"],
-                        "Nécessite Action": "Oui" if r["needs_action"] else "Non",
-                        "Écart": f"{r['ecart']:+.1f}%",
-                        "Nb Anomalies": r["nb_anom"],
-                        "Responsable": r["responsable"],
-                        "Action Recommandée": r["action"],
-                        "Délai": r["delai"]
-                    } for r in plan_actions_rows])
-
-                    st.markdown('<div class="stl a">✏️ Renseigner les délais (tableau modifiable)</div>', unsafe_allow_html=True)
-                    edited_df = st.data_editor(
-                        df_edit,
-                        column_config={
-                            "Délai": st.column_config.TextColumn(
-                                "Délai",
-                                help="Ex: 15 jours, 30/06/2026, ASAP...",
-                                required=False
-                            )
-                        },
-                        use_container_width=True,
-                        hide_index=True,
-                        num_rows="fixed",
-                        height=600
-                    )
-
-                    st.write("")
-
-                    # ── Export Excel (SF1 & SF2 séparés en feuilles distinctes) ──
-                    def to_excel_plan_split(df):
-                        output = io.BytesIO()
-                        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                            df_sf1 = df[df["Poste de travail"].str.startswith("SF1")].copy()
-                            df_sf2 = df[df["Poste de travail"].str.startswith("SF2")].copy()
-                            df_sf1.to_excel(writer, sheet_name="SF1 - Plan d'Actions", index=False)
-                            df_sf2.to_excel(writer, sheet_name="SF2 - Plan d'Actions", index=False)
-                        return output.getvalue()
-
-                    excel_data_plan = to_excel_plan_split(edited_df)
-                    st.download_button(
-                        label="📥 Exporter le Plan d'Actions (Excel — SF1 & SF2 séparés)",
-                        data=excel_data_plan,
-                        file_name="plan_d_actions_kpis.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        use_container_width=True
-                    )
-                else:
+                if not plan_actions_rows:
                     st.markdown('<div class="es">🎉 Aucune anomalie détectée. Tous les KPIs sont aux normes !</div>', unsafe_allow_html=True)
 
         except Exception as e:
