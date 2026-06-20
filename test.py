@@ -559,31 +559,19 @@ def main():
         return h
         
     def show_pie_pair(piv_df, title_prefix):
-        global_counts=piv_df[["CRÉÉ","LANC","CLOT","TCLO"]].sum()
-        global_counts=global_counts[global_counts>0]
-        realised=global_counts.get("CLOT",0)+global_counts.get("TCLO",0)
-        not_realised=global_counts.sum()-realised
-        if not global_counts.empty:
-            fig1=px.pie(global_counts, names=global_counts.index, values=global_counts.values,
-                title="%s — Par Statut OT"%title_prefix,
-                color_discrete_sequence=["#e53e3e","#d69e2e","#38a169","#3182ce"])
-            fig1.update_traces(textposition='inside',textinfo='percent+value',textfont_size=14, domain={'x': [0.15, 0.85], 'y': [0.15, 0.85]})
-            fig1.update_layout(margin=dict(t=40,b=10,l=10,r=10),height=450,legend=dict(font_size=12,orientation="h",yanchor="bottom",y=-0.1, x=0.5, xanchor="center"))
-            st.plotly_chart(fig1,use_container_width=True)
-        else:
-            st.markdown('<div class="es">Aucune donnee</div>',unsafe_allow_html=True)
-            
-        if global_counts.sum()>0:
-            pie2_data=pd.DataFrame({"Statut":["Réalisés (CLOT+TCLO)","Non Réalisés"],"Nombre":[realised,not_realised]})
-            fig2=px.pie(pie2_data, names="Statut", values="Nombre",
-                title="%s — Réalisés vs Non Réalisés"%title_prefix,
-                color="Statut", color_discrete_map={"Réalisés (CLOT+TCLO)":"#38a169","Non Réalisés":"#e53e3e"})
-            fig2.update_traces(textposition='inside',textinfo='percent+value',textfont_size=14, domain={'x': [0.15, 0.85], 'y': [0.15, 0.85]})
-            fig2.update_layout(margin=dict(t=40,b=10,l=10,r=10),height=450,legend=dict(font_size=12,orientation="h",yanchor="bottom",y=-0.1, x=0.5, xanchor="center"))
-            st.plotly_chart(fig2,use_container_width=True)
-        else:
-            st.markdown('<div class="es">Aucune donnee</div>',unsafe_allow_html=True)
+        global_counts = piv_df[["CRÉÉ","LANC","CLOT","TCLO"]].sum()
+    global_counts = global_counts[global_counts > 0]
+    realised = global_counts.get("CLOT", 0) + global_counts.get("TCLO", 0)
+    not_realised = global_counts.sum() - realised
+    if global_counts.empty:
+        st.markdown('
 
+Aucune donnee
+', unsafe_allow_html=True) return colors = ["#e53e3e", "#d69e2e", "#38a169", "#3182ce"] fig = make_subplots(rows=1, cols=2, specs=[[{"type":"domain"},{"type":"domain"}]], subplot_titles=(f"{title_prefix} — Par Statut OT", f"{title_prefix} — Réalisés vs Non Réalisés")) fig.add_trace(go.Pie(labels=global_counts.index, values=global_counts.values, hole=0.45, textinfo='percent+label', texttemplate='%{label}
+%{percent:.1%}
+(%{value})', marker=dict(colors=colors, line=dict(color='#FFFFFF', width=1))), 1, 1) pie2_data = pd.Series([realised, not_realised], index=["Réalisés (CLOT+TCLO)", "Non Réalisés"]) fig.add_trace(go.Pie(labels=pie2_data.index, values=pie2_data.values, hole=0.55, textinfo='percent+label', texttemplate='%{label}
+%{percent:.1%}
+(%{value})', marker=dict(colors=["#38a169", "#e53e3e"], line=dict(color='#FFFFFF', width=1))), 1, 2) fig.update_layout(margin=dict(t=50, b=10, l=10, r=10), height=420, legend=dict(orientation="h", yanchor="bottom", y=-0.12, x=0.5, xanchor="center"), annotations=[dict(text=title_prefix, x=0.5, y=1.06, xref="paper", yref="paper", showarrow=False, font=dict(size=14))]) st.plotly_chart(fig, use_container_width=True)
     def show_simple_pie(piv_df, title, keep_non_carac=False):
         if not keep_non_carac and "NON CARACTERISE" in piv_df.columns:
             piv_df = piv_df.drop(columns=["NON CARACTERISE"])
