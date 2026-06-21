@@ -304,6 +304,7 @@ def inject_custom_css():
     .main .block-container{max-width:100%!important;width:100%!important;padding-left:0.5rem!important;padding-right:0.5rem!important}
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
     
+    /* Palette professionnelle */
     :root{
         --primary:#1e3a5f;
         --primary-light:#2c5282;
@@ -311,8 +312,8 @@ def inject_custom_css():
         --success-dark:#059669;
         --warning:#f59e0b;
         --warning-dark:#d97706;
-        --danger:#8b5cf6; /* Violet au lieu de rouge */
-        --danger-dark:#7c3aed;
+        --danger:#ef4444;
+        --danger-dark:#dc2626;
         --info:#3b82f6;
         --border:#e2e8f0;
         --radius:10px;
@@ -322,6 +323,7 @@ def inject_custom_css():
     .stApp{background:#f8fafc;font-family:'Inter',sans-serif}
     .main .block-container{padding-top:.8rem;padding-bottom:.8rem}
     
+    /* Header moderne avec gradient */
     .mh{
         background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);
         padding:16px 24px;
@@ -345,6 +347,7 @@ def inject_custom_css():
         backdrop-filter:blur(10px);
     }
     
+    /* Cartes métriques modernisées */
     .cr{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
     .cc{
         background:#fff;
@@ -360,7 +363,7 @@ def inject_custom_css():
     .cc.c1{border-left-color:#3b82f6}.cc.c1 .cv{color:#2563eb}
     .cc.c2{border-left-color:#10b981}.cc.c2 .cv{color:#059669}
     .cc.c3{border-left-color:#8b5cf6}.cc.c3 .cv{color:#7c3aed}
-    .cc.c4{border-left-color:#f97316}.cc.c4 .cv{color:#ea580c} /* Orange au lieu de rouge */
+    .cc.c4{border-left-color:#ef4444}.cc.c4 .cv{color:#dc2626}
     .cc.c5{border-left-color:#3b82f6}.cc.c5 .cv{color:#2563eb}
     .cc.c6{border-left-color:#06b6d4}.cc.c6 .cv{color:#0891b2}
     .cc.c7{border-left-color:#f59e0b}.cc.c7 .cv{color:#d97706}
@@ -368,11 +371,12 @@ def inject_custom_css():
     
     .stl{font-size:16px;font-weight:800;color:var(--primary);margin:10px 0 5px 0;padding-left:12px;border-left:4px solid var(--info);}
     
+    /* Tableaux */
     .tw{width:100%;border-collapse:collapse;font-family:'Inter',sans-serif;font-size:13px;display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0}
     .tw thead th{background:var(--primary);color:#fff;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.3px;padding:6px 8px;border:none;white-space:nowrap;position:sticky;top:0;z-index:10}
     .tw.qt thead th{background:linear-gradient(135deg,#2563eb,#3b82f6)}
     .tw.pt thead th{background:linear-gradient(135deg,#059669,#10b981)}
-    .tw.at thead th{background:linear-gradient(135deg,#7c3aed,#8b5cf6)}
+    .tw.at thead th{background:linear-gradient(135deg,#dc2626,#ef4444)}
     .tw.st thead th{background:linear-gradient(135deg,#d97706,#f59e0b)}
     .tw thead th:first-child{z-index:11;left:0}
     .tw tbody td:first-child{position:sticky;left:0;background:#fff;z-index:5;border-right:1px solid var(--border);color:#1e293b !important}
@@ -619,7 +623,7 @@ def main():
             st.markdown('<div class="es">Aucune donnee</div>', unsafe_allow_html=True)
             return
             
-        colors = ["#8b5cf6", "#f59e0b", "#10b981", "#3b82f6"] # Violet, Orange, Vert, Bleu
+        colors = ["#ef4444", "#f59e0b", "#10b981", "#3b82f6"]
         fig = make_subplots(rows=1, cols=2, specs=[[{"type":"domain"},{"type":"domain"}]], 
                             subplot_titles=(f"{title_prefix} — Par Statut OT", f"{title_prefix} — Réalisés vs Non Réalisés"))
         
@@ -628,8 +632,7 @@ def main():
                              texttemplate='%{label}<br>%{percent:.1%}<br>(%{value})', 
                              textposition='inside',
                              insidetextorientation='radial',
-                             textfont=dict(size=14, color='white', family='Inter, sans-serif'),
-                             marker=dict(colors=colors, line=dict(color='#FFFFFF', width=3))), 1, 1)
+                             marker=dict(colors=colors, line=dict(color='#FFFFFF', width=2))), 1, 1)
                              
         pie2_data = pd.Series([realised, not_realised], index=["Réalisés (CLOT+TCLO)", "Non Réalisés"])
         
@@ -638,8 +641,7 @@ def main():
                              texttemplate='%{label}<br>%{percent:.1%}<br>(%{value})', 
                              textposition='inside',
                              insidetextorientation='radial',
-                             textfont=dict(size=14, color='white', family='Inter, sans-serif'),
-                             marker=dict(colors=["#10b981", "#8b5cf6"], line=dict(color='#FFFFFF', width=3))), 1, 2) # Vert et Violet
+                             marker=dict(colors=["#10b981", "#ef4444"], line=dict(color='#FFFFFF', width=2))), 1, 2)
                              
         fig.update_layout(margin=dict(t=80, b=20, l=20, r=20), height=450, 
                           legend=dict(orientation="h", yanchor="bottom", y=-0.12, x=0.5, xanchor="center"))
@@ -657,9 +659,9 @@ def main():
             st.markdown('<div class="es">Aucune donnee</div>', unsafe_allow_html=True)
             return
             
-        # Palette sans rouge pur
-        color_map = {"CARACTERISE": "#10b981", "NON CARACTERISE": "#f97316"} # Vert et Orange
-        type_palette = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#14b8a6', '#6366f1', '#0ea5e9', '#d946ef', '#a855f7']
+        color_map = {"CARACTERISE": "#10b981", "NON CARACTERISE": "#ef4444"}
+        # Palette pour les types (ATPL, CRPR, etc.)
+        type_palette = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#0ea5e9', '#d946ef']
         
         colors = []
         palette_idx = 0
@@ -676,8 +678,7 @@ def main():
                                      texttemplate='%{label}<br>%{percent:.1%}<br>(%{value})', 
                                      textposition='inside',
                                      insidetextorientation='radial',
-                                     textfont=dict(size=14, color='white', family='Inter, sans-serif'),
-                                     marker=dict(colors=colors, line=dict(color='#FFFFFF', width=3)))])
+                                     marker=dict(colors=colors, line=dict(color='#FFFFFF', width=2)))])
                                      
         fig.update_traces(sort=False)
         fig.update_layout(
@@ -773,50 +774,50 @@ def main():
         if kpi in ["OT préparation <1 mois","OT planification <1 mois","OT exécution <1 mois"]:
             if v>=80: return "#10b981"
             elif v>=75: return "#f59e0b"
-            else: return "#8b5cf6" # Violet au lieu de rouge
+            else: return "#ef4444"
         if kpi in ["OT préparation 1mois< <3mois","OT planification 1mois< <3mois","OT exécution 1mois< <3mois"]:
-            return "#10b981" if v<=15 else "#8b5cf6"
+            return "#10b981" if v<=15 else "#ef4444"
         if kpi in ["OT préparation >3 mois","OT planification >3 mois","OT exécution >3 mois"]:
-            return "#10b981" if v<=5 else "#8b5cf6"
+            return "#10b981" if v<=5 else "#ef4444"
         if kpi=="TAUX_REALISATION_CORRECTIF/PT":
             if v>=85: return "#10b981"
             elif v>=80: return "#f59e0b"
-            else: return "#8b5cf6"
+            else: return "#ef4444"
         if kpi=="appel avis approuvé":
             if v>=95: return "#10b981"
             elif v>=90: return "#f59e0b"
-            else: return "#8b5cf6"
+            else: return "#ef4444"
         if kpi in ["OT LANC ESTIME","Backlog préparation caractérisé","Backlog planification caractérisé","OT CONFIME","OT_COR_EGAL"]:
             if v>=100: return "#10b981"
             elif v>=95: return "#f59e0b"
-            else: return "#8b5cf6"
+            else: return "#ef4444"
         if kpi in ["Performance Graissage","Performance Inspection","Performance Appels Systématiques"]:
             if v>=95: return "#10b981"
             elif v>90: return "#f59e0b"
-            else: return "#8b5cf6"
+            else: return "#ef4444"
         if kpi in ["OT Fiabilité","Total Avis de Panne"]:
             return "#10b981" if v>=100 else "#f59e0b"
         if v>=90: return "#10b981"
         elif v>=80: return "#f59e0b"
-        else: return "#8b5cf6"
+        else: return "#ef4444"
 
     def ks(v,c):
         try: val=float(v)
         except Exception: return ""
         if c in ["OT préparation <1 mois","OT planification <1 mois","OT exécution <1 mois"]:
-            return "background:#d1fae5;color:#065f46;font-weight:600" if val>=80 else ("background:#fef3c7;color:#92400e;font-weight:600" if val>=75 else "background:#ede9fe;color:#5b21b6;font-weight:600")
+            return "background:#d1fae5;color:#065f46;font-weight:600" if val>=80 else ("background:#fef3c7;color:#92400e;font-weight:600" if val>=75 else "background:#fee2e2;color:#991b1b;font-weight:600")
         if c in ["OT préparation 1mois< <3mois","OT planification 1mois< <3mois","OT exécution 1mois< <3mois"]:
-            return "background:#d1fae5;color:#065f46;font-weight:600" if val<=15 else "background:#ede9fe;color:#5b21b6;font-weight:600"
+            return "background:#d1fae5;color:#065f46;font-weight:600" if val<=15 else "background:#fee2e2;color:#991b1b;font-weight:600"
         if c in ["OT préparation >3 mois","OT planification >3 mois","OT exécution >3 mois"]:
-            return "background:#d1fae5;color:#065f46;font-weight:600" if val<=5 else "background:#ede9fe;color:#5b21b6;font-weight:600"
+            return "background:#d1fae5;color:#065f46;font-weight:600" if val<=5 else "background:#fee2e2;color:#991b1b;font-weight:600"
         if c=="TAUX_REALISATION_CORRECTIF/PT":
-            return "background:#d1fae5;color:#065f46;font-weight:600" if val>=85 else ("background:#fef3c7;color:#92400e;font-weight:600" if val>=80 else "background:#ede9fe;color:#5b21b6;font-weight:600")
+            return "background:#d1fae5;color:#065f46;font-weight:600" if val>=85 else ("background:#fef3c7;color:#92400e;font-weight:600" if val>=80 else "background:#fee2e2;color:#991b1b;font-weight:600")
         if c=="appel avis approuvé":
-            return "background:#d1fae5;color:#065f46;font-weight:600" if val>=95 else ("background:#fef3c7;color:#92400e;font-weight:600" if val>=90 else "background:#ede9fe;color:#5b21b6;font-weight:600")
+            return "background:#d1fae5;color:#065f46;font-weight:600" if val>=95 else ("background:#fef3c7;color:#92400e;font-weight:600" if val>=90 else "background:#fee2e2;color:#991b1b;font-weight:600")
         if c in ["OT LANC ESTIME","Backlog préparation caractérisé","Backlog planification caractérisé","OT CONFIME","OT_COR_EGAL"]:
-            return "background:#d1fae5;color:#065f46;font-weight:600" if val>=100 else ("background:#fef3c7;color:#92400e;font-weight:600" if val>=95 else "background:#ede9fe;color:#5b21b6;font-weight:600")
+            return "background:#d1fae5;color:#065f46;font-weight:600" if val>=100 else ("background:#fef3c7;color:#92400e;font-weight:600" if val>=95 else "background:#fee2e2;color:#991b1b;font-weight:600")
         if c in ["Performance Graissage","Performance Inspection","Performance Appels Systématiques"]:
-            return "background:#d1fae5;color:#065f46;font-weight:600" if val>=95 else ("background:#fef3c7;color:#92400e;font-weight:600" if val>90 else "background:#ede9fe;color:#5b21b6;font-weight:600")
+            return "background:#d1fae5;color:#065f46;font-weight:600" if val>=95 else ("background:#fef3c7;color:#92400e;font-weight:600" if val>90 else "background:#fee2e2;color:#991b1b;font-weight:600")
         if c in ["OT Fiabilité","Total Avis de Panne"]:
             return "background:#d1fae5;color:#065f46;font-weight:600" if val>=100 else "background:#fef3c7;color:#92400e;font-weight:600"
         return ""
@@ -824,15 +825,15 @@ def main():
     def cs(v):
         try: val=float(str(v).replace(' %','').strip())
         except Exception: return ""
-        return "background:#d1fae5;color:#065f46;font-weight:700" if val>=90 else ("background:#fef3c7;color:#92400e;font-weight:700" if val>=80 else "background:#ede9fe;color:#5b21b6;font-weight:700")
+        return "background:#d1fae5;color:#065f46;font-weight:700" if val>=90 else ("background:#fef3c7;color:#92400e;font-weight:700" if val>=80 else "background:#fee2e2;color:#991b1b;font-weight:700")
         
     def kas(v):
         try: val=int(v)
         except Exception: return ""
         if val==0: return "background:#d1fae5;color:#065f46;font-weight:600"
         if val<=3: return "background:#fef3c7;color:#92400e;font-weight:600"
-        if val<=10: return "background:#ede9fe;color:#5b21b6;font-weight:600"
-        return "background:#ddd6fe;color:#4c1d95;font-weight:800"
+        if val<=10: return "background:#fee2e2;color:#991b1b;font-weight:600"
+        return "background:#fecaca;color:#7f1d1d;font-weight:800"
         
     def gscore(k,a,t):
         if pd.isna(a) or pd.isna(t): return 0
@@ -893,14 +894,14 @@ def main():
             av=actuals.get(k,0); tv=targets.get(k,100); diff=av-tv
             met=av<=tv if is_lb(k) else av>=tv
             status="ATTEINT" if met else "NON ATTEINT"
-            st_s="background:#d1fae5;color:#065f46;font-weight:700" if met else "background:#ede9fe;color:#5b21b6;font-weight:700"
-            ec_clr="#059669" if met else "#7c3aed"
+            st_s="background:#d1fae5;color:#065f46;font-weight:700" if met else "background:#fee2e2;color:#991b1b;font-weight:700"
+            ec_clr="#059669" if met else "#dc2626"
             action="Objectif atteint" if met else act_map.get(k,"")
             h+='<tr><td style="font-weight:600">%s</td><td>%.1f%%</td><td>%.0f%%</td><td style="color:%s;font-weight:700">%+.1f%%</td><td style="%s">%s</td><td style="color:#4a5568">%s</td></tr>'%(k,av,tv,ec_clr,diff,st_s,status,action)
         return h+'</tbody></table>'
         
-    def html_plan_actions_table(rows, title, accent_color, anomaly_dfs):
-        """Tableau HTML professionnel avec fusion des cellules Poste de travail et lien de téléchargement"""
+    def html_plan_actions_table(rows, title, accent_color):
+        """Tableau HTML professionnel avec fusion des cellules Poste de travail"""
         if not rows:
             return '<div class="ca" style="margin-bottom:10px;"><div class="ct" style="color:%s;border-bottom:2px solid %s;">%s</div><div class="es" style="padding:20px;">✅ Aucune action requise — Tous les KPIs sont conformes !</div></div>' % (accent_color, accent_color, title)
 
@@ -939,7 +940,7 @@ def main():
 
                 # Nécessite Action
                 if r["needs_action"]:
-                    h += '<td style="padding:6px;text-align:center;border-bottom:1px solid #edf2f7;"><span style="background:#f97316;color:#fff;padding:2px 10px;border-radius:12px;font-size:10px;font-weight:700;">OUI</span></td>' # Orange au lieu de rouge
+                    h += '<td style="padding:6px;text-align:center;border-bottom:1px solid #edf2f7;"><span style="background:#ef4444;color:#fff;padding:2px 10px;border-radius:12px;font-size:10px;font-weight:700;">OUI</span></td>'
                 else:
                     h += '<td style="padding:6px;text-align:center;border-bottom:1px solid #edf2f7;"><span style="background:#10b981;color:#fff;padding:2px 10px;border-radius:12px;font-size:10px;font-weight:700;">NON</span></td>'
 
@@ -947,43 +948,16 @@ def main():
                 ecart = r["ecart"]
                 lower = r["kpi"] in LOWER_BETTER
                 is_bad = (ecart < 0 and not lower) or (ecart > 0 and lower)
-                ec_clr = "#7c3aed" if is_bad else "#059669" # Violet au lieu de rouge
+                ec_clr = "#dc2626" if is_bad else "#059669"
                 h += '<td style="padding:6px;text-align:center;font-weight:800;color:%s;font-size:13px;border-bottom:1px solid #edf2f7;">%+.1f%%</td>' % (ec_clr, ecart)
 
-                # Nb Anomalies (Lien de téléchargement cliquable)
+                # Nb Anomalies
                 nb = r["nb_anom"]
-                if nb == 0:
-                    nb_bg, nb_clr = "#d1fae5", "#065f46"
-                    h += '<td style="padding:6px;text-align:center;font-weight:800;background:%s;color:%s;font-size:14px;border-bottom:1px solid #edf2f7;">0</td>' % (nb_bg, nb_clr)
-                else:
-                    if nb <= 3:  nb_bg, nb_clr = "#fef3c7", "#92400e"
-                    elif nb <= 10: nb_bg, nb_clr = "#ede9fe", "#5b21b6"
-                    else:          nb_bg, nb_clr = "#ddd6fe", "#4c1d95"
-                    
-                    # Générer le lien de téléchargement si des données existent
-                    link_html = str(nb)
-                    try:
-                        kpi_name = r["kpi"]
-                        poste_name = r["poste"]
-                        if kpi_name in anomaly_dfs:
-                            df_anom = anomaly_dfs[kpi_name]
-                            if "Poste travail princ." in df_anom.columns:
-                                df_poste = df_anom[df_anom["Poste travail princ."] == poste_name].copy()
-                            else:
-                                df_poste = df_anom.copy()
-                                
-                            if not df_poste.empty:
-                                output = io.BytesIO()
-                                with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                                    df_poste.to_excel(writer, index=False, sheet_name='Anomalies')
-                                b64 = base64.b64encode(output.getvalue()).decode()
-                                safe_filename = f"{poste_name}_{kpi_name}".replace("/", "-").replace("\\", "-").replace(" ", "_").replace("<","").replace(">","")[:50]
-                                href = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="{safe_filename}.xlsx" style="display:block;padding:6px 8px;color:inherit;text-decoration:none;cursor:pointer;font-weight:800;">{nb}</a>'
-                                link_html = href
-                    except Exception:
-                        pass
-                        
-                    h += '<td style="padding:0;text-align:center;background:%s;color:%s;font-size:14px;border-bottom:1px solid #edf2f7;">%s</td>' % (nb_bg, nb_clr, link_html)
+                if nb == 0:   nb_bg, nb_clr = "#d1fae5", "#065f46"
+                elif nb <= 3:  nb_bg, nb_clr = "#fef3c7", "#92400e"
+                elif nb <= 10: nb_bg, nb_clr = "#fee2e2", "#991b1b"
+                else:          nb_bg, nb_clr = "#fecaca", "#7f1d1d"
+                h += '<td style="padding:6px;text-align:center;font-weight:800;background:%s;color:%s;font-size:14px;border-bottom:1px solid #edf2f7;">%d</td>' % (nb_bg, nb_clr, nb)
 
                 # Responsable
                 h += '<td style="padding:6px 8px;font-weight:600;font-size:11px;text-align:center;color:#4a5568;border-bottom:1px solid #edf2f7;">%s</td>' % r["responsable"]
@@ -1008,9 +982,9 @@ def main():
         if t5:
             for i,(p,s) in enumerate(t5): h+='<div class="cgr"><span class="rk" style="color:%s">%s</span><span class="pn">%s</span><span class="ps" style="%s">%.2f%%</span></div>'%(accent,i+1,p,cs("%.2f"%s),s)
         else: h+='<div style="padding:6px;font-size:12px;color:#64748b">Aucun poste</div>'
-        h+='</div><div><div class="ct" style="color:#f97316">Bottom 5 — Non Atteint</div>'
+        h+='</div><div><div class="ct" style="color:#ef4444">Bottom 5 — Non Atteint</div>'
         if b5:
-            for i,(p,s) in enumerate(reversed(b5)): h+='<div class="cgr"><span class="rk" style="color:#f97316">%s</span><span class="pn">%s</span><span class="ps" style="%s">%.2f%%</span></div>'%(len(b5)-i,p,cs("%.2f"%s),s)
+            for i,(p,s) in enumerate(reversed(b5)): h+='<div class="cgr"><span class="rk" style="color:#ef4444">%s</span><span class="pn">%s</span><span class="ps" style="%s">%.2f%%</span></div>'%(len(b5)-i,p,cs("%.2f"%s),s)
         else: h+='<div style="padding:6px;font-size:12px;color:#10b981">Tous atteints</div>'
         h+='</div></div>'; return h
         
@@ -1029,6 +1003,7 @@ def main():
         
     def html_grouped_bars(posts,pscores,qscores,title):
         h='<div class="ca"><div class="ct" style="color:#1e3a5f">%s</div>'%title
+        # En-tête Performance / Qualite
         h+='<div style="display:flex;align-items:center;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid #e2e8f0;">'
         h+='<div class="gbr-l"></div>'
         h+='<div class="gbr-g">'
@@ -1059,7 +1034,7 @@ def main():
                     try:
                         d = float(diff)
                         if d > 0: clr="#d1fae5"
-                        elif d < 0: clr="#ede9fe"
+                        elif d < 0: clr="#fee2e2"
                         else: clr=""
                         h+='<td style="background:%s;text-align:center;font-weight:700">%s</td>'%(clr,diff)
                     except:
@@ -1083,7 +1058,7 @@ def main():
         
         def get_style(col_name):
             if col_name == "CARACTERISE": return "background:#d1fae5;color:#065f46;font-weight:600;"
-            if col_name == "NON CARACTERISE": return "background:#ede9fe;color:#5b21b6;font-weight:600;"
+            if col_name == "NON CARACTERISE": return "background:#fee2e2;color:#991b1b;font-weight:600;"
             if col_name == "Total": return "background:#ede9fe;color:#5b21b6;font-weight:700;"
             return "background:#f8fafc;color:#1e293b;font-weight:600;"
             
@@ -1516,10 +1491,10 @@ def main():
                 col1,col2=st.columns(2)
                 with col1:
                     st.markdown('<div class="stl p">Indicateurs de Performance</div>',unsafe_allow_html=True)
-                    st.markdown(html_kpi_bars(QK,pa,CIBLE,"Taux moyens — Performance","#10b981","#8b5cf6"),unsafe_allow_html=True)
+                    st.markdown(html_kpi_bars(QK,pa,CIBLE,"Taux moyens — Performance","#10b981","#ef4444"),unsafe_allow_html=True)
                 with col2:
                     st.markdown('<div class="stl q">Indicateurs de Qualite</div>',unsafe_allow_html=True)
-                    st.markdown(html_kpi_bars(PK,qa,CIBLE,"Taux moyens — Qualite","#3b82f6","#8b5cf6"),unsafe_allow_html=True)
+                    st.markdown(html_kpi_bars(PK,qa,CIBLE,"Taux moyens — Qualite","#3b82f6","#ef4444"),unsafe_allow_html=True)
                 st.markdown('<div class="stl c">Classement Performance</div>',unsafe_allow_html=True)
                 st.markdown(html_classement(pscores,"#10b981"),unsafe_allow_html=True)
                 st.markdown('<div class="stl c">Classement Qualite</div>',unsafe_allow_html=True)
@@ -1619,8 +1594,8 @@ def main():
                 st.write("")
 
                 # ── Tableaux HTML professionnels (SF1 / SF2 séparés) ──
-                st.markdown(html_plan_actions_table(sf1_rows, "SF1 — Plan d'Actions", "#3b82f6", anomaly_dfs), unsafe_allow_html=True)
-                st.markdown(html_plan_actions_table(sf2_rows, "SF2 — Plan d'Actions", "#10b981", anomaly_dfs), unsafe_allow_html=True)
+                st.markdown(html_plan_actions_table(sf1_rows, "SF1 — Plan d'Actions", "#3b82f6"), unsafe_allow_html=True)
+                st.markdown(html_plan_actions_table(sf2_rows, "SF2 — Plan d'Actions", "#10b981"), unsafe_allow_html=True)
 
                 if not plan_actions_rows:
                     st.markdown('<div class="es">🎉 Aucune anomalie détectée. Tous les KPIs sont aux normes !</div>', unsafe_allow_html=True)
