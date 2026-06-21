@@ -20,7 +20,7 @@ QK = ["TAUX_REALISATION_CORRECTIF/PT","OT préparation <1 mois","OT préparation
       "OT planification 1mois< <3mois","OT exécution <1 mois","OT exécution >3 mois",
       "OT exécution 1mois< <3mois",
       "Performance Graissage","Performance Inspection","Performance Appels Systématiques"]
-PK = ["appel avis approuvé","OT LANC ESTIME","Backlog préparation caractérisé",
+PK = ["Taux d'approbation des Avis","OT LANC ESTIME","Backlog préparation caractérisé",
       "Backlog planification caractérisé","OT CONFIME","OT_COR_EGAL",
       "OT Fiabilité","Total Avis de Panne"]
 ALL_KPI = QK + PK
@@ -28,7 +28,7 @@ ALL_KPI = QK + PK
 CIBLE = {"TAUX_REALISATION_CORRECTIF/PT":85,"OT préparation <1 mois":80,"OT préparation >3 mois":5,
          "OT préparation 1mois< <3mois":15,"OT planification <1 mois":80,"OT planification >3 mois":5,
          "OT planification 1mois< <3mois":15,"OT exécution <1 mois":80,"OT exécution >3 mois":5,
-         "OT exécution 1mois< <3mois":15,"appel avis approuvé":95,"OT LANC ESTIME":100,
+         "OT exécution 1mois< <3mois":15,"Taux d'approbation des Avis":95,"OT LANC ESTIME":100,
          "Backlog préparation caractérisé":100,"Backlog planification caractérisé":100,
          "OT CONFIME":100,"OT_COR_EGAL":100,
          "Performance Graissage":95,"Performance Inspection":95,"Performance Appels Systématiques":95,
@@ -46,7 +46,7 @@ ACT_MAP = {"TAUX_REALISATION_CORRECTIF/PT":"Ameliorer le taux de realisation des
            "Backlog planification caractérisé":"Caracteriser le backlog de planification.",
            "OT CONFIME":"Confirmer les OT termines.",
            "OT_COR_EGAL":"Rapprocher les couts reels et budgetes.",
-           "appel avis approuvé":"Creer un OT pour les avis sans ordre.",
+           "Taux d'approbation des Avis":"Creer un OT pour les avis sans ordre.",
            "OT préparation 1mois< <3mois":"Reduire les OT entre 1 et 3 mois.",
            "OT planification 1mois< <3mois":"Reduire les OT entre 1 et 3 mois.",
            "OT exécution 1mois< <3mois":"Reduire les OT entre 1 et 3 mois.",
@@ -67,7 +67,7 @@ KPI_RESP_MAP = {
     "OT exécution <1 mois": "Chef d'atelier",
     "OT exécution 1mois< <3mois": "Chef d'atelier",
     "OT exécution >3 mois": "Chef d'atelier",
-    "appel avis approuvé": "Chef d'atelier",
+    "Taux d'approbation des Avis": "Chef d'atelier",
     "OT LANC ESTIME": "Fiabilité",
     "Backlog préparation caractérisé": "Préparateur BM",
     "Backlog planification caractérisé": "Planificateur BM",
@@ -185,7 +185,14 @@ def prepare_data(ot_bytes, av_bytes, date_str):
     
     if "Statut système" in df.columns: df["Statut OT"]=df["Statut système"].fillna("").astype(str).str.strip().str.split().str[0]
     
-    avf = raw_av[(raw_av["Ordre"].isna())|(raw_av["Ordre"].astype(str).str.strip()=="")].copy()
+    avf = raw_av[
+    (
+        raw_av["Ordre"].isna() |
+        (raw_av["Ordre"].astype(str).str.strip() == "")
+    )
+    &
+    (raw_av["Type d'avis"].isin(["ZU","Z4","ZR","ZP"]))
+].copy()
     
     apm = sorted(df[df["Poste travail princ."].astype(str).str.startswith(("SF1","SF2"),na=False)]["Poste travail princ."].dropna().unique().tolist())
     
@@ -756,7 +763,7 @@ def main():
         avf=av.copy(); res['avf']=avf
         tca=pd.pivot_table(avf,index="Poste travail princ.",columns="Statut utilisateur",values="Avis",aggfunc="count",fill_value=0).reindex(posts,fill_value=0)
         for c in ["APRQ","APRV","APRV AVAU","REJT"]: tca[c]=tca.get(c,0)
-        tca["Total"]=tca[["APRQ","APRV","APRV AVAU","REJT"]].sum(axis=1); tca["appel avis approuvé"]=ckpi(tca["APRV"],tca["Total"])
+        tca["Total"]=tca[["APRQ","APRV","APRV AVAU","REJT"]].sum(axis=1); tca["Taux d'approbation des Avis"] = ckpi(tca["APRV"] + tca["APRV AVAU"],tca["Total"])
         
         g_num=df[(df["Statut OT"].isin(["CLOT","TCLO"]))&(df["_tw_num"]==350)].groupby("Poste travail princ.")["Ordre"].count()
         g_den=df[(df["Contient SOPL"]==1)&(df["_tw_num"]==350)].groupby("Poste travail princ.")["Ordre"].count()
@@ -783,7 +790,7 @@ def main():
             "OT planification <1 mois":pl["OT planification <1 mois"],"OT planification >3 mois":pl["OT planification >3 mois"],"OT planification 1mois< <3mois":pl["OT planification 1mois< <3mois"],
             "OT exécution <1 mois":ex["OT exécution <1 mois"],"OT exécution >3 mois":ex["OT exécution >3 mois"],"OT exécution 1mois< <3mois":ex["OT exécution 1mois< <3mois"],
             "Performance Graissage":g_df["Performance Graissage"],"Performance Inspection":ins_df["Performance Inspection"],"Performance Appels Systématiques":sys_df["Performance Appels Systématiques"],
-            "appel avis approuvé":tca["appel avis approuvé"],"OT LANC ESTIME":la["OT LANC ESTIME"],
+            "Taux d'approbation des Avis":tca["Taux d'approbation des Avis"],"OT LANC ESTIME":la["OT LANC ESTIME"],
             "Backlog préparation caractérisé":pc["Backlog préparation caractérisé"],"Backlog planification caractérisé":plc["Backlog planification caractérisé"],
             "OT CONFIME":res['ot_confime']["OT CONFIME"],"OT_COR_EGAL":res['ot_cor_egal']["OT_COR_EGAL"],
             "OT Fiabilité":fiab_s,"Total Avis de Panne":avpan_s
@@ -805,7 +812,7 @@ def main():
             if v>=85: return "#38a169"
             elif v>=80: return "#f59e0b"
             else: return "#e53e3e"
-        if kpi=="appel avis approuvé":
+        if kpi=="Taux d'approbation des Avis":
             if v>=95: return "#38a169"
             elif v>=90: return "#f59e0b"
             else: return "#e53e3e"
@@ -834,7 +841,7 @@ def main():
             return "background:#c6efce;color:#006100;font-weight:600" if val<=5 else "background:#ffc7ce;color:#9c0006;font-weight:600"
         if c=="TAUX_REALISATION_CORRECTIF/PT":
             return "background:#c6efce;color:#006100;font-weight:600" if val>=85 else ("background:#ffeb9c;color:#9c6500;font-weight:600" if val>=80 else "background:#ffc7ce;color:#9c0006;font-weight:600")
-        if c=="appel avis approuvé":
+        if c=="Taux d'approbation des Avis":
             return "background:#c6efce;color:#006100;font-weight:600" if val>=95 else ("background:#ffeb9c;color:#9c6500;font-weight:600" if val>=90 else "background:#ffc7ce;color:#9c0006;font-weight:600")
         if c in ["OT LANC ESTIME","Backlog préparation caractérisé","Backlog planification caractérisé","OT CONFIME","OT_COR_EGAL"]:
             return "background:#c6efce;color:#006100;font-weight:600" if val>=100 else ("background:#ffeb9c;color:#9c6500;font-weight:600" if val>=95 else "background:#ffc7ce;color:#9c0006;font-weight:600")
@@ -863,7 +870,7 @@ def main():
         if k in ["OT préparation 1mois< <3mois","OT planification 1mois< <3mois","OT exécution 1mois< <3mois"]: return 1 if a<=15 else 0
         if k in ["OT préparation >3 mois","OT planification >3 mois","OT exécution >3 mois"]: return 1 if a<=5 else 0
         if k=="TAUX_REALISATION_CORRECTIF/PT": return 1 if a>=80 else 0
-        if k=="appel avis approuvé": return 1 if a>=90 else 0
+        if k=="Taux d'approbation des Avis": return 1 if a>=90 else 0
         if k in ["OT LANC ESTIME","Backlog préparation caractérisé","Backlog planification caractérisé","OT CONFIME","OT_COR_EGAL"]: return 1 if a>=95 else 0
         if k in ["Performance Graissage","Performance Inspection","Performance Appels Systématiques"]: return 1 if a>=95 else 0
         if k in ["OT Fiabilité","Total Avis de Panne"]: return 1 if a>=100 else 0
@@ -1253,7 +1260,7 @@ def main():
             ano_map["Performance Appels Systématiques"] = dfp[perf_filt & (dfp["_tw_num"]==360)&(dfp["Date de début planifiée"]<=now_ts)].groupby("Poste travail princ.")["Ordre"].count()
             avf_tot = avf.groupby("Poste travail princ.")["Avis"].count()
             avf_aprv = avf[avf["Statut utilisateur"].isin(["APRV","APRV AVAU"])].groupby("Poste travail princ.")["Avis"].count()
-            ano_map["appel avis approuvé"] = avf_tot.sub(avf_aprv, fill_value=0)
+            ano_map["Taux d'approbation des Avis"] = avf_tot.sub(avf_aprv, fill_value=0)
             ano_map["OT LANC ESTIME"] = dfp[(dfp["Statut OT"]=="LANC")&(dfp["OT LANC ESTIME"]=="NON")].groupby("Poste travail princ.")["Ordre"].count()
             ano_map["Backlog préparation caractérisé"] = dfp[(dfp["Statut OT"]=="CRÉÉ")&(dfp["Backlog preparation"]=="NON CARACTERISE")].groupby("Poste travail princ.")["Ordre"].count()
             ano_map["Backlog planification caractérisé"] = dfp[(dfp["Statut OT"]=="LANC")&(dfp["Backlog planification"]=="NON CARACTERISE")].groupby("Poste travail princ.")["Ordre"].count()
@@ -1401,7 +1408,7 @@ def main():
             anomaly_dfs["Performance Graissage"] = dfp[perf_filt & (dfp["_tw_num"]==350)].copy()
             anomaly_dfs["Performance Inspection"] = dfp[perf_filt & (dfp["_tw_num"].isin([290,300,310]))&(dfp["Date de début planifiée"]<=now_ts)].copy()
             anomaly_dfs["Performance Appels Systématiques"] = dfp[perf_filt & (dfp["_tw_num"]==360)&(dfp["Date de début planifiée"]<=now_ts)].copy()
-            anomaly_dfs["appel avis approuvé"] = avf[~avf["Statut utilisateur"].isin(["APRV","APRV AVAU"])].copy()
+            anomaly_dfs["Taux d'approbation des Avis"] = avf[~avf["Statut utilisateur"].isin(["APRV","APRV AVAU"])].copy()
             anomaly_dfs["OT LANC ESTIME"] = dfp[(dfp["Statut OT"]=="LANC")&(dfp["OT LANC ESTIME"]=="NON")].copy()
             anomaly_dfs["Backlog préparation caractérisé"] = dfp[(dfp["Statut OT"]=="CRÉÉ")&(dfp["Backlog preparation"]=="NON CARACTERISE")].copy()
             anomaly_dfs["Backlog planification caractérisé"] = dfp[(dfp["Statut OT"]=="LANC")&(dfp["Backlog planification"]=="NON CARACTERISE")].copy()
