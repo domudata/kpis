@@ -345,7 +345,6 @@ def inject_custom_css():
         backdrop-filter:blur(10px);
     }
     
-    /* Cartes métriques avec titres agrandis */
     .cr{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
     .cc{
         background:#fff;
@@ -621,7 +620,7 @@ def main():
             st.markdown('<div class="es">Aucune donnee</div>', unsafe_allow_html=True)
             return
             
-        colors = ["#8b5cf6", "#f59e0b", "#10b981", "#3b82f6"] # Violet, Orange, Vert, Bleu
+        colors = ["#8b5cf6", "#f59e0b", "#10b981", "#3b82f6"]
         fig = make_subplots(rows=1, cols=2, specs=[[{"type":"domain"},{"type":"domain"}]], 
                             subplot_titles=(f"{title_prefix} — Par Statut OT", f"{title_prefix} — Réalisés vs Non Réalisés"))
         
@@ -659,7 +658,7 @@ def main():
             st.markdown('<div class="es">Aucune donnee</div>', unsafe_allow_html=True)
             return
             
-        color_map = {"CARACTERISE": "#10b981", "NON CARACTERISE": "#f97316"} # Vert et Orange
+        color_map = {"CARACTERISE": "#10b981", "NON CARACTERISE": "#f97316"}
         type_palette = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#14b8a6', '#6366f1', '#0ea5e9', '#d946ef', '#a855f7']
         
         colors = []
@@ -672,19 +671,36 @@ def main():
                 colors.append(type_palette[palette_idx % len(type_palette)])
                 palette_idx += 1
         
-        fig = go.Figure(data=[go.Pie(labels=counts.index, values=counts.values, hole=0.4, 
-                                     textinfo='percent+label', 
-                                     texttemplate='%{label}<br>%{percent:.1%}<br>(%{value})', 
-                                     textposition='inside',
-                                     insidetextorientation='radial',
-                                     textfont=dict(size=14, color='white', family='Inter, sans-serif'),
-                                     marker=dict(colors=colors, line=dict(color='#FFFFFF', width=3)))])
-                                     
-        fig.update_traces(sort=False)
+        total_sum = counts.sum()
+        pull_list = [0.05 if (v/total_sum)*100 < 10 else 0 for v in counts.values]
+        
+        fig = go.Figure(
+            go.Pie(
+                labels=counts.index,
+                values=counts.values,
+                hole=0.4,
+                sort=False,
+                textinfo="percent",
+                textposition="outside",
+                pull=pull_list,
+                marker=dict(
+                    colors=colors,
+                    line=dict(color="white", width=2)
+                )
+            )
+        )
+
+        fig.update_traces(
+            hovertemplate="<b>%{label}</b><br>Nombre : %{value}<br>Pourcentage : %{percent}<extra></extra>",
+            textfont=dict(size=13, family='Inter, sans-serif')
+        )
+
         fig.update_layout(
             title=dict(text=title, x=0.5, xanchor='center', font=dict(size=16)), 
-            margin=dict(t=80, b=20, l=20, r=20), height=450, 
-            legend=dict(orientation="h", yanchor="bottom", y=-0.15, x=0.5, xanchor="center")
+            height=500, 
+            showlegend=True,
+            legend=dict(orientation="h", yanchor="bottom", y=-0.15, x=0.5, xanchor="center"),
+            margin=dict(t=80, b=80, l=40, r=40)
         )
                           
         st.plotly_chart(fig, use_container_width=True)
@@ -771,11 +787,10 @@ def main():
     def get_bar_color(kpi, val):
         try: v = float(val)
         except: return "#cbd5e0"
-        # Définition stricte Rouge, Jaune, Vert
         if kpi in ["OT préparation <1 mois","OT planification <1 mois","OT exécution <1 mois"]:
-            if v>=80: return "#38a169" # Vert
-            elif v>=75: return "#f59e0b" # Jaune
-            else: return "#e53e3e" # Rouge
+            if v>=80: return "#38a169"
+            elif v>=75: return "#f59e0b"
+            else: return "#e53e3e"
         if kpi in ["OT préparation 1mois< <3mois","OT planification 1mois< <3mois","OT exécution 1mois< <3mois"]:
             return "#38a169" if v<=15 else "#e53e3e"
         if kpi in ["OT préparation >3 mois","OT planification >3 mois","OT exécution >3 mois"]:
@@ -805,7 +820,6 @@ def main():
     def ks(v,c):
         try: val=float(v)
         except Exception: return ""
-        # Définition stricte des couleurs de cellules (Rouge clair, Jaune clair, Vert clair)
         if c in ["OT préparation <1 mois","OT planification <1 mois","OT exécution <1 mois"]:
             return "background:#c6efce;color:#006100;font-weight:600" if val>=80 else ("background:#ffeb9c;color:#9c6500;font-weight:600" if val>=75 else "background:#ffc7ce;color:#9c0006;font-weight:600")
         if c in ["OT préparation 1mois< <3mois","OT planification 1mois< <3mois","OT exécution 1mois< <3mois"]:
@@ -902,8 +916,8 @@ def main():
             h+='<tr><td style="font-weight:600">%s</td><td>%.1f%%</td><td>%.0f%%</td><td style="color:%s;font-weight:700">%+.1f%%</td><td style="%s">%s</td><td style="color:#4a5568">%s</td></tr>'%(k,av,tv,ec_clr,diff,st_s,status,action)
         return h+'</tbody></table>'
         
-    def html_plan_actions_table(rows, title, accent_color, anomaly_dfs):
-        """Tableau HTML professionnel avec fusion des cellules Poste de travail et lien de téléchargement"""
+    def html_plan_actions_table(rows, title, accent_color):
+        """Tableau HTML professionnel avec fusion des cellules Poste de travail (sans liens de téléchargement)"""
         if not rows:
             return '<div class="ca" style="margin-bottom:10px;"><div class="ct" style="color:%s;border-bottom:2px solid %s;">%s</div><div class="es" style="padding:20px;">✅ Aucune action requise — Tous les KPIs sont conformes !</div></div>' % (accent_color, accent_color, title)
 
@@ -940,51 +954,31 @@ def main():
                 # KPI
                 h += '<td style="padding:6px 8px;font-weight:600;font-size:11px;color:#2d3748;border-bottom:1px solid #edf2f7;">%s</td>' % r["kpi"]
 
-                # Nécessite Action (Rouge/Green)
+                # Nécessite Action
                 if r["needs_action"]:
                     h += '<td style="padding:6px;text-align:center;border-bottom:1px solid #edf2f7;"><span style="background:#e53e3e;color:#fff;padding:2px 10px;border-radius:12px;font-size:10px;font-weight:700;">OUI</span></td>'
                 else:
                     h += '<td style="padding:6px;text-align:center;border-bottom:1px solid #edf2f7;"><span style="background:#38a169;color:#fff;padding:2px 10px;border-radius:12px;font-size:10px;font-weight:700;">NON</span></td>'
 
-                # Écart (Rouge/Green)
+                # Écart
                 ecart = r["ecart"]
                 lower = r["kpi"] in LOWER_BETTER
                 is_bad = (ecart < 0 and not lower) or (ecart > 0 and lower)
                 ec_clr = "#dc2626" if is_bad else "#059669"
                 h += '<td style="padding:6px;text-align:center;font-weight:800;color:%s;font-size:13px;border-bottom:1px solid #edf2f7;">%+.1f%%</td>' % (ec_clr, ecart)
 
-                # Nb Anomalies (Lien de téléchargement cliquable - Utilisation CSV pour rapidité)
+                # Nb Anomalies (Affichage simple sans lien)
                 nb = r["nb_anom"]
                 if nb == 0:
                     nb_bg, nb_clr = "#d1fae5", "#065f46"
-                    h += '<td style="padding:6px;text-align:center;font-weight:800;background:%s;color:%s;font-size:14px;border-bottom:1px solid #edf2f7;">0</td>' % (nb_bg, nb_clr)
+                elif nb <= 3:
+                    nb_bg, nb_clr = "#fef3c7", "#92400e"
+                elif nb <= 10:
+                    nb_bg, nb_clr = "#fee2e2", "#991b1b"
                 else:
-                    if nb <= 3:  nb_bg, nb_clr = "#fef3c7", "#92400e"
-                    elif nb <= 10: nb_bg, nb_clr = "#fee2e2", "#991b1b"
-                    else:          nb_bg, nb_clr = "#fecaca", "#7f1d1d"
+                    nb_bg, nb_clr = "#fecaca", "#7f1d1d"
                     
-                    link_html = str(nb)
-                    try:
-                        kpi_name = r["kpi"]
-                        poste_name = r["poste"]
-                        if kpi_name in anomaly_dfs:
-                            df_anom = anomaly_dfs[kpi_name]
-                            if "Poste travail princ." in df_anom.columns:
-                                df_poste = df_anom[df_anom["Poste travail princ."] == poste_name].copy()
-                            else:
-                                df_poste = df_anom.copy()
-                                
-                            if not df_poste.empty:
-                                # Utilisation d'un lien CSV encodé en base64 pour éviter la lenteur de openpyxl
-                                csv_data = df_poste.to_csv(index=False)
-                                b64 = base64.b64encode(csv_data.encode('utf-8')).decode()
-                                safe_filename = f"{poste_name}_{kpi_name}".replace("/", "-").replace("\\", "-").replace(" ", "_").replace("<","").replace(">","")[:50]
-                                href = f'<a href="data:text/csv;charset=utf-8;base64,{b64}" download="{safe_filename}.csv" style="display:block;padding:6px 8px;color:inherit;text-decoration:none;cursor:pointer;font-weight:800;">{nb}</a>'
-                                link_html = href
-                    except Exception:
-                        pass
-                        
-                    h += '<td style="padding:0;text-align:center;background:%s;color:%s;font-size:14px;border-bottom:1px solid #edf2f7;">%s</td>' % (nb_bg, nb_clr, link_html)
+                h += '<td style="padding:6px;text-align:center;font-weight:800;background:%s;color:%s;font-size:14px;border-bottom:1px solid #edf2f7;">%d</td>' % (nb_bg, nb_clr, nb)
 
                 # Responsable
                 h += '<td style="padding:6px 8px;font-weight:600;font-size:11px;text-align:center;color:#4a5568;border-bottom:1px solid #edf2f7;">%s</td>' % r["responsable"]
@@ -1620,8 +1614,8 @@ def main():
                 st.write("")
 
                 # ── Tableaux HTML professionnels (SF1 / SF2 séparés) ──
-                st.markdown(html_plan_actions_table(sf1_rows, "SF1 — Plan d'Actions", "#3b82f6", anomaly_dfs), unsafe_allow_html=True)
-                st.markdown(html_plan_actions_table(sf2_rows, "SF2 — Plan d'Actions", "#10b981", anomaly_dfs), unsafe_allow_html=True)
+                st.markdown(html_plan_actions_table(sf1_rows, "SF1 — Plan d'Actions", "#3b82f6"), unsafe_allow_html=True)
+                st.markdown(html_plan_actions_table(sf2_rows, "SF2 — Plan d'Actions", "#10b981"), unsafe_allow_html=True)
 
                 if not plan_actions_rows:
                     st.markdown('<div class="es">🎉 Aucune anomalie détectée. Tous les KPIs sont aux normes !</div>', unsafe_allow_html=True)
