@@ -1616,4 +1616,4 @@ def main():
     st.markdown('<div class="footer">Bureau Méthodes Maroc Chimie – © 2026 Tous droits réservés</div>', unsafe_allow_html=True)
 
 if __name__ == "__main__":
-    main()ff
+    main()
