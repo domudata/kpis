@@ -726,7 +726,7 @@ def main():
         if c in ["OT préparation 1mois< <3mois","OT planification 1mois< <3mois","OT exécution 1mois< <3mois"]:
             return "background:#c6efce;color:#006100;font-weight:600" if val<=15 else "background:#ffc7ce;color:#9c0006;font-weight:600"
         if c in ["OT préparation >3 mois","OT planification >3 mois","OT exécution >3 mois"]:
-            return "background:#c6efce;color:#006100;font-weight:600" if val<=5 else "background:#ffc7ce;color:#9c0006;font-weight:600"
+            return "background:#c6efce;color:#006100;font-weight:600" if val<=5 else "background:#ffc7ce;color:#9c0006;font-weight:600")
         if c=="TAUX_REALISATION_CORRECTIF/PT":
             return "background:#c6efce;color:#006100;font-weight:600" if val>=85 else ("background:#ffeb9c;color:#9c6500;font-weight:600" if val>=80 else "background:#ffc7ce;color:#9c0006;font-weight:600")
         if c=="appel avis approuvé":
@@ -752,26 +752,30 @@ def main():
         if val>=0: return "color:#1a202c;font-weight:600"
         return "color:#e53e3e;font-weight:600"
 
-    # ===== SIDEBAR =====
-    with st.sidebar:
-        st.markdown("### 📁 Fichiers de données")
-        ot_file = st.file_uploader("Fichier OT", type=["xlsx","xls"], key="ot_up")
-        av_file = st.file_uploader("Fichier Avis", type=["xlsx","xls"], key="av_up")
-        st.markdown("---")
-        if st.button("🔄 Réinitialiser", key="reset_btn"):
-            st.rerun()
+    # ===== LECTURE DIRECTE DES FICHIERS LOCAUX =====
+    OT_PATH = "ot.xlsx"
+    AV_PATH = "avis.xlsx"
 
-    if not ot_file or not av_file:
-        st.markdown("""<div style="min-height:60vh;display:flex;align-items:center;justify-content:center">
+    if not os.path.exists(OT_PATH) or not os.path.exists(AV_PATH):
+        st.markdown(f"""<div style="min-height:60vh;display:flex;align-items:center;justify-content:center">
         <div style="text-align:center;padding:40px 60px;background:#fff;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.08)">
         <div style="font-size:64px;margin-bottom:16px">📂</div>
-        <h2 style="color:#1e3a5f;font-size:24px;font-weight:800;margin:0 0 8px 0">Chargement des données</h2>
-        <p style="color:#718096;font-size:16px;margin:0">Veuillez charger les deux fichiers Excel (OT et Avis) dans la barre latérale pour continuer.</p>
+        <h2 style="color:#e53e3e;font-size:24px;font-weight:800;margin:0 0 12px 0">Fichiers introuvables</h2>
+        <p style="color:#4a5568;font-size:15px;margin:0 0 8px 0">Les fichiers suivants doivent être placés dans le même dossier que <code style="background:#edf2f7;padding:2px 6px;border-radius:4px">ocp9.py</code> :</p>
+        <p style="color:#1a202c;font-size:16px;font-weight:700;margin:0">
+        {'✅ <span style="color:#38a169">' + OT_PATH + '</span>' if os.path.exists(OT_PATH) else '❌ <span style="color:#e53e3e">' + OT_PATH + '</span>'}<br>
+        {'✅ <span style="color:#38a169">' + AV_PATH + '</span>' if os.path.exists(AV_PATH) else '❌ <span style="color:#e53e3e">' + AV_PATH + '</span>'}
+        </p>
         </div></div>""", unsafe_allow_html=True)
         st.stop()
 
+    with open(OT_PATH, "rb") as f:
+        ot_bytes = f.read()
+    with open(AV_PATH, "rb") as f:
+        av_bytes = f.read()
+
     try:
-        df, avf, apm, now_ts = prepare_data(ot_file.read(), av_file.read(), fichier_date)
+        df, avf, apm, now_ts = prepare_data(ot_bytes, av_bytes, fichier_date)
     except Exception as e:
         st.error(f"Erreur lors du chargement des données : {e}")
         st.stop()
@@ -972,7 +976,6 @@ def main():
                 v_str = f"{v:.1f}" if isinstance(v, (int, float)) else str(v)
                 h += f'<td style="{style}">{v_str}</td>'
             h += '</tr>'
-        # Total row
         h += '<tr style="background:#2b6cb0!important"><td class="poste-cell" style="background:#2b6cb0!important;color:#fff!important;font-weight:700">Total general</td>'
         for k in all_kpi_list + ["Score Performance", "Score Qualite"]:
             vals = [r.get(k, 0) for r in synth_rows if r.get(k, 0) != 0]
@@ -1007,7 +1010,6 @@ def main():
         h += '</tbody></table>'
         st.markdown(h, unsafe_allow_html=True)
 
-        # Performance bar charts
         st.markdown('<div class="stl">GRAPHIQUES PERFORMANCE</div>', unsafe_allow_html=True)
         data_posts = [r["Poste de travail"] for r in prows if r["Poste de travail"] != "Total general"]
         for kpi in QK:
@@ -1024,7 +1026,6 @@ def main():
                               yaxis_title="%", plot_bgcolor='rgba(0,0,0,0)')
             st.plotly_chart(fig, use_container_width=True)
 
-        # Anomalies
         if ano_p_r:
             st.markdown('<div class="stl" style="color:#e53e3e;border-left-color:#e53e3e">ANOMALIES PERFORMANCE</div>', unsafe_allow_html=True)
             h = '<table class="tw at"><thead><tr>' + ''.join(f'<th>{c}</th>' for c in ano_p_c) + '</tr></thead><tbody>'
@@ -1058,7 +1059,6 @@ def main():
         h += '</tbody></table>'
         st.markdown(h, unsafe_allow_html=True)
 
-        # Quality bar charts
         st.markdown('<div class="stl">GRAPHIQUES QUALITE</div>', unsafe_allow_html=True)
         for kpi in PK:
             st.markdown(f'<div class="stl" style="font-size:13px">{kpi} (Cible: {CIBLE.get(kpi,100)})</div>', unsafe_allow_html=True)
