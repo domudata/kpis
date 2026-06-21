@@ -1149,11 +1149,11 @@ def main():
             conformity_rate = ((conform_count / total_count) * 100) if total_count > 0 else 0
     
     
-              if k in ["OT préparation >3 mois", "OT préparation 1mois< <3mois",
+            if k in ["OT préparation >3 mois", "OT préparation 1mois< <3mois",
                 "OT planification >3 mois", "OT planification 1mois< <3mois",
                 "OT exécution >3 mois", "OT exécution 1mois< <3mois"]:
                 tot_p[k] = "%.1f" % (100 - conformity_rate)
-              else:
+            else:
                tot_p[k] = "%.1f" % conformity_rate
 
 tot_p["Score Performance"] = "%.2f" % (sum(pscores.values())/len(pscores)) if pscores else "0.00"
