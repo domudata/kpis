@@ -507,7 +507,6 @@ def main():
         fig.update_layout(title=dict(text=title, x=0.5, xanchor='center', font=dict(size=16)), height=500, showlegend=True, legend=dict(orientation="h", yanchor="bottom", y=-0.15, x=0.5, xanchor="center"), margin=dict(t=80, b=80, l=40, r=40))
         st.plotly_chart(fig, use_container_width=True)
 
-    # ---- VERTE SI ATTEINT, ROUGE SINON (PLUS DE JAUNE) ----
     def is_green(kpi, val):
         try: v = float(val)
         except Exception: return False
@@ -525,7 +524,6 @@ def main():
     def get_bar_color(kpi, val):
         return "#38a169" if is_green(kpi, val) else "#e53e3e"
 
-    # ---- LISTE DES OT/AVIS ANORMAUX POUR UN POSTE ET UN KPI ----
     def get_anomalous_items(df_full, av_full, poste, kpi, now_ts):
         items = []
         df_p = df_full[df_full["Poste travail princ."] == poste]
@@ -564,7 +562,7 @@ def main():
             anom = df_p[base & ~df_p["Statut OT"].isin(["CLOT","TCLO"])]
             items = anom["Ordre"].dropna().tolist()
         elif kpi == "Performance Appels Systématiques":
-            base = (df_p["_tw_num"]==360) & (df_p["Contient SOPL"]==1) & (df_p["Date de début planifiée"].notna()) & (df_p["Date de début planifiée"]<=now_ts)
+            base = (df_p["_tw_num"]==360) & (df_p["Contient SOPL"]==1) & (df_p["Date de début planifiée"].not_na() if hasattr(df_p["Date de début planifiée"], 'not_na') else df_p["Date de début planifiée"].notna()) & (df_p["Date de début planifiée"]<=now_ts)
             anom = df_p[base & ~df_p["Statut OT"].isin(["CLOT","TCLO"])]
             items = anom["Ordre"].dropna().tolist()
         elif kpi == "appel avis approuvé":
@@ -587,7 +585,7 @@ def main():
             items = anom["Ordre"].dropna().tolist()
         elif kpi in ["OT Fiabilité", "Total Avis de Panne"]:
             items = []
-        return [str(int(i)) if isinstance(i, (int,float)) and float(i).is_integer() else str(i) for i in items]
+        return [str(int(i)) if isinstance(i, (int,float)) and not pd.isna(i) and float(i).is_integer() else str(i) for i in items if not pd.isna(i)]
 
     def calc_kpis(df_i, av_i, now_ts, posts):
         res={}; df=df_i.copy(); av=av_i.copy()
@@ -655,7 +653,6 @@ def main():
         })
         return res
 
-    # ---- TABLEAU KPI AVEC TOTAL GENERAL CORRIGE ----
     def html_kpi_table(kpi_list, ckdf, posts, table_class):
         cols=["Poste de travail"]+kpi_list+["Total Général"]
         h='<table class="tw %s"><thead><tr>'%table_class+''.join('<th>%s</th>'%c for c in cols)+'</tr></thead><tbody>'
@@ -684,7 +681,6 @@ def main():
         h+='</tr></tbody></table>'
         return h
 
-    # ---- ANOMALIES AVEC NOMBRE PRECIS D'OT/AVIS ----
     def build_anomalies(kpi_list, ckdf, posts, df_full, av_full, now_ts):
         rows=[]; cols=["Poste de travail","KPI","Valeur","Cible","Ecart","Nb Anomalies","Statut"]
         for p in posts:
@@ -737,7 +733,6 @@ def main():
         h+='</div>'
         return h
 
-    # ---- GENERATION EXCEL EN MEMOIRE ----
     def generate_plan_action_excel(all_plan_rows):
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
@@ -764,14 +759,60 @@ def main():
         output.seek(0)
         return output.getvalue()
 
+    # ============================================================
+    # CHARGEMENT AUTOMATIQUE DES FICHIERS OT.XLSX, AVIS.XLSX, DATE.TXT
+    # ============================================================
+    ot_path = "OT.xlsx"
+    av_path = "AVIS.xlsx"
+    auto_loaded = False
+    ot_bytes_auto = None
+    av_bytes_auto = None
+
+    if os.path.exists(ot_path) and os.path.exists(av_path):
+        try:
+            with open(ot_path, "rb") as f: ot_bytes_auto = f.read()
+            with open(av_path, "rb") as f: av_bytes_auto = f.read()
+            auto_loaded = True
+        except Exception:
+            auto_loaded = False
+
     # ---- SIDEBAR ----
     with st.sidebar:
         st.markdown('<div style="text-align:center;margin-bottom:15px"><div style="font-size:28px;font-weight:900;color:#fff">⚙️ PARAMETRES</div></div>',unsafe_allow_html=True)
-        ot_file=st.file_uploader("Fichier OT (Excel)",type=["xlsx","xls"],key="ot_up")
-        av_file=st.file_uploader("Fichier Avis (Excel)",type=["xlsx","xls"],key="av_up")
+
+        if auto_loaded:
+            st.markdown('<div style="background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.5);border-radius:8px;padding:10px 12px;margin-bottom:8px;text-align:center"><div style="font-size:18px;margin-bottom:4px">✅ Fichiers charges automatiquement</div><div style="font-size:11px;opacity:0.9">OT.xlsx • AVIS.xlsx • date.txt</div></div>', unsafe_allow_html=True)
+            ot_file = None
+            av_file = None
+            st.markdown("**Fichiers locaux actifs :**")
+            st.markdown("- 📄 `OT.xlsx`")
+            st.markdown("- 📄 `AVIS.xlsx`")
+            st.markdown("- 📄 `date.txt` → `%s`" % fichier_date)
+            use_auto = st.checkbox("Utiliser les fichiers locaux", value=True, key="use_auto")
+            if not use_auto:
+                st.markdown("---")
+                st.markdown("**Ou uploader manuellement :**")
+                ot_file=st.file_uploader("Fichier OT (Excel)",type=["xlsx","xls"],key="ot_up")
+                av_file=st.file_uploader("Fichier Avis (Excel)",type=["xlsx","xls"],key="av_up")
+        else:
+            st.markdown('<div style="background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.5);border-radius:8px;padding:10px 12px;margin-bottom:8px;text-align:center"><div style="font-size:14px">⚠️ Fichiers locaux non trouvés</div><div style="font-size:11px;opacity:0.9">Placez OT.xlsx et AVIS.xlsx à côté du script</div></div>', unsafe_allow_html=True)
+            ot_file=st.file_uploader("Fichier OT (Excel)",type=["xlsx","xls"],key="ot_up")
+            av_file=st.file_uploader("Fichier Avis (Excel)",type=["xlsx","xls"],key="av_up")
+
         st.markdown("---")
-        if ot_file and av_file:
-            df_r, av_r, posts, now_ts = prepare_data(ot_file.read(), av_file.read(), fichier_date)
+        # Determiner les bytes a utiliser
+        if auto_loaded and (not hasattr(st, 'session_state') or st.session_state.get("use_auto", True)):
+            final_ot_bytes = ot_bytes_auto
+            final_av_bytes = av_bytes_auto
+        elif ot_file and av_file:
+            final_ot_bytes = ot_file.read()
+            final_av_bytes = av_file.read()
+        else:
+            final_ot_bytes = None
+            final_av_bytes = None
+
+        if final_ot_bytes and final_av_bytes:
+            df_r, av_r, posts, now_ts = prepare_data(final_ot_bytes, final_av_bytes, fichier_date)
             if posts:
                 sel_posts=st.multiselect("Postes de travail",posts,default=posts,key="sp")
             else:
@@ -779,6 +820,7 @@ def main():
         else:
             st.info("Veuillez charger les deux fichiers Excel pour commencer.")
             sel_posts=[]; df_r=None; av_r=None; posts=[]; now_ts=pd.Timestamp.now()
+
         st.markdown("---")
         show_hist=st.checkbox("Analyse historique",value=False,key="sh")
         hist_df=pd.DataFrame(); var_df=pd.DataFrame(); journal_df=pd.DataFrame(); top5=pd.DataFrame(); bottom5=pd.DataFrame()
@@ -791,7 +833,7 @@ def main():
         st.markdown('<div style="text-align:center;font-size:11px;color:rgba(255,255,255,.5);margin-top:10px">Dashboard KPI v2.0<br>Maintenance BM</div>',unsafe_allow_html=True)
 
     # ---- MAIN CONTENT ----
-    if not ot_file or not av_file:
+    if not final_ot_bytes or not final_av_bytes:
         st.markdown('<div style="min-height:60vh;display:flex;align-items:center;justify-content:center"><div style="text-align:center"><div style="font-size:80px;margin-bottom:20px">📊</div><h2 style="color:#1e3a5f;font-size:32px;font-weight:800">Dashboard KPI Maintenance</h2><p style="color:#64748b;font-size:18px;margin-top:10px">Chargez les fichiers OT et Avis dans la barre laterale pour demarrer</p></div></div>',unsafe_allow_html=True)
         st.stop()
     if not sel_posts:
@@ -807,7 +849,6 @@ def main():
     global_score = round((perf_score + qual_score) / 2, 1)
     total_ot = len(df_sel); total_av = len(av_sel)
 
-    # Comptage precis des anomalies (denominateur - numerateur)
     nb_anomalies_perf = 0; nb_anomalies_qual = 0
     for p in sel_posts:
         if p not in ckdf.index: continue
@@ -973,7 +1014,6 @@ def main():
         if not has_qual_plan:
             st.markdown('<div class="es">✅ Aucun plan d\'action requis en Qualite — Tous les KPI sont atteints</div>',unsafe_allow_html=True)
 
-        # ---- BOUTON TELECHARGEMENT CORRIGE ----
         st.markdown("---")
         plan_bytes = generate_plan_action_excel(all_plan_rows)
         safe_date = fichier_date.replace("/","-")
