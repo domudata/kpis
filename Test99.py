@@ -1338,9 +1338,7 @@ def main():
                 for rw in prows:
                     if k in rw and rw.get("_t") not in ("cible", "total"):
                         try:
-                            val = float(rw[k])
-                            target = CIBLE.get(k, 100)
-                            conform_count += gscore(k, val, target)
+                            conform_count += gscore(k,100-float(rw[k]) if k in ["OT préparation >3 mois","OT préparation 1mois< <3mois","OT planification >3 mois","OT planification 1mois< <3mois","OT exécution >3 mois","OT exécution 1mois< <3mois"] else float(rw[k]),CIBLE.get(k,100))
                             total_count += 1
                         except:
                             pass
