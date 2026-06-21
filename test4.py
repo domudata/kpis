@@ -11,7 +11,7 @@ from plotly.subplots import make_subplots
 from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
-# ============================================================
+# ===========================================================
 st.set_page_config(layout="wide", page_title="Dashboard KPI", initial_sidebar_state="expanded")
 # ============================================================
 
@@ -858,7 +858,7 @@ def main():
         return "background:#ff9999;color:#7f1d1d;font-weight:800"
         
     def gscore(k,a,t):
-      return 1 if ((k=="TAUX_REALISATION_CORRECTIF/PT" and a>=95) or (k in ["OT préparation <1 mois","OT planification <1 mois","OT exécution <1 mois"] and a>=80) or (k in ["OT préparation >3 mois","OT planification >3 mois","OT exécution >3 mois"] and a<=5) or (k in ["OT préparation 1mois< <3mois","OT planification 1mois< <3mois","OT exécution 1mois< <3mois"] and a<=15) or (k in ["Performance Graissage","Performance Inspection"] and a>=95) or (k=="Performance Appels Systématiques" and a>=85) or (k=="appel avis approuvé" and a>=95) or (k=="OT_COR_EGAL" and a>=95) or (k in ["OT LANC ESTIME","Backlog préparation caractérisé","Backlog planification caractérisé","OT CONFIME","OT Fiabilité","Total Avis de Panne"] and a==100)) else 0
+      return 1 if ((k=="TAUX_REALISATION_CORRECTIF/PT" and a>=95) or (k in ["OT préparation <1 mois","OT planification <1 mois","OT exécution <1 mois"] and a>=80) or (k in ["OT préparation >3 mois","OT planification >3 mois","OT exécution >3 mois"] and (100-a)>=95) or (k in ["OT préparation 1mois< <3mois","OT planification 1mois< <3mois","OT exécution 1mois< <3mois"] and (100-a)>=85) or (k in ["Performance Graissage","Performance Inspection"] and a>=95) or (k=="Performance Appels Systématiques" and a>=85) or (k=="appel avis approuvé" and a>=95) or (k=="OT_COR_EGAL" and a>=95) or (k in ["OT LANC ESTIME","Backlog préparation caractérisé","Backlog planification caractérisé","OT CONFIME","OT Fiabilité","Total Avis de Panne"] and a==100)) else 0
       return 0
         
     def is_lb(k): return k in LOWER_BETTER
