@@ -1222,7 +1222,7 @@ def main():
             pscores={}; qscores={}
             for poste in ckdf.index:
                 r=ckdf.loc[poste]
-               pscores[poste]=(sum(gscore(k,100-r[k] if k in ["OT préparation >3 mois","OT préparation 1mois< <3mois","OT planification >3 mois","OT planification 1mois< <3mois","OT exécution >3 mois","OT exécution 1mois< <3mois"] else r[k],CIBLE[k]) for k in QK if k in r.index)/len(QK)*100) if QK else 0
+                pscores[poste]=(sum(gscore(k,100-r[k] if k in ["OT préparation >3 mois","OT préparation 1mois< <3mois","OT planification >3 mois","OT planification 1mois< <3mois","OT exécution >3 mois","OT exécution 1mois< <3mois"] else r[k],CIBLE[k]) for k in QK if k in r.index)/len(QK)*100) if QK else 0
                 qscores[poste]=(sum(gscore(k,r[k],CIBLE[k]) for k in PK if k in r.index)/len(PK)*100) if PK else 0
 
             sf1_posts = [p for p in vp if str(p).startswith("SF1")]
