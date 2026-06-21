@@ -858,7 +858,7 @@ def main():
         return "background:#ff9999;color:#7f1d1d;font-weight:800"
         
     def gscore(k,a,t):
-      return 1 if ((k=="TAUX_REALISATION_CORRECTIF/PT" and a>=95) or (k in ["OT préparation <1 mois","OT planification <1 mois","OT exécution <1 mois"] and a>=80) or (k in ["OT préparation >3 mois","OT planification >3 mois","OT exécution >3 mois"] and (100-a)>=95) or (k in ["OT préparation 1mois< <3mois","OT planification 1mois< <3mois","OT exécution 1mois< <3mois"] and (100-a)>=85) or (k in ["Performance Graissage","Performance Inspection"] and a>=95) or (k=="Performance Appels Systématiques" and a>=85) or (k=="appel avis approuvé" and a>=95) or (k=="OT_COR_EGAL" and a>=95) or (k in ["OT LANC ESTIME","Backlog préparation caractérisé","Backlog planification caractérisé","OT CONFIME","OT Fiabilité","Total Avis de Panne"] and a==100)) else 0
+      return max(0,100-a) if k in ["OT préparation >3 mois","OT planification >3 mois","OT exécution >3 mois","OT préparation 1mois< <3mois","OT planification 1mois< <3mois","OT exécution 1mois< <3mois"] else (100 if ((k=="TAUX_REALISATION_CORRECTIF/PT" and a>=95) or (k in ["OT préparation <1 mois","OT planification <1 mois","OT exécution <1 mois"] and a>=80) or (k in ["Performance Graissage","Performance Inspection"] and a>=95) or (k=="Performance Appels Systématiques" and a>=85) or (k=="appel avis approuvé" and a>=95) or (k=="OT_COR_EGAL" and a>=95) or (k in ["OT LANC ESTIME","Backlog préparation caractérisé","Backlog planification caractérisé","OT CONFIME","OT Fiabilité","Total Avis de Panne"] and a==100)) else 0)
       return 0
         
     def is_lb(k): return k in LOWER_BETTER
@@ -1214,8 +1214,8 @@ def main():
             pscores={}; qscores={}
             for poste in ckdf.index:
                 r=ckdf.loc[poste]
-                pscores[poste]=(sum(gscore(k,r[k],CIBLE[k]) for k in QK if k in r.index)/len(QK)*100) if QK else 0
-                qscores[poste]=(sum(gscore(k,r[k],CIBLE[k]) for k in PK if k in r.index)/len(PK)*100) if PK else 0
+                pscores[poste]=(sum(gscore(k,r[k],CIBLE[k]) for k in QK if k in r.index)/len(QK)) if QK else 0
+                qscores[poste]=(sum(gscore(k,r[k],CIBLE[k]) for k in PK if k in r.index)/len(PK)) if PK else 0
 
             sf1_posts = [p for p in vp if str(p).startswith("SF1")]
             sf2_posts = [p for p in vp if str(p).startswith("SF2")]
