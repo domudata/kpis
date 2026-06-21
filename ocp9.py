@@ -1132,22 +1132,32 @@ def main():
             qrows.append({"_t":"cible",**cible_q})
             
             # Ligne TOTAL GENERAL (Méthode : 1 si Vert/Jaune, 0 si Rouge -> Moyenne)
-            tot_p={"Poste de travail":"Total general"}
+            tot_p = {"Poste de travail": "Total general"}
             for k in QK:
-                conform_count = 0
-                total_count = 0
-                for rw in prows:
-                    if k in rw and rw.get("_t") not in ("cible", "total"):
-                        try:
-                            val = float(rw[k])
-                            target = CIBLE.get(k, 100)
-                            conform_count += gscore(k, val, target)
-                            total_count += 1
-                        except:
-                            pass
-                tot_p[k] = "%.1f" % ((conform_count / total_count) * 100) if total_count > 0 else "0.0"
-            tot_p["Score Performance"]="%.2f"%(sum(pscores.values())/len(pscores)) if pscores else "0.00"
-            prows.append({"_t":"total",**tot_p})
+               conform_count = 0
+               total_count = 0
+               for rw in prows:
+                  if k in rw and rw.get("_t") not in ("cible", "total"):
+                    try:
+                      val = float(rw[k])
+                      target = CIBLE.get(k, 100)
+                      conform_count += gscore(k, val, target)
+                      total_count += 1
+                    except:
+                      pass
+    
+            conformity_rate = ((conform_count / total_count) * 100) if total_count > 0 else 0
+    
+    
+              if k in ["OT préparation >3 mois", "OT préparation 1mois< <3mois",
+                "OT planification >3 mois", "OT planification 1mois< <3mois",
+                "OT exécution >3 mois", "OT exécution 1mois< <3mois"]:
+                tot_p[k] = "%.1f" % (100 - conformity_rate)
+              else:
+               tot_p[k] = "%.1f" % conformity_rate
+
+tot_p["Score Performance"] = "%.2f" % (sum(pscores.values())/len(pscores)) if pscores else "0.00"
+prows.append({"_t": "total", **tot_p})
             
             tot_q={"Poste de travail":"Total general"}
             for k in PK:
