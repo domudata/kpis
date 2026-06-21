@@ -708,12 +708,20 @@ def main():
     def calc_kpis(df_i, av_i, now_ts, posts):
         res={}; df=df_i.copy(); av=av_i.copy()
         res['dfp']=df
-        filt_corr=(df["Nº appel pl.entret."].fillna(0)==0)&(df["Contient SOPL"]==1)
-        an=cpiv(df,filt_corr,"Statut OT",posts)
-        for c in ["CLOT","CRÉÉ","LANC","TCLO"]: an[c]=an.get(c,0)
-        an["OT_CLOTURES"]=an["CLOT"]+an["TCLO"]
-        an["TOTAL_OT"]=an[["CLOT","CRÉÉ","LANC","TCLO"]].sum(axis=1)
-        an["TAUX_REALISATION_CORRECTIF/PT"]=np.where(an["TOTAL_OT"]==0,100.0,ckpi(an["OT_CLOTURES"],an["TOTAL_OT"]))
+        # --- Nouveau filtre général : sans plan d'entretien uniquement ---
+        filt_corr = df["Nº appel pl.entret."].fillna(0) == 0
+
+        # --- NUMÉRATEUR : OT clôturés (CLOT + TCLO) sans plan, SANS condition SOPL ---
+        num_filt = filt_corr & df["Statut OT"].isin(["CLOT", "TCLO"])
+        num = df[num_filt].groupby("Poste travail princ.")["Ordre"].count().reindex(posts, fill_value=0)
+
+        # --- DÉNOMINATEUR : OT contenant SOPL et sans plan ---
+        den_filt = filt_corr & (df["Contient SOPL"] == 1)
+        den = df[den_filt].groupby("Poste travail princ.")["Ordre"].count().reindex(posts, fill_value=0)
+
+        # --- Calcul du taux ---
+        an = pd.DataFrame({"OT_CLOTURES": num, "TOTAL_OT": den}, index=posts)
+        an["TAUX_REALISATION_CORRECTIF/PT"] = np.where(an["TOTAL_OT"] == 0, 100.0, ckpi(an["OT_CLOTURES"], an["TOTAL_OT"]))
         
         pr=cpiv(df,(df["Statut OT"]=="CRÉÉ")&(df["Statut utilisateur"].str.contains("CRPR",na=False)),"ap",posts)
         for c in ["<1 mois",">3 mois","1 mois < <3 mois","Inconnu"]: pr[c]=pr.get(c,0)
