@@ -1143,7 +1143,7 @@ for k in QK:
                 target = CIBLE.get(k, 100)
                 conform_count += gscore(k, val, target)
                 total_count += 1
-            except:
+             except:
                 pass
     
     conformity_rate = ((conform_count / total_count) * 100) if total_count > 0 else 0
