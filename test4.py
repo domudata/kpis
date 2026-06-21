@@ -1214,8 +1214,8 @@ def main():
             pscores={}; qscores={}
             for poste in ckdf.index:
                 r=ckdf.loc[poste]
-                pscores[poste]=(sum(gscore(k,r[k],CIBLE[k]) for k in QK if k in r.index)/len(QK)) if QK else 0
-                qscores[poste]=(sum(gscore(k,r[k],CIBLE[k]) for k in PK if k in r.index)/len(PK)) if PK else 0
+                pscores[poste]=(sum(gscore(k,r[k],CIBLE[k]) for k in QK if k in r.index)/len(QK)*100) if QK else 0
+                qscores[poste]=(sum(gscore(k,r[k],CIBLE[k]) for k in PK if k in r.index)/len(PK)*100) if PK else 0
 
             sf1_posts = [p for p in vp if str(p).startswith("SF1")]
             sf2_posts = [p for p in vp if str(p).startswith("SF2")]
