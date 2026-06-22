@@ -148,6 +148,7 @@ def excr(df):
         return df[~df["Poste travail princ."].astype(str).str.contains("cresseur",case=False,na=False)].copy()
     return df
 
+
 @st.cache_data(show_spinner=False)
 @st.cache_data(show_spinner=False)
 def prepare_data(ot_bytes, av_bytes, date_str):
@@ -156,53 +157,140 @@ def prepare_data(ot_bytes, av_bytes, date_str):
         if bytes_data is None or len(bytes_data) == 0:
             raise ValueError(f"{label} : fichier vide ou introuvable.")
         
-        # Check XLSX magic number: PK\x03\x04
         is_xlsx = bytes_data[:4] == b'PK\x03\x04'
-        # Check XLS magic number: \xD0\xCF\x11\xE0 (OLE2)
-        is_xls = bytes_data[:4] == b'\xd0\xcf\x11\xe0'
+        is_xls  = bytes_data[:4] == b'\xd0\xcf\x11\xe0'
         
-        if is_xlsx:
-            try:
-                return pd.read_excel(io.BytesIO(bytes_data), engine='openpyxl')
-            except Exception as e:
-                raise ValueError(f"{label} : fichier .xlsx corrompu ou invalide. Détail : {e}")
-        
-        elif is_xls:
+        if is_xls:
+            # Old .xls format
             try:
                 return pd.read_excel(io.BytesIO(bytes_data), engine='xlrd')
             except Exception as e:
-                # xlrd only supports .xls, not .xlsx
-                raise ValueError(f"{label} : fichier .xls corrompu ou non lisible. Détail : {e}")
-        
-        else:
-            # Not a recognized Excel format — try CSV as fallback
-            try:
-                # Try UTF-8 first, then latin-1
-                try:
-                    text = bytes_data.decode('utf-8')
-                except UnicodeDecodeError:
-                    text = bytes_data.decode('latin-1')
-                
-                # Detect separator
-                first_line = text.split('\n')[0]
-                if '\t' in first_line:
-                    sep = '\t'
-                elif ';' in first_line:
-                    sep = ';'
-                else:
-                    sep = ','
-                
-                return pd.read_csv(io.StringIO(text), sep=sep)
-            except Exception:
-                raise ValueError(
-                    f"{label} : format non reconnu. Ce fichier n'est ni un .xlsx, "
-                    f"ni un .xls, ni un CSV valide. "
-                    f"Veuillez exporter votre fichier au format .xlsx depuis Excel/Google Sheets."
-                )
+                raise ValueError(f"{label} : fichier .xls illisible. Détail : {e}")
 
+        if not is_xlsx:
+            # Not Excel at all — try CSV
+            return _try_read_csv(bytes_data, label)
+
+        # ---- It looks like .xlsx — try engines in order of robustness ----
+        engines = ['openpyxl']
+        # Add calamine if available (much more tolerant with corrupted files)
+        try:
+            import calamine
+            engines.insert(0, 'calamine')
+        except ImportError:
+            pass
+
+        last_err = None
+        for eng in engines:
+            try:
+                return pd.read_excel(io.BytesIO(bytes_data), engine=eng)
+            except Exception as e:
+                last_err = e
+                continue
+
+        # All engines failed — last resort: manual ZIP extraction
+        try:
+            return _read_xlsx_via_zipfile(bytes_data, label)
+        except Exception:
+            pass
+
+        raise ValueError(
+            f"{label} : le fichier .xlsx ne peut être lu par aucun moteur. "
+            f"Dernière erreur ({engines[-1]}): {last_err}\n\n"
+            f"💡 Ouvrez le fichier dans Excel, faites "
+            f"**Fichier → Enregistrer sous → Classeur Excel (.xlsx)**, "
+            f"puis rechargez-le."
+        )
+
+    def _try_read_csv(bytes_data, label):
+        try:
+            try:
+                text = bytes_data.decode('utf-8')
+            except UnicodeDecodeError:
+                text = bytes_data.decode('latin-1')
+            first_line = text.split('\n')[0]
+            if '\t' in first_line:
+                sep = '\t'
+            elif ';' in first_line:
+                sep = ';'
+            else:
+                sep = ','
+            return pd.read_csv(io.StringIO(text), sep=sep)
+        except Exception:
+            raise ValueError(
+                f"{label} : format non reconnu (ni .xlsx, ni .xls, ni CSV). "
+                f"Exportez en .xlsx depuis Excel."
+            )
+
+    def _read_xlsx_via_zipfile(bytes_data, label):
+        """Last resort: manually extract sharedStrings and sheet1 from the ZIP."""
+        import zipfile
+        from xml.etree import ElementTree as ET
+
+        with zipfile.ZipFile(io.BytesIO(bytes_data)) as zf:
+            # List contents for diagnostics
+            names = zf.namelist()
+            
+            # Find the first worksheet
+            sheet_path = None
+            for n in names:
+                if n.startswith('xl/worksheets/sheet') and n.endswith('.xml'):
+                    sheet_path = n
+                    break
+            if sheet_path is None:
+                raise ValueError("Aucune feuille trouvée dans le fichier .xlsx")
+
+            # Parse shared strings
+            ss = {}
+            ss_path = 'xl/sharedStrings.xml'
+            if ss_path in names:
+                tree = ET.parse(zf.open(ss_path))
+                for i, si in enumerate(tree.findall('.//{http://schemas.openxmlformats.org/spreadsheetml/2006/main}si')):
+                    texts = si.findall('.//{http://schemas.openxmlformats.org/spreadsheetml/2006/main}t')
+                    ss[str(i)] = ''.join(t.text or '' for t in texts)
+
+            # Parse sheet
+            ns = '{http://schemas.openxmlformats.org/spreadsheetml/2006/main}'
+            tree = ET.parse(zf.open(sheet_path))
+            rows_data = []
+            for row in tree.findall(f'.//{ns}row'):
+                cells = {}
+                for cell in row.findall(f'{ns}c'):
+                    ref = cell.get('r', '')
+                    col_letter = ''.join(c for c in ref if c.isalpha())
+                    cell_type = cell.get('t', '')
+                    val_el = cell.find(f'{ns}v')
+                    if val_el is not None and val_el.text is not None:
+                        val = val_el.text
+                        if cell_type == 's':
+                            val = ss.get(val, val)
+                        cells[col_letter] = val
+                    else:
+                        cells[col_letter] = None
+                if cells:
+                    rows_data.append(cells)
+
+        if not rows_data:
+            raise ValueError("La feuille extraite est vide.")
+
+        # Convert col letters to column indices
+        all_cols = set()
+        for r in rows_data:
+            all_cols.update(r.keys())
+        sorted_cols = sorted(all_cols, key=lambda c: [ord(ch) - 64 for ch in c])
+
+        df = pd.DataFrame()
+        for col in sorted_cols:
+            df[col] = [r.get(col) for r in rows_data]
+
+        # First row = headers
+        df.columns = [str(df.iloc[0][c]) if pd.notna(df.iloc[0][c]) else c for c in df.columns]
+        df = df.iloc[1:].reset_index(drop=True)
+        return df
+
+    # ---------- CALL ----------
     raw_ot = safe_read_excel(ot_bytes, "Fichier OT")
     raw_av = safe_read_excel(av_bytes, "Fichier Avis")
-    # ---------- FIN VALIDATION ----------
 
     raw_ot = excr(raw_ot)
     raw_av = excr(raw_av)
