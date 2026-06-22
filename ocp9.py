@@ -840,9 +840,12 @@ def main():
             "OT CONFIME":res['ot_confime']["OT CONFIME"],"OT_COR_EGAL":res['ot_cor_egal']["OT_COR_EGAL"],
             "OT Fiabilité":fiab_s,"Total Avis de Panne":avpan_s
         })
-                res["anomalies_perf"] = pd.DataFrame(index=posts)
+                 # ==========================
+        # TABLEAU DES ANOMALIES
+        # ==========================
 
-        # Performance
+        res["anomalies_perf"] = pd.DataFrame(index=posts)
+
         res["anomalies_perf"]["TAUX_REALISATION_CORRECTIF/PT"] = (
             an["TOTAL_OT"] - an["OT_CLOTURES"]
         )
@@ -895,16 +898,13 @@ def main():
             sys_df["_d"] - sys_df["_n"]
         ).clip(lower=0)
 
-        # Qualité
         res["anomalies_qual"] = pd.DataFrame(index=posts)
 
         res["anomalies_qual"]["Taux d'approbation des Avis"] = (
             tca["Total"] - tca["APRV"]
         )
 
-        res["anomalies_qual"]["OT LANC ESTIME"] = (
-            la["NON"]
-        )
+        res["anomalies_qual"]["OT LANC ESTIME"] = la["NON"]
 
         res["anomalies_qual"]["Backlog préparation caractérisé"] = (
             pc["NON CARACTERISE"]
