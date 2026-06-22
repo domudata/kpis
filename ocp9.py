@@ -1646,8 +1646,19 @@ def main():
             with tabs[1]:
                 st.markdown('<div class="stl p">Detail des indicateurs de Performance</div>',unsafe_allow_html=True)
                 st.markdown(html_table(prows,pcols,"pt",["Score Performance"]),unsafe_allow_html=True)
-                st.markdown('<div class="stl a">Nombre d\'anomalies par KPI et Poste (à traiter pour atteindre 100%)</div>',unsafe_allow_html=True)
-                st.markdown(html_anomaly_table(ano_p_rows,ano_p_cols,"at"),unsafe_allow_html=True)
+                st.markdown("### Nombre d'anomalies par KPI et Poste")
+
+df_ano_perf = res["anomalies_perf"].reset_index()
+
+df_ano_perf = df_ano_perf.rename(
+    columns={"index": "Poste de travail"}
+)
+
+st.dataframe(
+    df_ano_perf,
+    use_container_width=True,
+    hide_index=True
+)
                 st.markdown('<div class="stl a">Actions recommandees — Performance</div>',unsafe_allow_html=True)
                 st.markdown(html_actions_table(QK,pa,CIBLE,ACT_MAP),unsafe_allow_html=True)
 
