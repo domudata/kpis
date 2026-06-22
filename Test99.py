@@ -872,9 +872,9 @@ for poste in posts:
     anom_perf.append(rp)
     anom_qual.append(rq)
 
-res["anom_perf"]=pd.DataFrame(anom_perf)
-res["anom_qual"]=pd.DataFrame(anom_qual)
-        return res
+    res["anom_perf"]=pd.DataFrame(anom_perf)
+    res["anom_qual"]=pd.DataFrame(anom_qual)
+       
 
     def get_bar_color(kpi, val):
         try: v = float(val)
