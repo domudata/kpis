@@ -1374,17 +1374,8 @@ def main():
 # ==============================================================
 # FONCTION POUR EXCLURE LES COMPRESSEURS
 # ==============================================================
-           def excr(df):
-    """Exclut les postes contenant 'compresseur' (insensible à la casse)"""
-             if "Poste travail princ." in df.columns:
-                return df[
-                 ~df["Poste travail princ."].astype(str).str.contains(
-                   "compresseur", 
-                    case=False, 
-                      na=False
-                         )
-                          ].copy()
-               return df 
+           dfp = excr(res['dfp'])  # Exclut les compresseurs des OT
+           avf = excr(res['avf'])  # Exclut les compresseurs des Avis
             ano_map = {}
             ano_map["TAUX_REALISATION_CORRECTIF/PT"] = dfp[(dfp["Nº appel pl.entret."].fillna(0)==0)&(dfp["Contient SOPL"]==1)&(~dfp["Statut OT"].isin(["CLOT","TCLO"]))].groupby("Poste travail princ.")["Ordre"].count()
             prep_filt = (dfp["Statut OT"]=="CRÉÉ")&(dfp["Statut utilisateur"].str.contains("CRPR",na=False))
