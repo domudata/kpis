@@ -190,7 +190,7 @@ def prepare_data(ot_bytes, av_bytes, date_str):
         raw_av["Ordre"].isna() |
         (raw_av["Ordre"].astype(str).str.strip() == "")
            &
-    (raw_av["Type d'avis"].isin(["ZU","Z4","ZR","ZP"]))
+         (raw_av["Type d'avis"].isin(["ZU","Z4","ZR","ZP"]))
     )
    
 ].copy()
