@@ -149,243 +149,53 @@ def excr(df):
     return df
 
 @st.cache_data(show_spinner=False)
-def prepare_data(ot_bytes, av_bytes, date_str):
-    # ---------- DIAGNOSTIC & ROBUST READING ----------
-    def diagnose_bytes(data, label):
-        """Return detailed info about what this file actually is."""
-        info = {"label": label, "size": len(data), "first_16": data[:16].hex()}
-        
-        # Check real ZIP validity
-        info["is_valid_zip"] = False
-        info["zip_contents"] = []
-        info["zip_error"] = None
-        try:
-            import zipfile
-            with zipfile.ZipFile(io.BytesIO(data)) as zf:
-                info["is_valid_zip"] = True
-                info["zip_contents"] = zf.namelist()[:30]
-        except Exception as e:
-            info["zip_error"] = str(e)
-        
-        # Identify real format from magic bytes
-        h = data[:8]
-        if h[:4] == b'PK\x03\x04':
-            if info["is_valid_zip"]:
-                if any('xl/' in n for n in info["zip_contents"]):
-                    info["detected_format"] = "xlsx (valid)"
-                elif any('word/' in n for n in info["zip_contents"]):
-                    info["detected_format"] = "docx (NOT xlsx!)"
-                elif any('ppt/' in n for n in info["zip_contents"]):
-                    info["detected_format"] = "pptx (NOT xlsx!)"
-                else:
-                    info["detected_format"] = f"zip (contents: {info['zip_contents'][:5]})"
-            else:
-                info["detected_format"] = "corrupted/truncated zip or encrypted"
-        elif h[:4] == b'\xd0\xcf\x11\xe0':
-            info["detected_format"] = "xls (OLE2)"
-        elif data[:5] == b'%PDF-':
-            info["detected_format"] = "PDF (NOT xlsx!)"
-        elif data[:3] in (b'\xef\xbb\xbf', b'\xfe\xff', b'\xff\xfe'):
-            info["detected_format"] = "text with BOM (CSV?)"
-        elif b',' in data[:200] or b';' in data[:200] or b'\t' in data[:200]:
-            info["detected_format"] = "likely CSV/TSV (NOT xlsx!)"
-        else:
-            info["detected_format"] = "unknown binary"
-        
-        return info
-
-    def safe_read_excel(bytes_data, label="fichier"):
-        if bytes_data is None or len(bytes_data) == 0:
-            raise ValueError(f"{label} : fichier vide ou introuvable.")
-        
-        # ---- Step 1: Diagnose ----
-        diag = diagnose_bytes(bytes_data, label)
-        
-        # ---- Step 2: Route by real format ----
-        fmt = diag["detected_format"]
-        
-        # --- It's actually NOT an xlsx ---
-        if "NOT xlsx" in fmt:
-            raise ValueError(
-                f"{label} : le fichier est en réalité un **{fmt.split('(')[0].strip()}**, pas un .xlsx !\n"
-                f"Veuillez exporter au format .xlsx depuis Excel."
-            )
-        
-        if fmt == "xls (OLE2)":
+def read_excel_safe(bytes_data):
+    """Lit un fichier Excel en détectant automatiquement le vrai format."""
+    bio = io.BytesIO(bytes_data)
+    
+    # Détection du format via les magic bytes
+    header = bytes_data[:8]
+    
+    if header[:4] in (b'PK\x03\x04', b'PK\x05\x06'):
+        # Format ZIP → .xlsx / .xlsm
+        for engine in ['openpyxl', 'calamine']:
             try:
-                return pd.read_excel(io.BytesIO(bytes_data), engine='xlrd')
-            except Exception as e:
-                raise ValueError(f"{label} : fichier .xls illisible. Détail : {e}")
-        
-        if fmt in ("likely CSV/TSV (NOT xlsx!)", "text with BOM (CSV?)"):
-            return _try_read_csv(bytes_data, label)
-        
-        if fmt == "PDF (NOT xlsx!)":
-            raise ValueError(f"{label} : c'est un PDF, pas un Excel ! Exportez en .xlsx.")
-        
-        if fmt == "unknown binary":
-            # Last chance: try CSV
-            return _try_read_csv(bytes_data, label)
-        
-        # --- It claims to be xlsx but might be corrupted ---
-        if fmt == "corrupted/truncated zip or encrypted":
-            # Could be password-protected — try calamine which sometimes handles this
-            try:
-                import calamine
-                return pd.read_excel(io.BytesIO(bytes_data), engine='calamine')
+                return pd.read_excel(bio, engine=engine)
             except Exception:
-                pass
-            
-            # Try msoffcrypto for password detection
-            try:
-                import msoffcrypto
-                decrypted = io.BytesIO()
-                with msoffcrypto.OfficeFile(io.BytesIO(bytes_data)) as f:
-                    f.load_key(password='')  # empty password
-                    f.decrypt(decrypted)
-                # If we get here, it was encrypted with empty password
-                bytes_data = decrypted.getvalue()
-                # Retry with decrypted data
-                return pd.read_excel(io.BytesIO(bytes_data), engine='openpyxl')
-            except Exception:
-                pass
-            
-            raise ValueError(
-                f"{label} : fichier .xlsx **corrompu, tronqué ou protégé par mot de passe**.\n"
-                f"Taille : {diag['size']:,} octets\n"
-                f"Erreur ZIP : {diag['zip_error']}\n\n"
-                f"💡 Solutions :\n"
-                f"1. Ouvrez dans Excel → Fichier → Enregistrer sous → .xlsx\n"
-                f"2. Si protégé par mot de passe, retirez la protection avant upload\n"
-                f"3. Si le téléchargement a échoué, retéléchargez le fichier"
-            )
-        
-        # --- Valid xlsx ZIP — try engines in cascade ---
-        engines_to_try = []
-        
-        # calamine first (most tolerant) — but guard against Python 3.14 incompatibility
-        try:
-            import calamine
-            engines_to_try.append('calamine')
-        except Exception:
-            pass
-        
-        engines_to_try.append('openpyxl')
-        
-        last_err = None
-        for eng in engines_to_try:
-            try:
-                return pd.read_excel(io.BytesIO(bytes_data), engine=eng)
-            except Exception as e:
-                last_err = e
+                bio.seek(0)
                 continue
-        
-        # All standard engines failed on a valid ZIP — try manual extraction
-        try:
-            return _read_xlsx_via_zipfile(bytes_data)
-        except Exception as zip_err:
-            pass
-        
-        # Build ultra-detailed error
-        contents_preview = str(diag["zip_contents"][:10])
-        raise ValueError(
-            f"{label} : fichier .xlsx non lisible malgré un ZIP valide.\n\n"
-            f"🔍 **Diagnostic** :\n"
-            f"- Taille : {diag['size']:,} octets\n"
-            f"- Contenu ZIP : {contents_preview}\n"
-            f"- Moteurs essayés : {engines_to_try}\n"
-            f"- Dernière erreur ({engines_to_try[-1]}): {last_err}\n"
-            f"- Erreur extraction manuelle : {zip_err}\n\n"
-            f"💡 Ce fichier provient probablement d'un ERP (SAP, Maximo…). "
-            f"Ouvrez-le dans Excel, faites **Enregistrer sous → .xlsx**, puis rechargez."
-        )
-
-    def _try_read_csv(bytes_data, label):
-        try:
+    
+    if header == b'\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1':
+        # Format OLE2 → .xls (ancien format binaire)
+        for engine in ['xlrd', 'calamine']:
             try:
-                text = bytes_data.decode('utf-8')
-            except UnicodeDecodeError:
-                text = bytes_data.decode('latin-1')
-            first_line = text.split('\n')[0]
-            if '\t' in first_line:
-                sep = '\t'
-            elif ';' in first_line:
-                sep = ';'
-            else:
-                sep = ','
-            return pd.read_csv(io.StringIO(text), sep=sep)
+                return pd.read_excel(bio, engine=engine)
+            except Exception:
+                bio.seek(0)
+                continue
+    
+    # Dernier recours : essai de tous les moteurs
+    for engine in ['openpyxl', 'xlrd', 'calamine']:
+        try:
+            bio.seek(0)
+            return pd.read_excel(bio, engine=engine)
         except Exception:
-            raise ValueError(
-                f"{label} : format non reconnu. "
-                f"Exportez explicitement en .xlsx depuis Excel."
-            )
+            continue
+    
+    raise ValueError(
+        "Format de fichier non reconnu. Le fichier n'est ni un .xlsx ni un .xls valide.\n"
+        "Vérifiez que le fichier n'est pas corrompu ou protégé par mot de passe."
+    )
 
-    def _read_xlsx_via_zipfile(bytes_data):
-        import zipfile
-        from xml.etree import ElementTree as ET
 
-        with zipfile.ZipFile(io.BytesIO(bytes_data)) as zf:
-            names = zf.namelist()
-            sheet_path = None
-            for n in names:
-                if n.startswith('xl/worksheets/sheet') and n.endswith('.xml'):
-                    sheet_path = n
-                    break
-            if sheet_path is None:
-                raise ValueError("No worksheet found in xlsx")
-
-            ss = {}
-            ss_path = 'xl/sharedStrings.xml'
-            if ss_path in names:
-                tree = ET.parse(zf.open(ss_path))
-                ns = '{http://schemas.openxmlformats.org/spreadsheetml/2006/main}'
-                for i, si in enumerate(tree.findall(f'.//{ns}si')):
-                    texts = si.findall(f'.//{ns}t')
-                    ss[str(i)] = ''.join(t.text or '' for t in texts)
-
-            ns = '{http://schemas.openxmlformats.org/spreadsheetml/2006/main}'
-            tree = ET.parse(zf.open(sheet_path))
-            rows_data = []
-            for row in tree.findall(f'.//{ns}row'):
-                cells = {}
-                for cell in row.findall(f'{ns}c'):
-                    ref = cell.get('r', '')
-                    col_letter = ''.join(c for c in ref if c.isalpha())
-                    cell_type = cell.get('t', '')
-                    val_el = cell.find(f'{ns}v')
-                    if val_el is not None and val_el.text is not None:
-                        val = val_el.text
-                        if cell_type == 's':
-                            val = ss.get(val, val)
-                        cells[col_letter] = val
-                    else:
-                        cells[col_letter] = None
-                if cells:
-                    rows_data.append(cells)
-
-        if not rows_data:
-            raise ValueError("Sheet is empty")
-
-        all_cols = set()
-        for r in rows_data:
-            all_cols.update(r.keys())
-        sorted_cols = sorted(all_cols, key=lambda c: [ord(ch) - 64 for ch in c])
-
-        df = pd.DataFrame()
-        for col in sorted_cols:
-            df[col] = [r.get(col) for r in rows_data]
-
-        df.columns = [str(df.iloc[0][c]) if pd.notna(df.iloc[0][c]) else c for c in df.columns]
-        df = df.iloc[1:].reset_index(drop=True)
-        return df
-
-    # ---------- CALL ----------
-    raw_ot = safe_read_excel(ot_bytes, "Fichier OT")
-    raw_av = safe_read_excel(av_bytes, "Fichier Avis")
-
+@st.cache_data(show_spinner=False)
+def prepare_data(ot_bytes, av_bytes, date_str):
+    raw_ot = read_excel_safe(ot_bytes)       # ← remplacé
+    raw_av = read_excel_safe(av_bytes)       # ← remplacé
     raw_ot = excr(raw_ot)
     raw_av = excr(raw_av)
     
+    # ... le reste de la fonction reste IDENTIQUE ...
     for c in ["Créé le","Date de début planifiée","Date de clôture","Début réel","Fin réelle"]:
         if c in raw_ot.columns: raw_ot[c]=pd.to_datetime(raw_ot[c],errors="coerce")
     for c in ["Créé le","Début souhaité","Date de la clôture"]:
