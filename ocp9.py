@@ -840,7 +840,7 @@ def main():
             "OT CONFIME":res['ot_confime']["OT CONFIME"],"OT_COR_EGAL":res['ot_cor_egal']["OT_COR_EGAL"],
             "OT Fiabilité":fiab_s,"Total Avis de Panne":avpan_s
         })
-         
+      return res   
        #  =========================
 # ANOMALIES PERFORMANCE
 # =========================
@@ -886,7 +886,7 @@ def main():
            res["anomalies_qual"]["OT Fiabilité"] = 0
 
            res["anomalies_qual"]["Total Avis de Panne"] = 0
-           return res
+           
 # PAGE PERFORMANCE
 st.subheader("Nombre d'anomalies par KPI et Poste")
 st.dataframe(kpi_res["anomalies_perf"], use_container_width=True)
