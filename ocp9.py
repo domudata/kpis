@@ -1646,14 +1646,14 @@ def main():
             with tabs[1]:
                 st.markdown('<div class="stl p">Detail des indicateurs de Performance</div>',unsafe_allow_html=True)
                 st.markdown(html_table(prows,pcols,"pt",["Score Performance"]),unsafe_allow_html=True)
-                st.markdown("### Nombre d'anomalies par KPI et Poste"); st.dataframe(res["anomalies_perf"].reset_index().rename(columns={"index":"Poste de travail"}), use_container_width=True, hide_index=True)
+                st.markdown("### Nombre d'anomalies par KPI et Poste"); ano_perf=res["anomalies_perf"].copy(); ano_perf["Score Anomalies"]=ano_perf.apply(lambda r: round((r.eq(0).sum()/len(r))*100,1),axis=1); ano_perf.loc["Total général"]=ano_perf.sum(numeric_only=True); st.dataframe(ano_perf.style.map(cs,subset=["Score Anomalies"]).map(kas,subset=[c for c in ano_perf.columns if c!="Score Anomalies"]),use_container_width=True)
                 st.markdown('<div class="stl a">Actions recommandees — Performance</div>',unsafe_allow_html=True)
                 st.markdown(html_actions_table(QK,pa,CIBLE,ACT_MAP),unsafe_allow_html=True)
 
             with tabs[2]:
                 st.markdown('<div class="stl q">Detail des indicateurs de Qualite</div>',unsafe_allow_html=True)
                 st.markdown(html_table(qrows,qcols,"qt",["Score Qualite"]),unsafe_allow_html=True)
-                st.markdown("### Nombre d'anomalies par KPI et Poste"); st.dataframe(res["anomalies_qual"].reset_index().rename(columns={"index":"Poste de travail"}), use_container_width=True, hide_index=True)
+                st.markdown("### Nombre d'anomalies par KPI et Poste"); ano_perf=res["anomalies_perf"].copy(); ano_perf["Score Anomalies"]=ano_perf.apply(lambda r: round((r.eq(0).sum()/len(r))*100,1),axis=1); ano_perf.loc["Total général"]=ano_perf.sum(numeric_only=True); st.dataframe(ano_perf.style.map(cs,subset=["Score Anomalies"]).map(kas,subset=[c for c in ano_perf.columns if c!="Score Anomalies"]),use_container_width=True)
                 
                 st.markdown('<div class="stl a">Actions recommandees — Qualite</div>',unsafe_allow_html=True)
                 st.markdown(html_actions_table(PK,qa,CIBLE,ACT_MAP),unsafe_allow_html=True)
