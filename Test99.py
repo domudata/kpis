@@ -795,6 +795,85 @@ def main():
             "OT CONFIME":res['ot_confime']["OT CONFIME"],"OT_COR_EGAL":res['ot_cor_egal']["OT_COR_EGAL"],
             "OT Fiabilité":fiab_s,"Total Avis de Panne":avpan_s
         })
+          # =========================
+# TABLEAU ANOMALIES KPI
+# =========================
+
+anom_perf=[]
+anom_qual=[]
+
+for poste in posts:
+
+    rp={"Poste de travail":poste}
+    rq={"Poste de travail":poste}
+
+    rp["TAUX_REALISATION_CORRECTIF/PT"]=len(
+        df[
+            (df["Poste travail princ."]==poste)
+            &(df["Contient SOPL"]==1)
+            &(~df["Statut OT"].isin(["CLOT","TCLO"]))
+        ]
+    )
+
+    rp["OT préparation <1 mois"]=len(
+        df[
+            (df["Poste travail princ."]==poste)
+            &(df["Statut OT"]=="CRÉÉ")
+            &(df["ap"]!="<1 mois")
+        ]
+    )
+
+    rp["OT préparation >3 mois"]=len(
+        df[
+            (df["Poste travail princ."]==poste)
+            &(df["Statut OT"]=="CRÉÉ")
+            &(df["ap"]==">3 mois")
+        ]
+    )
+
+    rq["Taux d'approbation des Avis"]=len(
+        avf[
+            (avf["Poste travail princ."]==poste)
+            &(~avf["Statut utilisateur"].isin(["APRV","APRV AVAU"]))
+        ]
+    )
+
+    rq["OT LANC ESTIME"]=len(
+        df[
+            (df["Poste travail princ."]==poste)
+            &(df["OT LANC ESTIME"]=="NON")
+        ]
+    )
+
+    rq["Backlog préparation caractérisé"]=len(
+        df[
+            (df["Poste travail princ."]==poste)
+            &(df["Backlog preparation"]=="NON CARACTERISE")
+        ]
+    )
+
+    rq["Backlog planification caractérisé"]=len(
+        df[
+            (df["Poste travail princ."]==poste)
+            &(df["Backlog planification"]=="NON CARACTERISE")
+        ]
+    )
+
+    rq["OT CONFIME"]=len(
+        df[
+            (df["Poste travail princ."]==poste)
+            &(df["OT CONFIME"]=="NON")
+        ]
+    )
+
+    rp["Total Anomalies"]=sum(v for k,v in rp.items() if k!="Poste de travail")
+    rq["Total Anomalies"]=sum(v for k,v in rq.items() if k!="Poste de travail")
+
+    anom_perf.append(rp)
+    anom_qual.append(rq)
+
+res["anom_perf"]=pd.DataFrame(anom_perf)
+res["anom_qual"]=pd.DataFrame(anom_qual)
         return res
 
     def get_bar_color(kpi, val):
@@ -1518,6 +1597,8 @@ def main():
                 st.markdown('<div class="stl p">Detail des indicateurs de Performance</div>',unsafe_allow_html=True)
                 st.markdown(html_table(prows,pcols,"pt",["Score Performance"]),unsafe_allow_html=True)
                 st.markdown('<div class="stl a">Nombre d\'anomalies par KPI et Poste (à traiter pour atteindre 100%)</div>',unsafe_allow_html=True)
+                st.subheader("Nombre d'anomalies par KPI et Poste")
+                st.dataframe(kpis["anom_perf"],use_container_width=True)
                 st.markdown(html_anomaly_table(ano_p_rows,ano_p_cols,"at"),unsafe_allow_html=True)
                 st.markdown('<div class="stl a">Actions recommandees — Performance</div>',unsafe_allow_html=True)
                 st.markdown(html_actions_table(QK,pa,CIBLE,ACT_MAP),unsafe_allow_html=True)
