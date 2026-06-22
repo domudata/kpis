@@ -1529,7 +1529,7 @@ def main():
 
             logo_b64 = get_logo_base64()
             if logo_b64:
-                st.markdown('<div class="mh"><img src="data:image/png;base64,%s" class="logo" alt="Logo"><h1>Tableau de Bord KPIs Performance & Qualite</h1><span class="db">📅 18/06/2026</span></div>'%logo_b64,unsafe_allow_html=True)
+               st.markdown(f'<div class="mh"><img src="data:image/png;base64,{logo_b64}" class="logo" alt="Logo"><h1>Tableau de Bord KPIs Performance & Qualite</h1><span class="db">📅 {fichier_date}</span></div>', unsafe_allow_html=True)
             else:
                 st.markdown('<div class="mh"><h1>Tableau de Bord KPIs Performance & Qualite</h1><span class="db">📅 18/06/2026</span></div>',unsafe_allow_html=True)
             
