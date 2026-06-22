@@ -1646,27 +1646,15 @@ def main():
             with tabs[1]:
                 st.markdown('<div class="stl p">Detail des indicateurs de Performance</div>',unsafe_allow_html=True)
                 st.markdown(html_table(prows,pcols,"pt",["Score Performance"]),unsafe_allow_html=True)
-                st.markdown("### Nombre d'anomalies par KPI et Poste")
-
-df_ano_perf = res["anomalies_perf"].reset_index()
-
-df_ano_perf = df_ano_perf.rename(
-    columns={"index": "Poste de travail"}
-)
-
-st.dataframe(
-    df_ano_perf,
-    use_container_width=True,
-    hide_index=True
-)
+                st.markdown("### Nombre d'anomalies par KPI et Poste"); st.dataframe(res["anomalies_perf"].reset_index().rename(columns={"index":"Poste de travail"}), use_container_width=True, hide_index=True)
                 st.markdown('<div class="stl a">Actions recommandees — Performance</div>',unsafe_allow_html=True)
                 st.markdown(html_actions_table(QK,pa,CIBLE,ACT_MAP),unsafe_allow_html=True)
 
             with tabs[2]:
                 st.markdown('<div class="stl q">Detail des indicateurs de Qualite</div>',unsafe_allow_html=True)
                 st.markdown(html_table(qrows,qcols,"qt",["Score Qualite"]),unsafe_allow_html=True)
-                st.markdown('<div class="stl a">Nombre d\'anomalies par KPI et Poste (à traiter pour atteindre 100%)</div>',unsafe_allow_html=True)
-                st.markdown(html_anomaly_table(ano_q_rows,ano_q_cols,"at"),unsafe_allow_html=True)
+                st.markdown("### Nombre d'anomalies par KPI et Poste"); st.dataframe(res["anomalies_qual"].reset_index().rename(columns={"index":"Poste de travail"}), use_container_width=True, hide_index=True)
+                
                 st.markdown('<div class="stl a">Actions recommandees — Qualite</div>',unsafe_allow_html=True)
                 st.markdown(html_actions_table(PK,qa,CIBLE,ACT_MAP),unsafe_allow_html=True)
 
