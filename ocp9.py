@@ -133,7 +133,7 @@ def get_date_from_file():
         try:
             with open("date.txt","r",encoding="utf-8") as f: return f.read().strip()
         except Exception: pass
-    return "18/06/2026"
+    return pd.Timestamp.today().strftime("%d/%m/%Y")
 
 def contient_mot(t,lm):
     t=str(t); return any(m in t for l in lm for m in l.split())
@@ -201,9 +201,8 @@ def prepare_data(ot_bytes, av_bytes, date_str):
     for c in ["Créé le","Début souhaité","Date de la clôture"]:
         if c in raw_av.columns: raw_av[c]=pd.to_datetime(raw_av[c],errors="coerce")
         
-    now_ts = pd.to_datetime(date_str, format="%d/%m/%Y", errors='coerce')
-    if pd.isna(now_ts): now_ts = pd.Timestamp.now()
-    
+   
+    now_ts = pd.Timestamp.today()
     df = raw_ot.copy()
     
     df["Backlog preparation"]=np.where(df["Statut utilisateur"].apply(lambda x:contient_mot(x,MP_KW)),"CARACTERISE","NON CARACTERISE")
@@ -768,7 +767,13 @@ def main():
         an["TOTAL_OT"]=an[["CLOT","CRÉÉ","LANC","TCLO"]].sum(axis=1)
         an["TAUX_REALISATION_CORRECTIF/PT"]=np.where(an["TOTAL_OT"]==0,100.0,ckpi(an["OT_CLOTURES"],an["TOTAL_OT"]))
         
-        pr=cpiv(df,(df["Statut OT"]=="CRÉÉ")&(df["Statut utilisateur"].str.contains("CRPR",na=False)),"ap",posts)
+        pr = cpiv(
+    df,
+    (df["Statut OT"]=="CRÉÉ") &
+    (df["Statut utilisateur"].str.contains(r"\bCRPR\b", case=False, na=False)),
+    "ap",
+    posts
+)
         for c in ["<1 mois",">3 mois","1 mois < <3 mois","Inconnu"]: pr[c]=pr.get(c,0)
         pr["Total"]=pr[["<1 mois","1 mois < <3 mois",">3 mois","Inconnu"]].sum(axis=1)
         pr["OT préparation <1 mois"]=ckpi(pr["<1 mois"],pr["Total"]); pr["OT préparation >3 mois"]=ckpi(pr[">3 mois"],pr["Total"],0); pr["OT préparation 1mois< <3mois"]=ckpi(pr["1 mois < <3 mois"],pr["Total"],0)
@@ -1530,7 +1535,7 @@ def main():
 
             logo_b64 = get_logo_base64()
             if logo_b64:
-                st.markdown('<div class="mh"><img src="data:image/png;base64,%s" class="logo" alt="Logo"><h1>Tableau de Bord KPIs Performance & Qualite</h1><span class="db">📅 18/06/2026</span></div>'%logo_b64,unsafe_allow_html=True)
+               st.markdown(f'<div class="mh"><img src="data:image/png;base64,{logo_b64}" class="logo" alt="Logo"><h1>Tableau de Bord KPIs Performance & Qualite</h1><span class="db">📅 {fichier_date}</span></div>', unsafe_allow_html=True)
             else:
                 st.markdown('<div class="mh"><h1>Tableau de Bord KPIs Performance & Qualite</h1><span class="db">📅 18/06/2026</span></div>',unsafe_allow_html=True)
             
