@@ -133,7 +133,7 @@ def get_date_from_file():
         try:
             with open("date.txt","r",encoding="utf-8") as f: return f.read().strip()
         except Exception: pass
-    return "18/06/2026"
+    return pd.Timestamp.today().strftime("%d/%m/%Y")
 
 def contient_mot(t,lm):
     t=str(t); return any(m in t for l in lm for m in l.split())
