@@ -167,10 +167,14 @@ def prepare_data(ot_bytes, av_bytes, date_str):
     now_ts = pd.Timestamp.today()
     df = raw_ot.copy()
     
-    df["Backlog preparation"]=np.where(df["Statut utilisateur"].fillna("").astype(str).apply(lambda x:contient_mot(x,MP_KW)),"CARACTERISE","NON CARACTERISE")
-    df["Backlog planification"]=np.where(df["Statut utilisateur"].fillna("").astype(str).apply(lambda x:contient_mot(x,MPLAN_KW)),"CARACTERISE","NON CARACTERISE")
-    df["Type Carac Prep"]=df["Statut utilisateur"].fillna("").astype(str).apply(lambda x: next((kw.split()[0] for kw in MP_KW if kw in str(x)), "NON CARACTERISE"))
-    df["Type Carac Plan"]=df["Statut utilisateur"].fillna("").astype(str).apply(lambda x: next((kw.split()[0] for kw in MPLAN_KW if kw in str(x)), "NON CARACTERISE"))
+    # Sécurisation anti-NaN ambigus
+    df["Statut utilisateur"] = df["Statut utilisateur"].fillna("").astype(str)
+    df["Statut système"] = df["Statut système"].fillna("").astype(str)
+    
+    df["Backlog preparation"]=np.where(df["Statut utilisateur"].apply(lambda x:contient_mot(x,MP_KW)),"CARACTERISE","NON CARACTERISE")
+    df["Backlog planification"]=np.where(df["Statut utilisateur"].apply(lambda x:contient_mot(x,MPLAN_KW)),"CARACTERISE","NON CARACTERISE")
+    df["Type Carac Prep"]=df["Statut utilisateur"].apply(lambda x: next((kw.split()[0] for kw in MP_KW if kw in str(x)), "NON CARACTERISE"))
+    df["Type Carac Plan"]=df["Statut utilisateur"].apply(lambda x: next((kw.split()[0] for kw in MPLAN_KW if kw in str(x)), "NON CARACTERISE"))
     
     for dc,am,ac in [('Créé le',"amp","ap"),('Date de début planifiée',"amlp","alp"),('Date de début planifiée',"amex","aex")]:
         if dc in df.columns:
@@ -178,13 +182,13 @@ def prepare_data(ot_bytes, av_bytes, date_str):
             df[ac]=df[am].apply(cat_age)
         else: df[am]=np.nan; df[ac]="Inconnu"
         
-    df["OT CONFIME"]=np.where(df["Statut système"].fillna("").astype(str).str.contains("CLOT|TCLO",na=False) & df["Statut système"].fillna("").astype(str).str.contains("CONF",na=False),"OUI","NON")
-    df["Contient SOPL"]=df["Statut utilisateur"].fillna("").astype(str).str.contains("SOPL",na=False).map({True:1,False:0})
+    df["OT CONFIME"]=np.where(df["Statut système"].str.contains("CLOT|TCLO",na=False) & df["Statut système"].str.contains("CONF",na=False),"OUI","NON")
+    df["Contient SOPL"]=df["Statut utilisateur"].str.contains("SOPL",na=False).map({True:1,False:0})
     df["OT LANC ESTIME"]=np.where(df["Total coûts budgétés"].fillna(0)==0,"NON","OUI")
     df["OT_COR_EGAL"]=np.where((df["Total coûts budgétés"].fillna(0)-df["Total coûts réels"].fillna(0))==0,"OUI","NON")
     df["_tw_num"]=pd.to_numeric(df.get("Type de travail",pd.Series(dtype=float)),errors="coerce")
     
-    if "Statut système" in df.columns: df["Statut OT"]=df["Statut système"].fillna("").astype(str).str.strip().str.split().str[0]
+    if "Statut système" in df.columns: df["Statut OT"]=df["Statut système"].str.strip().str.split().str[0]
     else: df["Statut OT"] = ""
     
     avf = raw_av[(raw_av["Ordre"].isna() | (raw_av["Ordre"].astype(str).str.strip() == "")) & (raw_av["Type d'avis"].isin(["ZU","Z4","ZR","ZP"]))].copy()
@@ -282,15 +286,6 @@ def generate_journal(var_df):
     j=var_df.copy(); j["Significatif"]=j["Ecart %"].abs()>=5
     return j[j["Significatif"]].copy().sort_values(["Date actuelle","Ecart %"],ascending=[True,False])
 
-def calculate_rankings(var_df):
-    if var_df.empty: return pd.DataFrame(),pd.DataFrame()
-    scores={}
-    for poste in var_df["Poste"].unique():
-        pv=var_df[var_df["Poste"]==poste].copy()
-        scores[poste]=sum((-r["Ecart %"] if r["KPI"] in LOWER_BETTER else r["Ecart %"]) for _,r in pv.iterrows())
-    ranked=sorted(scores.items(),key=lambda x:x[1],reverse=True)
-    return pd.DataFrame(ranked[:5],columns=["Poste","Score variation"]),pd.DataFrame(ranked[-5:][::-1],columns=["Poste","Score variation"])
-
 def inject_custom_css():
     st.markdown("""<style>
     section[data-testid="stSidebar"]{width:250px!important}
@@ -338,7 +333,6 @@ def inject_custom_css():
     .es{text-align:center;padding:14px;color:#64748b;font-size:14px}
     [data-testid="stHeaderActionElements"]{display:none !important;}
     [data-testid="stActionButtonContainer"]{display:none !important;}
-    .footer {text-align: center;margin-top: 30px;padding: 15px;color: #64748b;font-size: 13px;border-top: 1px solid var(--border);font-weight: 600;}
     @media(max-width:768px){.cr{grid-template-columns:repeat(2,1fr)}.mh{padding:8px 10px;gap:8px}.mh h1{font-size:18px}.tw{font-size:10px}}
     @media print {section[data-testid="stSidebar"], header[data-testid="stHeader"], div[data-testid="stToolbar"], footer, .stDeployButton, #MainMenu { display: none !important; } .main .block-container { padding-top: 0 !important; max-width: 100% !important; } .stButton, .stDownloadButton { display: none !important; } * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }}
     </style>""",unsafe_allow_html=True)
@@ -400,13 +394,12 @@ def main():
         res['dfp']=df
         anom = {}
 
-        # Sécurisation des filtres pour éviter les NaN ambigus
-        is_cree = df["Statut OT"].fillna("").astype(str) == "CRÉÉ"
-        is_lanc = df["Statut OT"].fillna("").astype(str) == "LANC"
-        is_clos = df["Statut OT"].fillna("").astype(str).isin(["CLOT","TCLO"])
+        is_cree = df["Statut OT"] == "CRÉÉ"
+        is_lanc = df["Statut OT"] == "LANC"
+        is_clos = df["Statut OT"].isin(["CLOT","TCLO"])
         has_sopl = df["Contient SOPL"] == 1
-        has_crpr = df["Statut utilisateur"].fillna("").astype(str).str.contains(r"\bCRPR\b",case=False,na=False)
-        has_atpl = df["Statut utilisateur"].fillna("").astype(str).str.contains("ATPL",case=False,na=False)
+        has_crpr = df["Statut utilisateur"].str.contains(r"\bCRPR\b",case=False,na=False)
+        has_atpl = df["Statut utilisateur"].str.contains("ATPL",case=False,na=False)
 
         filt_corr = (df["Nº appel pl.entret."].fillna(0)==0) & has_sopl
         an=cpiv(df,filt_corr,"Statut OT",posts)
@@ -566,17 +559,19 @@ def main():
         h+='</tbody></table>'
         return h
 
-    # ================= LECTURE DIRECTE DEPUIS LE REPERTOIRE =================
-    ot_path = "OT.xlsx"
-    av_path = "avis.xlsx"
+    # ================= RECHERCHE AUTOMATIQUE DES FICHIERS =================
+    ot_path = next((f for f in os.listdir() if f.lower() == "ot.xlsx"), None)
+    av_path = next((f for f in os.listdir() if f.lower() == "avis.xlsx"), None)
 
     with st.sidebar:
         logo_b64 = get_logo_base64()
         if logo_b64:
             st.markdown(f'<div style="text-align:center;padding:10px 0"><img src="data:image/png;base64,{logo_b64}" class="logo" style="height:60px;width:auto"></div>', unsafe_allow_html=True)
         
-        if not os.path.exists(ot_path) or not os.path.exists(av_path):
-            st.error(f"Veuillez placer les fichiers **OT.xlsx** et **avis.xlsx** dans le répertoire : `{os.getcwd()}`")
+        if not ot_path or not av_path:
+            st.error("Fichiers introuvables. Vérifiez que vos fichiers s'appellent bien **OT.xlsx** et **avis.xlsx**.")
+            st.markdown(f"**Fichiers actuels dans `{os.getcwd()}` :**")
+            st.code("\n".join(os.listdir()))
             st.stop()
 
         try:
