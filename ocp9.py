@@ -1374,7 +1374,7 @@ def main():
 # ==============================================================
 # FONCTION POUR EXCLURE LES COMPRESSEURS
 # ==============================================================
-          def excr(df):
+           def excr(df):
     """Exclut les postes contenant 'compresseur' (insensible à la casse)"""
              if "Poste travail princ." in df.columns:
                 return df[
