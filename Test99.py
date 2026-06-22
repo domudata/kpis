@@ -148,6 +148,14 @@ def excr(df):
         return df[~df["Poste travail princ."].astype(str).str.contains("cresseur",case=False,na=False)].copy()
     return df
 
+def read_file_bytes(filepath):
+    """Lit un fichier binaire du répertoire et retourne les bytes."""
+    for p in [filepath, "./" + filepath, os.path.join("kpis", filepath)]:
+        if os.path.exists(p):
+            with open(p, "rb") as f:
+                return f.read()
+    return None
+
 @st.cache_data(show_spinner=False)
 def prepare_data(ot_bytes, av_bytes, date_str):
     raw_ot = pd.read_excel(io.BytesIO(ot_bytes))
@@ -426,12 +434,8 @@ def inject_custom_css():
     .car .caf{height:100%;border-radius:4px;transition:width .3s}
     
     .car .target-mark{
-        position:absolute;
-        top:-4px;
-        bottom:-4px;
-        width:3px;
-        background:var(--info) !important; 
-        z-index:20;
+        position:absolute;top:-4px;bottom:-4px;width:3px;
+        background:var(--info) !important; z-index:20;
         transform:translateX(-50%);
         box-shadow:0 0 6px rgba(59,130,246,.9),0 0 2px rgba(0,0,0,.4);
         border-radius:2px;
@@ -442,24 +446,11 @@ def inject_custom_css():
     .gbr:last-child{border:none}
     .gbr-l{width:160px;font-weight:600;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;padding-right:10px;}
     .gbr-g{display:flex;align-items:center;gap:4px;flex:1;position:relative}
-    .gbr-target{position:absolute;left:90%;top:-4px;bottom:-4px;width:3px;background:var(--primary) !important;z-index:10;box-shadow:0 0 6px rgba(30,58,95,.8);border-radius:2px}
-    .gbr-target-label{position:absolute;left:90%;top:-20px;transform:translateX(-50%);font-size:9px;font-weight:800;color:#fff;background:var(--primary) !important;padding:1px 5px;border-radius:3px;white-space:nowrap;z-index:11;box-shadow:0 1px 3px rgba(0,0,0,.2)}
     .gbr-w{flex:1;height:22px;background:#f1f5f9;border-radius:3px;overflow:hidden}
     .gbr-f{height:100%;border-radius:3px}
     .gbr-v{font-size:11px;font-weight:800;min-width:48px;text-align:right;color:#1e293b}
-    .gbr-legend{display:flex;gap:14px;margin-bottom:10px;font-size:12px;font-weight:700;align-items:center}
-    .gbr-legend span{display:flex;align-items:center;gap:5px}
-    .gbr-legend i{display:inline-block;width:14px;height:14px;border-radius:2px}
-    .gbr-legend .target-icon{display:inline-block;width:3px;height:14px;background:var(--primary) !important;border-radius:1px;box-shadow:0 0 3px rgba(30,58,95,.6)}
-    .cg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-    .cg>div{background:#fff;border-radius:var(--radius);padding:8px 10px;border:1px solid var(--border)}
-    .cg .ct{font-size:13px;font-weight:700;margin-bottom:4px;padding-bottom:3px;border-bottom:1px solid var(--border)}
-    .cgr{display:flex;align-items:center;padding:3px 0;font-size:12px;border-bottom:1px solid #f1f5f9}
-    .cgr:last-child{border:none}
-    .cgr .rk{width:18px;font-weight:800;text-align:center}
-    .cgr .pn{flex:1;font-weight:600;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .cgr .ps{font-weight:800;min-width:55px;text-align:right}
-    .dgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+    .es{text-align:center;padding:14px;color:#64748b;font-size:14px}
+    
     .stButton>button[kind="primary"]{background:linear-gradient(135deg,var(--primary),var(--primary-light));border:none;border-radius:6px;padding:8px 14px;font-weight:700;font-size:15px;width:100%}
     ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:#f1f1f1}::-webkit-scrollbar-thumb{background:#cbd5e0;border-radius:3px}
     
@@ -470,14 +461,6 @@ def inject_custom_css():
     div[data-testid="stSidebar"] .stSelectbox label,div[data-testid="stSidebar"] .stMultiSelect label,div[data-testid="stSidebar"] .stDateInput label,div[data-testid="stSidebar"] .stCheckbox label,div[data-testid="stSidebar"] .stTextInput label{color:rgba(255,255,255,.9)!important;font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.5px}
     div[data-testid="stSidebar"] div[data-testid="stWidget"]{background:rgba(255,255,255,.1);border-radius:6px;padding:5px 10px;margin-bottom:5px;border:1px solid rgba(255,255,255,.15)}
     div[data-testid="stSidebar"] .stSelectbox>div>div,div[data-testid="stSidebar"] .stMultiSelect>div>div,div[data-testid="stSidebar"] .stDateInput>div>div,div[data-testid="stSidebar"] .stTextInput>div>div{background:rgba(255,255,255,.95)!important;border-radius:5px}
-    
-    .es{text-align:center;padding:14px;color:#64748b;font-size:14px}
-    .synth-tbl{width:100%;border-collapse:collapse;font-family:'Inter',sans-serif;font-size:12px}
-    .synth-tbl thead th{background:var(--primary);color:#fff;font-weight:700;font-size:11px;padding:5px 8px;border:none;white-space:nowrap;position:sticky;top:0}
-    .synth-tbl tbody td{padding:4px 8px;border-bottom:1px solid var(--border);text-align:center;color:#1e293b !important}
-    .synth-tbl tbody tr:nth-child(even) td{background:#f8fafc}
-    .synth-tbl tbody tr:hover td{background:#eff6ff!important}
-    .synth-tbl .poste-cell{text-align:left;font-weight:700;white-space:nowrap;min-width:140px;color:#1e293b !important}
     
     [data-testid="stHeaderActionElements"]{display:none !important;}
     [data-testid="stActionButtonContainer"]{display:none !important;}
@@ -500,13 +483,6 @@ def inject_custom_css():
         white-space: normal !important;
         word-wrap: break-word !important;
     }
-    div[data-testid="stDataEditor"] [data-testid="stMarkdownContainer"] {
-        font-size: 18px !important;
-    }
-    div[data-testid="stDataEditor"] [data-testid="stTable"] {
-        overflow-x: hidden !important;
-        width: 100% !important;
-    }
 
     @media(max-width:768px){
         .cr{grid-template-columns:repeat(2,1fr)}
@@ -515,21 +491,11 @@ def inject_custom_css():
         .mh .logo{height:35px;max-width:70px}
         .mh .db{font-size:11px;padding:2px 8px}
         .cg,.dgrid{grid-template-columns:1fr}
-        .car{flex-wrap:wrap;gap:2px}
-        .car .cal{width:100%;text-align:left;padding-right:0;margin-bottom:2px}
-        .car .cab{flex:1 1 70%}
-        .car .cav-out,.car .cav-tgt{flex:1 1 15%;min-width:40px}
-        .gbr{flex-direction:column;align-items:flex-start;gap:4px}
-        .gbr-l{width:100%;margin-bottom:2px}
-        .gbr-g{width:100%;flex-wrap:wrap}
-        .gbr-w{flex:1 1 45%}
-        .gbr-v{flex:1 1 10%;min-width:40px}
         .tw{font-size:10px}
         .tw thead th,.tw tbody td{padding:3px 4px}
         .stl{font-size:13px}
         .stTabs [data-baseweb="tab"]{padding:8px 12px;font-size:15px}
         .stTabs [data-baseweb="tab"] span{font-size:16px !important}
-        div[data-testid="stDataEditor"] table, div[data-testid="stDataEditor"] th, div[data-testid="stDataEditor"] td { font-size: 14px !important; }
     }
     
     @media print {
@@ -537,21 +503,11 @@ def inject_custom_css():
         header[data-testid="stHeader"], 
         div[data-testid="stToolbar"], 
         div[data-testid="stHeaderActionElements"],
-        footer, 
-        .stDeployButton, 
-        #MainMenu { display: none !important; }
-        .main .block-container { 
-            padding-top: 0 !important; 
-            padding-left: 0 !important; 
-            padding-right: 0 !important; 
-            max-width: 100% !important; 
-        }
+        footer, .stDeployButton, #MainMenu { display: none !important; }
+        .main .block-container { padding-top:0!important;padding-left:0!important;padding-right:0!important;max-width:100%!important; }
         .stButton, .stDownloadButton { display: none !important; }
-        * {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
-        .tw, .synth-tbl { page-break-inside: avoid; overflow: visible !important; }
+        * { -webkit-print-color-adjust:exact!important;print-color-adjust:exact!important; }
+        .tw { page-break-inside:avoid;overflow:visible!important; }
     }
     </style>""",unsafe_allow_html=True)
 
@@ -581,14 +537,6 @@ def main():
     
     def cpiv(df,f,c,p):
         return pd.pivot_table(df[f],index="Poste travail princ.",columns=c,values="Ordre",aggfunc="count",fill_value=0).reindex(p,fill_value=0)
-        
-    def get_text_col(df):
-        for c in ["Désignation","Designation","Désignation OT","Texte ordre","Texte","Description","Libellé","Libelle"]:
-            if c in df.columns: return c
-        for c in df.columns:
-            if df[c].dtype=='object' and any(kw in str(c).lower() for kw in ['sign','text','desc','libell']):
-                return c
-        return None
         
     def build_statut_pivot(df_sub, posts):
         if df_sub.empty:
@@ -627,124 +575,72 @@ def main():
         global_counts = global_counts[global_counts > 0]
         realised = global_counts.get("CLOT", 0) + global_counts.get("TCLO", 0)
         not_realised = global_counts.sum() - realised
-        
         if global_counts.empty:
             st.markdown('<div class="es">Aucune donnee</div>', unsafe_allow_html=True)
             return
-            
         colors = ["#8b5cf6", "#f59e0b", "#10b981", "#3b82f6"]
         fig = make_subplots(rows=1, cols=2, specs=[[{"type":"domain"},{"type":"domain"}]], 
                             subplot_titles=(f"{title_prefix} — Par Statut OT", f"{title_prefix} — Réalisés vs Non Réalisés"))
-        
         fig.add_trace(go.Pie(labels=global_counts.index, values=global_counts.values, hole=0.4, 
-                             textinfo='percent+label', 
-                             texttemplate='%{label}<br>%{percent:.1%}<br>(%{value})', 
-                             textposition='inside',
-                             insidetextorientation='radial',
+                             textinfo='percent+label', texttemplate='%{label}<br>%{percent:.1%}<br>(%{value})', 
+                             textposition='inside', insidetextorientation='radial',
                              textfont=dict(size=14, color='white', family='Inter, sans-serif'),
                              marker=dict(colors=colors, line=dict(color='#FFFFFF', width=3))), 1, 1)
-                             
         pie2_data = pd.Series([realised, not_realised], index=["Réalisés (CLOT+TCLO)", "Non Réalisés"])
-        
         fig.add_trace(go.Pie(labels=pie2_data.index, values=pie2_data.values, hole=0.5, 
-                             textinfo='percent+label', 
-                             texttemplate='%{label}<br>%{percent:.1%}<br>(%{value})', 
-                             textposition='inside',
-                             insidetextorientation='radial',
+                             textinfo='percent+label', texttemplate='%{label}<br>%{percent:.1%}<br>(%{value})', 
+                             textposition='inside', insidetextorientation='radial',
                              textfont=dict(size=14, color='white', family='Inter, sans-serif'),
                              marker=dict(colors=["#10b981", "#8b5cf6"], line=dict(color='#FFFFFF', width=3))), 1, 2)
-                             
         fig.update_layout(margin=dict(t=80, b=20, l=20, r=20), height=450, 
                           legend=dict(orientation="h", yanchor="bottom", y=-0.12, x=0.5, xanchor="center"))
-                          
         st.plotly_chart(fig, use_container_width=True)
 
     def show_simple_pie(piv_df, title, keep_non_carac=False):
         if not keep_non_carac and "NON CARACTERISE" in piv_df.columns:
             piv_df = piv_df.drop(columns=["NON CARACTERISE"])
-            
         counts = piv_df.sum()
         counts = counts[counts > 0]
-        
         if counts.empty:
             st.markdown('<div class="es">Aucune donnee</div>', unsafe_allow_html=True)
             return
-            
         color_map = {"CARACTERISE": "#10b981", "NON CARACTERISE": "#f97316"}
-        type_palette = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#14b8a6', '#6366f1', '#0ea5e9', '#d946ef', '#a855f7']
-        
+        type_palette = ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#06b6d4','#14b8a6','#6366f1','#0ea5e9','#d946ef','#a855f7']
         colors = []
         palette_idx = 0
         for c in counts.index:
             c_str = str(c)
-            if c_str in color_map:
-                colors.append(color_map[c_str])
-            else:
-                colors.append(type_palette[palette_idx % len(type_palette)])
-                palette_idx += 1
-        
+            if c_str in color_map: colors.append(color_map[c_str])
+            else: colors.append(type_palette[palette_idx % len(type_palette)]); palette_idx += 1
         total_sum = counts.sum()
         pull_list = [0.05 if (v/total_sum)*100 < 10 else 0 for v in counts.values]
-        
-        fig = go.Figure(
-            go.Pie(
-                labels=counts.index,
-                values=counts.values,
-                hole=0.4,
-                sort=False,
-                textinfo="percent",
-                textposition="outside",
-                pull=pull_list,
-                marker=dict(
-                    colors=colors,
-                    line=dict(color="white", width=2)
-                )
-            )
-        )
-
-        fig.update_traces(
-            hovertemplate="<b>%{label}</b><br>Nombre : %{value}<br>Pourcentage : %{percent}<extra></extra>",
-            textfont=dict(size=13, family='Inter, sans-serif')
-        )
-
-        fig.update_layout(
-            title=dict(text=title, x=0.5, xanchor='center', font=dict(size=16)), 
-            height=500, 
-            showlegend=True,
-            legend=dict(orientation="h", yanchor="bottom", y=-0.15, x=0.5, xanchor="center"),
-            margin=dict(t=80, b=80, l=40, r=40)
-        )
-                          
+        fig = go.Figure(go.Pie(labels=counts.index, values=counts.values, hole=0.4, sort=False,
+                             textinfo="percent", textposition="outside", pull=pull_list,
+                             marker=dict(colors=colors, line=dict(color="white", width=2))))
+        fig.update_traces(hovertemplate="<b>%{label}</b><br>Nombre : %{value}<br>Pourcentage : %{percent}<extra></extra>",
+                          textfont=dict(size=13, family='Inter, sans-serif'))
+        fig.update_layout(title=dict(text=title, x=0.5, xanchor='center', font=dict(size=16)), 
+                          height=500, showlegend=True,
+                          legend=dict(orientation="h", yanchor="bottom", y=-0.15, x=0.5, xanchor="center"),
+                          margin=dict(t=80, b=80, l=40, r=40))
         st.plotly_chart(fig, use_container_width=True)
 
     # ======================================================================
-    # NOUVEAU FILTRE D'ANOMALIE : basé sur CIBLE et LOWER_BETTER
+    # NOUVEAU FILTRE D'ANOMALIE
     # ======================================================================
     def is_anomaly(kpi_name, value):
-        """
-        Nouveau filtre : un KPI est en anomalie s'il n'atteint pas sa cible.
-        - Pour les KPI LOWER_BETTER : anomalie si valeur > cible
-        - Pour les autres KPI : anomalie si valeur < cible
-        """
         target = CIBLE.get(kpi_name, 100)
-        try:
-            v = float(value)
-        except (ValueError, TypeError):
-            return False
+        try: v = float(value)
+        except (ValueError, TypeError): return False
         if kpi_name in LOWER_BETTER:
             return v > target
         else:
             return v < target
 
     def build_anomalies_table(ckdf, kpi_list, posts):
-        """
-        Construit la matrice d'anomalies pour une liste de KPIs et postes donnés.
-        Retourne un DataFrame avec 1=anomalie, 0=OK.
-        """
         anom_matrix = pd.DataFrame(index=posts, columns=kpi_list, data=0)
         for kpi in kpi_list:
-            if kpi not in ckdf.columns:
-                continue
+            if kpi not in ckdf.columns: continue
             for poste in posts:
                 if poste in ckdf.index:
                     val = ckdf.loc[poste, kpi]
@@ -752,23 +648,16 @@ def main():
                         anom_matrix.loc[poste, kpi] = 1
         return anom_matrix.astype(int)
 
-    def html_anomalies_heatmap(anom_matrix, kpi_list, section_label, table_class):
-        """
-        Génère un tableau HTML heatmap des anomalies par KPI et Poste.
-        1 = cellule rouge foncé (anomalie), 0 = cellule verte clair (OK)
-        Avec totaux par ligne et par colonne.
-        """
+    def html_anomalies_heatmap(anom_matrix, kpi_list, table_class):
         h = '<table class="tw %s"><thead><tr>' % table_class
         h += '<th>Poste de travail</th>'
         for kpi in kpi_list:
-            short = kpi.replace("OT préparation ", "Prép ").replace("OT planification ", "Plan ").replace("OT exécution ", "Exéc ")
-            short = short.replace("1mois< <3mois", "1-3m").replace("Performance ", "Perf ")
+            short = kpi.replace("OT préparation ","Prép ").replace("OT planification ","Plan ").replace("OT exécution ","Exéc ")
+            short = short.replace("1mois< <3mois","1-3m").replace("Performance ","Perf ")
             h += '<th style="font-size:10px;writing-mode:vertical-rl;text-orientation:mixed;max-width:30px;padding:8px 3px;">%s</th>' % short
         h += '<th>Nb Anomalies</th></tr></thead><tbody>'
-        
         total_par_kpi = {kpi: 0 for kpi in kpi_list}
         total_anomalies_global = 0
-        
         for poste in anom_matrix.index:
             h += '<tr><td style="font-weight:700;white-space:nowrap;font-size:11px;">%s</td>' % poste
             nb_ano_poste = 0
@@ -781,57 +670,82 @@ def main():
                     total_anomalies_global += 1
                 else:
                     h += '<td style="text-align:center;background:#d1fae5;color:#065f46;font-size:12px;">&#10003;</td>'
-            # Style du nombre d'anomalies par poste
-            if nb_ano_poste == 0:
-                style = "background:#d1fae5;color:#065f46;font-weight:800;"
-            elif nb_ano_poste <= 2:
-                style = "background:#fef3c7;color:#92400e;font-weight:800;"
-            else:
-                style = "background:#dc2626;color:#fff;font-weight:800;"
+            if nb_ano_poste == 0: style = "background:#d1fae5;color:#065f46;font-weight:800;"
+            elif nb_ano_poste <= 2: style = "background:#fef3c7;color:#92400e;font-weight:800;"
+            else: style = "background:#dc2626;color:#fff;font-weight:800;"
             h += '<td style="text-align:center;%s">%d</td>' % (style, nb_ano_poste)
             h += '</tr>'
-        
-        # Ligne totaux par KPI
         h += '<tr style="background:#1e3a5f;"><td style="font-weight:800;color:#fff;">Nb Anomalies</td>'
         for kpi in kpi_list:
             v = total_par_kpi[kpi]
-            if v == 0:
-                h += '<td style="text-align:center;color:#d1fae5;font-weight:800;">%d</td>' % v
-            else:
-                h += '<td style="text-align:center;color:#fbbf24;font-weight:800;">%d</td>' % v
+            if v == 0: h += '<td style="text-align:center;color:#d1fae5;font-weight:800;">%d</td>' % v
+            else: h += '<td style="text-align:center;color:#fbbf24;font-weight:800;">%d</td>' % v
         h += '<td style="text-align:center;color:#fbbf24;font-weight:900;font-size:15px;">%d</td>' % total_anomalies_global
         h += '</tr></tbody></table>'
         return h, total_par_kpi, total_anomalies_global
 
     def html_anomalies_detail(anom_matrix, ckdf, kpi_list, posts):
-        """
-        Génère un tableau détaillé des anomalies avec valeur réelle, cible, écart et responsable.
-        Une ligne par anomalie détectée.
-        """
         rows = []
         for poste in posts:
             for kpi in kpi_list:
-                if kpi not in ckdf.columns:
-                    continue
+                if kpi not in ckdf.columns: continue
                 if int(anom_matrix.loc[poste, kpi]) == 1:
                     val = float(ckdf.loc[poste, kpi])
                     cible = CIBLE.get(kpi, 100)
-                    if kpi in LOWER_BETTER:
-                        ecart = val - cible
-                    else:
-                        ecart = cible - val
+                    if kpi in LOWER_BETTER: ecart = val - cible
+                    else: ecart = cible - val
                     resp = KPI_RESP_MAP.get(kpi, "")
                     action = ACT_MAP.get(kpi, "")
                     rows.append({
-                        "Poste de travail": poste,
-                        "KPI": kpi,
-                        "Valeur (%)": round(val, 1),
-                        "Cible (%)": cible,
+                        "Poste de travail": poste, "KPI": kpi,
+                        "Valeur (%)": round(val, 1), "Cible (%)": cible,
                         "Ecart (pts)": round(ecart, 1),
-                        "Responsable": resp,
-                        "Action corrective": action
+                        "Responsable": resp, "Action corrective": action
                     })
         return rows
+
+    # ======================================================================
+    # FONCTION DE SCORE CORRIGEE : utilise la cible INDIVIDUELLE par KPI
+    # ======================================================================
+    def calc_section_score(ckdf, kpi_list, posts):
+        """Calcule le score moyen d'une section (perf ou qualite).
+        Pour chaque (poste, kpi): score = min(100, val/cible*100) pour KPI normal,
+        ou max(0, (cible-val)/cible*100) pour LOWER_BETTER.
+        Si val >= cible (ou val <= cible pour LOWER_BETTER), score = 100.
+        """
+        all_scores = []
+        for kpi in kpi_list:
+            if kpi not in ckdf.columns: continue
+            target = CIBLE.get(kpi, 100)
+            for poste in posts:
+                if poste not in ckdf.index: continue
+                try: val = float(ckdf.loc[poste, kpi])
+                except (ValueError, TypeError): continue
+                if target == 0:
+                    all_scores.append(100.0)
+                    continue
+                if kpi in LOWER_BETTER:
+                    if val <= target: s = 100.0
+                    else: s = max(0.0, (target - val) / target * 100.0)
+                else:
+                    if val >= target: s = 100.0
+                    else: s = min(100.0, val / target * 100.0)
+                all_scores.append(s)
+        return float(np.mean(all_scores)) if all_scores else 0.0
+
+    def calc_poste_score(ckdf, kpi, poste):
+        """Score pour un seul (poste, kpi)."""
+        if kpi not in ckdf.columns or poste not in ckdf.index: return 0.0
+        target = CIBLE.get(kpi, 100)
+        try: val = float(ckdf.loc[poste, kpi])
+        except (ValueError, TypeError): return 0.0
+        if target == 0: return 100.0
+        if kpi in LOWER_BETTER:
+            if val <= target: return 100.0
+            else: return max(0.0, (target - val) / target * 100.0)
+        else:
+            if val >= target: return 100.0
+            else: return min(100.0, val / target * 100.0)
 
     # ======================================================================
 
@@ -985,8 +899,8 @@ def main():
         if show_score: cols.append("Score")
         h = '<table class="tw %s"><thead><tr>' % table_class
         for c in cols:
-            short = c.replace("OT préparation ", "Prép ").replace("OT planification ", "Plan ").replace("OT exécution ", "Exéc ")
-            short = short.replace("1mois< <3mois", "1-3m").replace("Performance ", "Perf ")
+            short = c.replace("OT préparation ","Prép ").replace("OT planification ","Plan ").replace("OT exécution ","Exéc ")
+            short = short.replace("1mois< <3mois","1-3m").replace("Performance ","Perf ")
             h += '<th style="font-size:10px;">%s</th>' % short
         h += '</tr></thead><tbody>'
         for poste in posts:
@@ -998,14 +912,7 @@ def main():
                     color = get_bar_color(kpi, val)
                     status = ks(val, kpi)
                     h += '<td style="text-align:center;color:%s;font-weight:700;font-size:12px;">%s %.1f%%</td>' % (color, status, val)
-                    if kpi in CIBLE:
-                        target = CIBLE[kpi]
-                        if kpi in LOWER_BETTER:
-                            score_vals.append(max(0, (target - val) / target * 100) if target > 0 else 100)
-                        else:
-                            score_vals.append(min(100, val / target * 100) if target > 0 else 100)
-                    else:
-                        score_vals.append(min(100, val))
+                    score_vals.append(calc_poste_score(ckdf, kpi, poste))
                 else:
                     h += '<td style="text-align:center;color:#94a3b8;">-</td>'
                     score_vals.append(0)
@@ -1014,7 +921,6 @@ def main():
                 sc_color = "#38a169" if sc >= 90 else "#f59e0b" if sc >= 75 else "#e53e3e"
                 h += '<td style="text-align:center;color:%s;font-weight:900;font-size:13px;">%.1f%%</td>' % (sc_color, sc)
             h += '</tr>'
-        # Ligne Cible
         h += '<tr class="cb"><td style="font-weight:800;">Cible</td>'
         for kpi in kpi_list:
             h += '<td style="text-align:center;">%d%%</td>' % CIBLE.get(kpi, 100)
@@ -1031,8 +937,28 @@ def main():
         
         st.markdown('<div style="text-align:center;color:#fff;font-size:13px;font-weight:700;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.2);margin-bottom:10px;">📅 %s</div>' % fichier_date, unsafe_allow_html=True)
         
-        ot_file = st.file_uploader("Fichier OT (ot.xlsx)", type=["xlsx"], key="ot_up")
-        av_file = st.file_uploader("Fichier Avis (avis.xlsx)", type=["xlsx"], key="av_up")
+        # Tentative lecture depuis le répertoire, sinon uploader
+        ot_bytes_repo = read_file_bytes("ot.xlsx")
+        av_bytes_repo = read_file_bytes("avis.xlsx")
+        
+        use_repo_ot = ot_bytes_repo is not None
+        use_repo_av = av_bytes_repo is not None
+        
+        if use_repo_ot:
+            st.success("✅ ot.xlsx chargé du répertoire")
+        else:
+            st.warning("⚠️ ot.xlsx non trouvé")
+        if use_repo_av:
+            st.success("✅ avis.xlsx chargé du répertoire")
+        else:
+            st.warning("⚠️ avis.xlsx non trouvé")
+        
+        ot_file = None
+        av_file = None
+        if not use_repo_ot:
+            ot_file = st.file_uploader("Fichier OT (ot.xlsx)", type=["xlsx"], key="ot_up")
+        if not use_repo_av:
+            av_file = st.file_uploader("Fichier Avis (avis.xlsx)", type=["xlsx"], key="av_up")
         
         st.markdown("---")
         sel_posts = st.multiselect("Filtrer par poste", [], key="sp")
@@ -1045,17 +971,23 @@ def main():
         st.markdown("---")
         st.markdown('<div style="font-size:11px;color:rgba(255,255,255,.5);text-align:center;">Dashboard KPI v2.0<br>Filtre anomalies par cible</div>', unsafe_allow_html=True)
 
-    # ===== MAIN =====
-    if not ot_file or not av_file:
+    # ===== CHARGEMENT DES DONNEES =====
+    ot_data = ot_bytes_repo if use_repo_ot else (ot_file.read() if ot_file else None)
+    av_data = av_bytes_repo if use_repo_av else (av_file.read() if av_file else None)
+    
+    if ot_data is None or av_data is None:
+        missing = []
+        if ot_data is None: missing.append("ot.xlsx")
+        if av_data is None: missing.append("avis.xlsx")
         st.markdown("""<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;">
         <div style="font-size:80px;margin-bottom:20px;">📁</div>
-        <h2 style="color:#1e3a5f;font-weight:800;">Chargement des donnees</h2>
-        <p style="color:#64748b;font-size:16px;margin-top:8px;">Veuillez charger les fichiers <b>ot.xlsx</b> et <b>avis.xlsx</b> depuis la barre laterale.</p>
-        </div>""", unsafe_allow_html=True)
+        <h2 style="color:#1e3a5f;font-weight:800;">Fichiers manquants</h2>
+        <p style="color:#64748b;font-size:16px;margin-top:8px;">Veuillez placer <b>%s</b> dans le repertoire ou les charger depuis la barre laterale.</p>
+        </div>""" % " et ".join(missing), unsafe_allow_html=True)
         st.stop()
 
     with st.spinner("Traitement des donnees..."):
-        df, avf, apm, now_ts = prepare_data(ot_file.read(), av_file.read(), fichier_date)
+        df, avf, apm, now_ts = prepare_data(ot_data, av_data, fichier_date)
 
     if not apm:
         st.markdown('<div class="es">Aucun poste SF1/SF2 trouve dans les donnees.</div>', unsafe_allow_html=True)
@@ -1063,7 +995,6 @@ def main():
 
     posts = sel_posts if sel_posts else apm
     
-    # Filtrer par responsable si sélectionné
     if sel_resp:
         kpis_for_resp = [k for k, v in KPI_RESP_MAP.items() if v in sel_resp]
     else:
@@ -1075,22 +1006,23 @@ def main():
 
     # ===== HEADER =====
     logo_html = ''
-    logo_b64 = get_logo_base64()
     if logo_b64:
         logo_html = '<img class="logo" src="data:image/png;base64,%s" alt="Logo">' % logo_b64
     st.markdown('<div class="mh">%s<h1>DASHBOARD KPI MAINTENANCE</h1><div class="db">📅 %s</div></div>' % (logo_html, fichier_date), unsafe_allow_html=True)
 
-    # ===== CARTES RESUME =====
-    perf_score = ckdf.loc[posts, QK].apply(lambda col: np.where(col >= np.array([CIBLE.get(k,100) for k in QK]), 100, col / np.array([CIBLE.get(k,100) for k in QK]) * 100)).mean().mean() if not ckdf.loc[posts, QK].empty else 0
-    qual_score = ckdf.loc[posts, PK].apply(lambda col: np.where(col >= np.array([CIBLE.get(k,100) for k in PK]), 100, col / np.array([CIBLE.get(k,100) for k in PK]) * 100)).mean().mean() if not ckdf.loc[posts, PK].empty else 0
+    # ===== CARTES RESUME (SCORES CORRIGES) =====
+    perf_score = calc_section_score(ckdf, QK, posts)
+    qual_score = calc_section_score(ckdf, PK, posts)
     
-    # NOUVEAU FILTRE : compter les anomalies avec is_anomaly
+    display_qk = QK if not kpis_for_resp else [k for k in QK if k in kpis_for_resp]
+    display_pk = PK if not kpis_for_resp else [k for k in PK if k in kpis_for_resp]
+    
     anom_perf_matrix = build_anomalies_table(ckdf, QK, posts)
     anom_qual_matrix = build_anomalies_table(ckdf, PK, posts)
-    nb_ano_perf = int(anom_perf_matrix.sum().sum())
-    nb_ano_qual = int(anom_qual_matrix.sum().sum())
+    nb_ano_perf = int(anom_perf_matrix[display_qk].sum().sum()) if display_qk else 0
+    nb_ano_qual = int(anom_qual_matrix[display_pk].sum().sum()) if display_pk else 0
     nb_ano_total = nb_ano_perf + nb_ano_qual
-    nb_kpi_total = len(QK) * len(posts) + len(PK) * len(posts)
+    nb_kpi_total = len(display_qk)*len(posts) + len(display_pk)*len(posts)
     pct_conformite = round((1 - nb_ano_total / max(nb_kpi_total, 1)) * 100, 1)
 
     st.markdown('<div class="cr">'
@@ -1102,7 +1034,7 @@ def main():
         '<div class="cc c6"><div class="cv">%d</div><div class="cl">Anom. Qualite</div></div>'
         '<div class="cc c7"><div class="cv">%d</div><div class="cl">KPIs Suivis</div></div>'
         '<div class="cc c8"><div class="cv">%.1f%%</div><div class="cl">Conformite</div></div>'
-        '</div>' % (perf_score, qual_score, len(posts), nb_ano_total, nb_ano_perf, nb_ano_qual, len(ALL_KPI), pct_conformite), unsafe_allow_html=True)
+        '</div>' % (perf_score, qual_score, len(posts), nb_ano_total, nb_ano_perf, nb_ano_qual, len(display_qk)+len(display_pk), pct_conformite), unsafe_allow_html=True)
 
     # ===== ONGLETS =====
     tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
@@ -1113,7 +1045,6 @@ def main():
     # ===== TAB 1 : PERFORMANCE =====
     with tab1:
         st.markdown('<div class="stl">Indicateurs de Performance par Poste</div>', unsafe_allow_html=True)
-        display_qk = QK if not kpis_for_resp else [k for k in QK if k in kpis_for_resp]
         st.markdown(html_kpi_table(ckdf, display_qk, posts, "pt", show_score=True), unsafe_allow_html=True)
         
         st.markdown('<div class="stl">Distribution des Statuts OT</div>', unsafe_allow_html=True)
@@ -1161,7 +1092,6 @@ def main():
     # ===== TAB 2 : QUALITE =====
     with tab2:
         st.markdown('<div class="stl">Indicateurs de Qualite par Poste</div>', unsafe_allow_html=True)
-        display_pk = PK if not kpis_for_resp else [k for k in PK if k in kpis_for_resp]
         st.markdown(html_kpi_table(ckdf, display_pk, posts, "qt", show_score=True), unsafe_allow_html=True)
         
         st.markdown('<div class="stl">Backlog Preparation (OT CRÉÉ)</div>', unsafe_allow_html=True)
@@ -1191,130 +1121,101 @@ def main():
         else:
             st.markdown('<div class="es">Aucun avis sans ordre</div>', unsafe_allow_html=True)
 
-    # ===== TAB 3 : ANOMALIES (NOUVEAU FILTRE) =====
+    # ===== TAB 3 : ANOMALIES =====
     with tab3:
         st.markdown('<div class="stl">Nombre d\'anomalies par KPI et Poste (à traiter pour atteindre 100%)</div>', unsafe_allow_html=True)
-        st.markdown('<p style="font-size:12px;color:#64748b;margin-bottom:10px;padding-left:12px;">🔴 = Anomalie (valeur < cible pour KPIs normaux, valeur > cible pour KPIs inverses) &nbsp;|&nbsp; 🟢 = Conforme &nbsp;|&nbsp; Filtre basé sur les seuils du référentiel CIBLE</p>', unsafe_allow_html=True)
+        st.markdown('<p style="font-size:12px;color:#64748b;margin-bottom:10px;padding-left:12px;">🔴 = Anomalie (valeur &lt; cible pour KPIs normaux, valeur &gt; cible pour KPIs inverses) &nbsp;|&nbsp; 🟢 = Conforme</p>', unsafe_allow_html=True)
         
-        # --- Performance ---
-        st.markdown('<div class="stl" style="border-left-color:#059669;">Anomalies Performance (%d sur %d combinaisons)</div>' % (nb_ano_perf, len(display_qk)*len(posts)), unsafe_allow_html=True)
+        st.markdown('<div class="stl" style="border-left-color:#059669;">Anomalies Performance (%d sur %d)</div>' % (nb_ano_perf, len(display_qk)*len(posts)), unsafe_allow_html=True)
         if display_qk:
-            html_perf, tp_perf, _ = html_anomalies_heatmap(anom_perf_matrix[display_qk], display_qk, "Performance", "at")
+            html_perf, tp_perf, _ = html_anomalies_heatmap(anom_perf_matrix[display_qk], display_qk, "at")
             st.markdown(html_perf, unsafe_allow_html=True)
-            
-            # Top KPIs avec le plus d'anomalies
             st.markdown('<div class="stl" style="border-left-color:#f59e0b;font-size:14px;">Classement des KPIs Performance par nombre d\'anomalies</div>', unsafe_allow_html=True)
             sorted_pkpi = sorted(tp_perf.items(), key=lambda x: x[1], reverse=True)
             h_rank = '<table class="tw st"><thead><tr><th>Rang</th><th>KPI</th><th>Nb Anomalies</th><th>Nb Postes</th><th>Taux Anomalie</th><th>Cible</th></tr></thead><tbody>'
             for i, (kpi, nb) in enumerate(sorted_pkpi, 1):
-                cible = CIBLE.get(kpi, 100)
-                taux = round(nb / len(posts) * 100, 1)
+                cible = CIBLE.get(kpi, 100); taux = round(nb / len(posts) * 100, 1)
                 sens = "↓ Plus bas = mieux" if kpi in LOWER_BETTER else "↑ Plus haut = mieux"
                 bg = "background:#fee2e2;color:#991b1b;" if nb > 0 else "background:#d1fae5;color:#065f46;"
                 h_rank += '<tr><td style="text-align:center;font-weight:800;">%d</td><td style="font-weight:700;">%s</td><td style="text-align:center;%sfont-weight:800;">%d</td><td style="text-align:center;">%d</td><td style="text-align:center;%sfont-weight:700;">%s%%</td><td style="text-align:center;">%d%% (%s)</td></tr>' % (i, kpi, bg, nb, len(posts), bg, taux, cible, sens)
             h_rank += '</tbody></table>'
             st.markdown(h_rank, unsafe_allow_html=True)
         else:
-            st.markdown('<div class="es">Aucun KPI performance à afficher avec ce filtre</div>', unsafe_allow_html=True)
+            st.markdown('<div class="es">Aucun KPI performance avec ce filtre</div>', unsafe_allow_html=True)
         
         st.markdown('<hr style="margin:20px 0;border-color:#e2e8f0;">', unsafe_allow_html=True)
         
-        # --- Qualite ---
-        st.markdown('<div class="stl" style="border-left-color:#2563eb;">Anomalies Qualite (%d sur %d combinaisons)</div>' % (nb_ano_qual, len(display_pk)*len(posts)), unsafe_allow_html=True)
+        st.markdown('<div class="stl" style="border-left-color:#2563eb;">Anomalies Qualite (%d sur %d)</div>' % (nb_ano_qual, len(display_pk)*len(posts)), unsafe_allow_html=True)
         if display_pk:
-            html_qual, tp_qual, _ = html_anomalies_heatmap(anom_qual_matrix[display_pk], display_pk, "Qualite", "at")
+            html_qual, tp_qual, _ = html_anomalies_heatmap(anom_qual_matrix[display_pk], display_pk, "at")
             st.markdown(html_qual, unsafe_allow_html=True)
-            
             st.markdown('<div class="stl" style="border-left-color:#f59e0b;font-size:14px;">Classement des KPIs Qualite par nombre d\'anomalies</div>', unsafe_allow_html=True)
             sorted_qkpi = sorted(tp_qual.items(), key=lambda x: x[1], reverse=True)
             h_rank = '<table class="tw st"><thead><tr><th>Rang</th><th>KPI</th><th>Nb Anomalies</th><th>Nb Postes</th><th>Taux Anomalie</th><th>Cible</th></tr></thead><tbody>'
             for i, (kpi, nb) in enumerate(sorted_qkpi, 1):
-                cible = CIBLE.get(kpi, 100)
-                taux = round(nb / len(posts) * 100, 1)
+                cible = CIBLE.get(kpi, 100); taux = round(nb / len(posts) * 100, 1)
                 sens = "↓ Plus bas = mieux" if kpi in LOWER_BETTER else "↑ Plus haut = mieux"
                 bg = "background:#fee2e2;color:#991b1b;" if nb > 0 else "background:#d1fae5;color:#065f46;"
                 h_rank += '<tr><td style="text-align:center;font-weight:800;">%d</td><td style="font-weight:700;">%s</td><td style="text-align:center;%sfont-weight:800;">%d</td><td style="text-align:center;">%d</td><td style="text-align:center;%sfont-weight:700;">%s%%</td><td style="text-align:center;">%d%% (%s)</td></tr>' % (i, kpi, bg, nb, len(posts), bg, taux, cible, sens)
             h_rank += '</tbody></table>'
             st.markdown(h_rank, unsafe_allow_html=True)
         else:
-            st.markdown('<div class="es">Aucun KPI qualite à afficher avec ce filtre</div>', unsafe_allow_html=True)
+            st.markdown('<div class="es">Aucun KPI qualite avec ce filtre</div>', unsafe_allow_html=True)
         
         st.markdown('<hr style="margin:20px 0;border-color:#e2e8f0;">', unsafe_allow_html=True)
         
-        # --- Anomalies par Poste (classement) ---
-        st.markdown('<div class="stl" style="border-left-color:#dc2626;">Classement des Postes par nombre d\'anomalies (tous KPIs confondus)</div>', unsafe_allow_html=True)
+        st.markdown('<div class="stl" style="border-left-color:#dc2626;">Classement des Postes par nombre d\'anomalies</div>', unsafe_allow_html=True)
         poste_anomalies = []
         for poste in posts:
             nb_p = int(anom_perf_matrix.loc[poste].sum()) if poste in anom_perf_matrix.index else 0
             nb_q = int(anom_qual_matrix.loc[poste].sum()) if poste in anom_qual_matrix.index else 0
             poste_anomalies.append({"Poste": poste, "Anom. Perf.": nb_p, "Anom. Qual.": nb_q, "Total": nb_p + nb_q})
         poste_anomalies.sort(key=lambda x: x["Total"], reverse=True)
-        
         h_pr = '<table class="tw at"><thead><tr><th>Rang</th><th>Poste de travail</th><th>Anom. Performance</th><th>Anom. Qualite</th><th>Total Anomalies</th><th>Statut</th></tr></thead><tbody>'
         for i, pa in enumerate(poste_anomalies, 1):
-            if pa["Total"] == 0:
-                statut = '<span style="background:#d1fae5;color:#065f46;padding:3px 10px;border-radius:12px;font-weight:700;font-size:11px;">CONFORME</span>'
-            elif pa["Total"] <= 3:
-                statut = '<span style="background:#fef3c7;color:#92400e;padding:3px 10px;border-radius:12px;font-weight:700;font-size:11px;">A AMELIORER</span>'
-            else:
-                statut = '<span style="background:#fee2e2;color:#991b1b;padding:3px 10px;border-radius:12px;font-weight:700;font-size:11px;">CRITIQUE</span>'
+            if pa["Total"] == 0: statut = '<span style="background:#d1fae5;color:#065f46;padding:3px 10px;border-radius:12px;font-weight:700;font-size:11px;">CONFORME</span>'
+            elif pa["Total"] <= 3: statut = '<span style="background:#fef3c7;color:#92400e;padding:3px 10px;border-radius:12px;font-weight:700;font-size:11px;">A AMELIORER</span>'
+            else: statut = '<span style="background:#fee2e2;color:#991b1b;padding:3px 10px;border-radius:12px;font-weight:700;font-size:11px;">CRITIQUE</span>'
             h_pr += '<tr><td style="text-align:center;font-weight:800;">%d</td><td style="font-weight:700;">%s</td><td style="text-align:center;">%d</td><td style="text-align:center;">%d</td><td style="text-align:center;font-weight:900;color:#dc2626;">%d</td><td style="text-align:center;">%s</td></tr>' % (i, pa["Poste"], pa["Anom. Perf."], pa["Anom. Qual."], pa["Total"], statut)
         h_pr += '</tbody></table>'
         st.markdown(h_pr, unsafe_allow_html=True)
 
-        # --- Détail des anomalies (optionnel) ---
         if show_anomalies_detail:
             st.markdown('<hr style="margin:20px 0;border-color:#e2e8f0;">', unsafe_allow_html=True)
-            st.markdown('<div class="stl" style="border-left-color:#7c3aed;">Detail des Anomalies (liste exhaustive avec actions correctives)</div>', unsafe_allow_html=True)
-            
+            st.markdown('<div class="stl" style="border-left-color:#7c3aed;">Detail des Anomalies</div>', unsafe_allow_html=True)
             all_anom_rows = html_anomalies_detail(anom_perf_matrix, ckdf, display_qk, posts)
             all_anom_rows += html_anomalies_detail(anom_qual_matrix, ckdf, display_pk, posts)
             all_anom_rows.sort(key=lambda x: x["Ecart (pts)"], reverse=True)
-            
             if all_anom_rows:
                 h_det = '<table class="tw at"><thead><tr><th>Poste</th><th>KPI</th><th>Valeur</th><th>Cible</th><th>Ecart</th><th>Responsable</th><th>Action corrective</th></tr></thead><tbody>'
                 for r in all_anom_rows:
                     ecart_bg = "background:#fee2e2;color:#991b1b;" if r["Ecart (pts)"] > 20 else "background:#fef3c7;color:#92400e;" if r["Ecart (pts)"] > 5 else "background:#dbeafe;color:#1e40af;"
                     h_det += '<tr><td style="font-weight:700;">%s</td><td style="font-weight:600;font-size:11px;">%s</td><td style="text-align:center;font-weight:700;">%.1f%%</td><td style="text-align:center;">%d%%</td><td style="text-align:center;%sfont-weight:800;">%.1f pts</td><td style="text-align:center;font-size:11px;">%s</td><td style="text-align:left;font-size:11px;max-width:300px;">%s</td></tr>' % (
-                        r["Poste de travail"], r["KPI"], r["Valeur (%)"], r["Cible (%)"], 
-                        ecart_bg, r["Ecart (pts)"], r["Responsable"], r["Action corrective"])
+                        r["Poste de travail"], r["KPI"], r["Valeur (%)"], r["Cible (%)"], ecart_bg, r["Ecart (pts)"], r["Responsable"], r["Action corrective"])
                 h_det += '</tbody></table>'
                 st.markdown(h_det, unsafe_allow_html=True)
             else:
-                st.markdown('<div class="es" style="background:#d1fae5;color:#065f46;border-radius:8px;padding:20px;font-weight:700;">✅ Aucune anomalie detectee - Tous les KPIs atteignent leurs cibles !</div>', unsafe_allow_html=True)
+                st.markdown('<div class="es" style="background:#d1fae5;color:#065f46;border-radius:8px;padding:20px;font-weight:700;">✅ Aucune anomalie detectee !</div>', unsafe_allow_html=True)
 
     # ===== TAB 4 : PLAN D'ACTION =====
     with tab4:
         if show_plan:
-            st.markdown('<div class="stl">Plan d\'Action - Anomalies a traiter pour atteindre 100%</div>', unsafe_allow_html=True)
-            st.markdown('<p style="font-size:12px;color:#64748b;margin-bottom:10px;padding-left:12px;">Ce plan est genere automatiquement a partir du nouveau filtre d\'anomalies (valeur vs cible).</p>', unsafe_allow_html=True)
-            
+            st.markdown('<div class="stl">Plan d\'Action - Anomalies a traiter</div>', unsafe_allow_html=True)
             plan_rows = html_anomalies_detail(anom_perf_matrix, ckdf, display_qk, posts)
             plan_rows += html_anomalies_detail(anom_qual_matrix, ckdf, display_pk, posts)
             plan_rows.sort(key=lambda x: (x["Poste de travail"], x["Ecart (pts)"]), reverse=False)
-            
             if plan_rows:
-                h_plan = '<table class="plan-action-table"><thead><tr><th>Poste de travail</th><th>KPI en anomalie</th><th>Valeur act.</th><th>Cible</th><th>Ecart</th><th>Responsable</th><th>Action corrective</th><th>Priorite</th></tr></thead><tbody>'
-                for i, r in enumerate(plan_rows, 1):
-                    if r["Ecart (pts)"] > 30:
-                        prio = '<span style="background:#dc2626;color:#fff;padding:2px 8px;border-radius:4px;font-weight:800;font-size:11px;">P1</span>'
-                    elif r["Ecart (pts)"] > 10:
-                        prio = '<span style="background:#f59e0b;color:#fff;padding:2px 8px;border-radius:4px;font-weight:800;font-size:11px;">P2</span>'
-                    else:
-                        prio = '<span style="background:#3b82f6;color:#fff;padding:2px 8px;border-radius:4px;font-weight:800;font-size:11px;">P3</span>'
-                    h_plan += '<tr><td style="font-weight:800;">%s</td><td style="font-weight:600;font-size:11px;">%s</td><td>%.1f%%</td><td>%d%%</td><td style="font-weight:800;color:#dc2626;">%.1f</td><td style="font-size:11px;">%s</td><td style="text-align:left;font-size:11px;max-width:280px;">%s</td><td>%s</td></tr>' % (
-                        r["Poste de travail"], r["KPI"], r["Valeur (%)"], r["Cible (%)"],
-                        r["Ecart (pts)"], r["Responsable"], r["Action corrective"], prio)
+                h_plan = '<table class="plan-action-table"><thead><tr><th>Poste</th><th>KPI</th><th>Valeur</th><th>Cible</th><th>Ecart</th><th>Responsable</th><th>Action</th><th>Priorite</th></tr></thead><tbody>'
+                for r in plan_rows:
+                    if r["Ecart (pts)"] > 30: prio = '<span style="background:#dc2626;color:#fff;padding:2px 8px;border-radius:4px;font-weight:800;font-size:11px;">P1</span>'
+                    elif r["Ecart (pts)"] > 10: prio = '<span style="background:#f59e0b;color:#fff;padding:2px 8px;border-radius:4px;font-weight:800;font-size:11px;">P2</span>'
+                    else: prio = '<span style="background:#3b82f6;color:#fff;padding:2px 8px;border-radius:4px;font-weight:800;font-size:11px;">P3</span>'
+                    h_plan += '<tr><td style="font-weight:800;">%s</td><td style="font-size:11px;">%s</td><td>%.1f%%</td><td>%d%%</td><td style="font-weight:800;color:#dc2626;">%.1f</td><td style="font-size:11px;">%s</td><td style="text-align:left;font-size:11px;max-width:280px;">%s</td><td>%s</td></tr>' % (
+                        r["Poste de travail"], r["KPI"], r["Valeur (%)"], r["Cible (%)"], r["Ecart (pts)"], r["Responsable"], r["Action corrective"], prio)
                 h_plan += '</tbody></table>'
                 st.markdown(h_plan, unsafe_allow_html=True)
-                
-                st.markdown('<div style="display:flex;gap:20px;margin-top:10px;font-size:12px;font-weight:700;">'
-                    '<span><span style="display:inline-block;width:14px;height:14px;background:#dc2626;border-radius:3px;vertical-align:middle;margin-right:5px;"></span>P1 : Ecart > 30 pts</span>'
-                    '<span><span style="display:inline-block;width:14px;height:14px;background:#f59e0b;border-radius:3px;vertical-align:middle;margin-right:5px;"></span>P2 : Ecart > 10 pts</span>'
-                    '<span><span style="display:inline-block;width:14px;height:14px;background:#3b82f6;border-radius:3px;vertical-align:middle;margin-right:5px;"></span>P3 : Ecart <= 10 pts</span>'
-                    '</div>', unsafe_allow_html=True)
             else:
-                st.markdown('<div class="es" style="background:#d1fae5;color:#065f46;border-radius:8px;padding:20px;font-weight:700;">✅ Aucune action requise - Tous les indicateurs sont conformes !</div>', unsafe_allow_html=True)
+                st.markdown('<div class="es" style="background:#d1fae5;color:#065f46;border-radius:8px;padding:20px;font-weight:700;">✅ Aucune action requise !</div>', unsafe_allow_html=True)
         else:
             st.markdown('<div class="es">Activer "Afficher Plan d\'action" dans la barre laterale.</div>', unsafe_allow_html=True)
 
@@ -1324,7 +1225,7 @@ def main():
         hist_path = os.path.join("kpis", "indicateurs_kpis.xlsx")
         hist_df = load_historical_kpis(hist_path)
         if hist_df.empty:
-            st.markdown('<div class="es">Aucune donnee historique trouvee. Les tendances apparaitront apres au moins 2 sauvegardes.</div>', unsafe_allow_html=True)
+            st.markdown('<div class="es">Aucune donnee historique. Les tendances apparaitront apres au moins 2 sauvegardes.</div>', unsafe_allow_html=True)
         else:
             var_df = calculate_variations(hist_df)
             if var_df.empty:
@@ -1332,9 +1233,8 @@ def main():
             else:
                 journal = generate_journal(var_df)
                 if journal.empty:
-                    st.markdown('<div class="es">Aucune variation significative detectee (ecart < 5%%).</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="es">Aucune variation significative (ecart &lt; 5%%).</div>', unsafe_allow_html=True)
                 else:
-                    st.markdown('<p style="font-size:12px;color:#64748b;margin-bottom:8px;padding-left:12px;">Variations significatives (|ecart| >= 5%%) entre les periodes</p>', unsafe_allow_html=True)
                     h_j = '<table class="tw st"><thead><tr><th>Poste</th><th>Type</th><th>KPI</th><th>Avant</th><th>Apres</th><th>Ecart</th><th>Ecart %%</th><th>Sens</th></tr></thead><tbody>'
                     for _, r in journal.iterrows():
                         sens_color = "#059669" if r["Sens"]=="Amelioration" else "#dc2626" if r["Sens"]=="Degradation" else "#64748b"
@@ -1343,7 +1243,6 @@ def main():
                             r["Ecart"], sens_color, r["Ecart %"], sens_color, r["Sens"])
                     h_j += '</tbody></table>'
                     st.markdown(h_j, unsafe_allow_html=True)
-                
                 top5, bot5 = calculate_rankings(var_df)
                 if not top5.empty and not bot5.empty:
                     c1, c2 = st.columns(2)
@@ -1369,37 +1268,18 @@ def main():
         with c1:
             st.markdown('<div class="ca"><div class="ct">Performance par Poste</div>', unsafe_allow_html=True)
             for poste in posts:
-                vals = []
-                for kpi in QK:
-                    if kpi in ckdf.columns and poste in ckdf.index:
-                        v = ckdf.loc[poste, kpi]
-                        target = CIBLE.get(kpi, 100)
-                        if kpi in LOWER_BETTER:
-                            vals.append(max(0, min(100, (target - v) / target * 100)) if target > 0 else 100)
-                        else:
-                            vals.append(min(100, v / target * 100) if target > 0 else 100)
-                sc = np.mean(vals) if vals else 0
+                sc = calc_section_score(ckdf, QK, [poste])
                 color = "#059669" if sc >= 90 else "#f59e0b" if sc >= 75 else "#dc2626"
                 st.markdown('<div class="gbr"><div class="gbr-l">%s</div><div class="gbr-g"><div class="gbr-w"><div class="gbr-f" style="width:%.1f%%;background:%s;"></div></div><div class="gbr-v" style="color:%s;">%.1f%%</div></div></div>' % (poste, sc, color, color, sc), unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
         with c2:
             st.markdown('<div class="ca"><div class="ct">Qualite par Poste</div>', unsafe_allow_html=True)
             for poste in posts:
-                vals = []
-                for kpi in PK:
-                    if kpi in ckdf.columns and poste in ckdf.index:
-                        v = ckdf.loc[poste, kpi]
-                        target = CIBLE.get(kpi, 100)
-                        if kpi in LOWER_BETTER:
-                            vals.append(max(0, min(100, (target - v) / target * 100)) if target > 0 else 100)
-                        else:
-                            vals.append(min(100, v / target * 100) if target > 0 else 100)
-                sc = np.mean(vals) if vals else 0
+                sc = calc_section_score(ckdf, PK, [poste])
                 color = "#059669" if sc >= 90 else "#f59e0b" if sc >= 75 else "#dc2626"
                 st.markdown('<div class="gbr"><div class="gbr-l">%s</div><div class="gbr-g"><div class="gbr-w"><div class="gbr-f" style="width:%.1f%%;background:%s;"></div></div><div class="gbr-v" style="color:%s;">%.1f%%</div></div></div>' % (poste, sc, color, color, sc), unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
         
-        # Graphique radar
         if len(posts) <= 8:
             fig = go.Figure()
             colors_radar = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#14b8a6']
@@ -1408,8 +1288,7 @@ def main():
                 for kpi in QK[:6]:
                     if kpi in ckdf.columns and poste in ckdf.index:
                         vals.append(float(ckdf.loc[poste, kpi]))
-                    else:
-                        vals.append(0)
+                    else: vals.append(0)
                 fig.add_trace(go.Scatterpolar(r=vals, theta=[k.replace("OT ","").replace("préparation ","Prép ").replace("planification ","Plan ").replace("exécution ","Exéc ") for k in QK[:6]], fill='toself', name=poste, line_color=colors_radar[idx % len(colors_radar)]))
             fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), showlegend=True, height=500, legend=dict(orientation="h", y=-0.1))
             st.plotly_chart(fig, use_container_width=True)
@@ -1419,22 +1298,20 @@ def main():
         st.markdown('<div class="stl">Detail Complet par Poste</div>', unsafe_allow_html=True)
         for poste in posts:
             with st.expander("📋 %s" % poste, expanded=False):
-                st.markdown('<table class="tw qt"><thead><tr><th>KPI</th><th>Valeur</th><th>Cible</th><th>Ecart</th><th>Statut</th><th>Responsable</th></tr></thead><tbody>', unsafe_allow_html=True)
+                h_det = '<table class="tw qt"><thead><tr><th>KPI</th><th>Valeur</th><th>Cible</th><th>Ecart</th><th>Statut</th><th>Responsable</th></tr></thead><tbody>'
                 for kpi in ALL_KPI:
-                    if kpi not in ckdf.columns or poste not in ckdf.index:
-                        continue
+                    if kpi not in ckdf.columns or poste not in ckdf.index: continue
                     val = float(ckdf.loc[poste, kpi])
                     cible = CIBLE.get(kpi, 100)
-                    if kpi in LOWER_BETTER:
-                        ecart = val - cible
-                    else:
-                        ecart = cible - val
+                    if kpi in LOWER_BETTER: ecart = val - cible
+                    else: ecart = cible - val
                     is_ok = not is_anomaly(kpi, val)
                     resp = KPI_RESP_MAP.get(kpi, "")
                     status = "✅ OK" if is_ok else "❌ Anomalie"
                     bg = "background:#d1fae5;" if is_ok else "background:#fee2e2;"
-                    st.markdown('<tr><td style="font-weight:600;font-size:11px;">%s</td><td style="text-align:center;font-weight:700;">%.1f%%</td><td style="text-align:center;">%d%%</td><td style="text-align:center;font-weight:800;%s">%+.1f</td><td style="text-align:center;%sfont-weight:700;">%s</td><td style="text-align:center;font-size:11px;">%s</td></tr>' % (kpi, val, cible, bg, ecart, bg, status, resp), unsafe_allow_html=True)
-                st.markdown('</tbody></table>', unsafe_allow_html=True)
+                    h_det += '<tr><td style="font-weight:600;font-size:11px;">%s</td><td style="text-align:center;font-weight:700;">%.1f%%</td><td style="text-align:center;">%d%%</td><td style="text-align:center;font-weight:800;%s">%+.1f</td><td style="text-align:center;%sfont-weight:700;">%s</td><td style="text-align:center;font-size:11px;">%s</td></tr>' % (kpi, val, cible, bg, ecart, bg, status, resp)
+                h_det += '</tbody></table>'
+                st.markdown(h_det, unsafe_allow_html=True)
 
     # ===== SAUVEGARDE EXCEL =====
     prows = []
@@ -1443,17 +1320,8 @@ def main():
         for kpi in QK:
             if kpi in ckdf.columns and poste in ckdf.index:
                 row[kpi] = round(float(ckdf.loc[poste, kpi]), 1)
-            else:
-                row[kpi] = 0
-        score_vals = []
-        for kpi in QK:
-            if kpi in row:
-                target = CIBLE.get(kpi, 100)
-                if kpi in LOWER_BETTER:
-                    score_vals.append(max(0, min(100, (target - row[kpi]) / target * 100)) if target > 0 else 100)
-                else:
-                    score_vals.append(min(100, row[kpi] / target * 100) if target > 0 else 100)
-        row["Score Performance"] = round(np.mean(score_vals), 1) if score_vals else 0
+            else: row[kpi] = 0
+        row["Score Performance"] = round(calc_section_score(ckdf, QK, [poste]), 1)
         prows.append(row)
     
     qrows = []
@@ -1462,20 +1330,10 @@ def main():
         for kpi in PK:
             if kpi in ckdf.columns and poste in ckdf.index:
                 row[kpi] = round(float(ckdf.loc[poste, kpi]), 1)
-            else:
-                row[kpi] = 0
-        score_vals = []
-        for kpi in PK:
-            if kpi in row:
-                target = CIBLE.get(kpi, 100)
-                if kpi in LOWER_BETTER:
-                    score_vals.append(max(0, min(100, (target - row[kpi]) / target * 100)) if target > 0 else 100)
-                else:
-                    score_vals.append(min(100, row[kpi] / target * 100) if target > 0 else 100)
-        row["Score Qualite"] = round(np.mean(score_vals), 1) if score_vals else 0
+            else: row[kpi] = 0
+        row["Score Qualite"] = round(calc_section_score(ckdf, PK, [poste]), 1)
         qrows.append(row)
     
-    # Nouveau filtre pour les anomalies Excel
     ano_p_rows = html_anomalies_detail(anom_perf_matrix, ckdf, QK, posts)
     ano_q_rows = html_anomalies_detail(anom_qual_matrix, ckdf, PK, posts)
     
