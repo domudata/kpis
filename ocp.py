@@ -149,9 +149,61 @@ def excr(df):
     return df
 
 @st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False)
 def prepare_data(ot_bytes, av_bytes, date_str):
-    raw_ot = pd.read_excel(io.BytesIO(ot_bytes))
-    raw_av = pd.read_excel(io.BytesIO(av_bytes))
+    # ---------- VALIDATION & ROBUST READING ----------
+    def safe_read_excel(bytes_data, label="fichier"):
+        if bytes_data is None or len(bytes_data) == 0:
+            raise ValueError(f"{label} : fichier vide ou introuvable.")
+        
+        # Check XLSX magic number: PK\x03\x04
+        is_xlsx = bytes_data[:4] == b'PK\x03\x04'
+        # Check XLS magic number: \xD0\xCF\x11\xE0 (OLE2)
+        is_xls = bytes_data[:4] == b'\xd0\xcf\x11\xe0'
+        
+        if is_xlsx:
+            try:
+                return pd.read_excel(io.BytesIO(bytes_data), engine='openpyxl')
+            except Exception as e:
+                raise ValueError(f"{label} : fichier .xlsx corrompu ou invalide. Détail : {e}")
+        
+        elif is_xls:
+            try:
+                return pd.read_excel(io.BytesIO(bytes_data), engine='xlrd')
+            except Exception as e:
+                # xlrd only supports .xls, not .xlsx
+                raise ValueError(f"{label} : fichier .xls corrompu ou non lisible. Détail : {e}")
+        
+        else:
+            # Not a recognized Excel format — try CSV as fallback
+            try:
+                # Try UTF-8 first, then latin-1
+                try:
+                    text = bytes_data.decode('utf-8')
+                except UnicodeDecodeError:
+                    text = bytes_data.decode('latin-1')
+                
+                # Detect separator
+                first_line = text.split('\n')[0]
+                if '\t' in first_line:
+                    sep = '\t'
+                elif ';' in first_line:
+                    sep = ';'
+                else:
+                    sep = ','
+                
+                return pd.read_csv(io.StringIO(text), sep=sep)
+            except Exception:
+                raise ValueError(
+                    f"{label} : format non reconnu. Ce fichier n'est ni un .xlsx, "
+                    f"ni un .xls, ni un CSV valide. "
+                    f"Veuillez exporter votre fichier au format .xlsx depuis Excel/Google Sheets."
+                )
+
+    raw_ot = safe_read_excel(ot_bytes, "Fichier OT")
+    raw_av = safe_read_excel(av_bytes, "Fichier Avis")
+    # ---------- FIN VALIDATION ----------
+
     raw_ot = excr(raw_ot)
     raw_av = excr(raw_av)
     
@@ -186,18 +238,17 @@ def prepare_data(ot_bytes, av_bytes, date_str):
     if "Statut système" in df.columns: df["Statut OT"]=df["Statut système"].fillna("").astype(str).str.strip().str.split().str[0]
     
     avf = raw_av[
-    (
-        raw_av["Ordre"].isna() |
-        (raw_av["Ordre"].astype(str).str.strip() == "")
-    )
-    &
-    (raw_av["Type d'avis"].isin(["ZU","Z4","ZR","ZP"]))
-].copy()
+        (
+            raw_av["Ordre"].isna() |
+            (raw_av["Ordre"].astype(str).str.strip() == "")
+        )
+        &
+        (raw_av["Type d'avis"].isin(["ZU","Z4","ZR","ZP"]))
+    ].copy()
     
     apm = sorted(df[df["Poste travail princ."].astype(str).str.startswith(("SF1","SF2"),na=False)]["Poste travail princ."].dropna().unique().tolist())
     
     return df, avf, apm, now_ts
-
 def save_kpis_to_excel(prows,pcols,qrows,qcols,ano_p_r,ano_p_c,ano_q_r,ano_q_c,sheet_name):
     kpis_dir="kpis"; os.makedirs(kpis_dir,exist_ok=True)
     filepath=os.path.join(kpis_dir,"indicateurs_kpis.xlsx")
