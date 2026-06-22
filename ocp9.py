@@ -149,12 +149,53 @@ def excr(df):
     return df
 
 @st.cache_data(show_spinner=False)
+def read_excel_safe(bytes_data):
+    """Lit un fichier Excel en détectant automatiquement le vrai format."""
+    bio = io.BytesIO(bytes_data)
+    
+    # Détection du format via les magic bytes
+    header = bytes_data[:8]
+    
+    if header[:4] in (b'PK\x03\x04', b'PK\x05\x06'):
+        # Format ZIP → .xlsx / .xlsm
+        for engine in ['openpyxl', 'calamine']:
+            try:
+                return pd.read_excel(bio, engine=engine)
+            except Exception:
+                bio.seek(0)
+                continue
+    
+    if header == b'\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1':
+        # Format OLE2 → .xls (ancien format binaire)
+        for engine in ['xlrd', 'calamine']:
+            try:
+                return pd.read_excel(bio, engine=engine)
+            except Exception:
+                bio.seek(0)
+                continue
+    
+    # Dernier recours : essai de tous les moteurs
+    for engine in ['openpyxl', 'xlrd', 'calamine']:
+        try:
+            bio.seek(0)
+            return pd.read_excel(bio, engine=engine)
+        except Exception:
+            continue
+    
+    raise ValueError(
+        "Format de fichier non reconnu. Le fichier n'est ni un .xlsx ni un .xls valide.\n"
+        "Vérifiez que le fichier n'est pas corrompu ou protégé par mot de passe."
+    )
+
+
+@st.cache_data(show_spinner=False)
 def prepare_data(ot_bytes, av_bytes, date_str):
-    raw_ot = pd.read_excel(io.BytesIO(ot_bytes))
-    raw_av = pd.read_excel(io.BytesIO(av_bytes))
+    raw_ot = read_excel_safe(ot_bytes)       # ← remplacé
+    raw_av = read_excel_safe(av_bytes)       # ← remplacé
     raw_ot = excr(raw_ot)
     raw_av = excr(raw_av)
     
+    # ... le reste de la fonction reste IDENTIQUE ...
     for c in ["Créé le","Date de début planifiée","Date de clôture","Début réel","Fin réelle"]:
         if c in raw_ot.columns: raw_ot[c]=pd.to_datetime(raw_ot[c],errors="coerce")
     for c in ["Créé le","Début souhaité","Date de la clôture"]:
@@ -186,18 +227,17 @@ def prepare_data(ot_bytes, av_bytes, date_str):
     if "Statut système" in df.columns: df["Statut OT"]=df["Statut système"].fillna("").astype(str).str.strip().str.split().str[0]
     
     avf = raw_av[
-    (
-        raw_av["Ordre"].isna() |
-        (raw_av["Ordre"].astype(str).str.strip() == "")
-    )
-    &
-    (raw_av["Type d'avis"].isin(["ZU","Z4","ZR","ZP"]))
-].copy()
+        (
+            raw_av["Ordre"].isna() |
+            (raw_av["Ordre"].astype(str).str.strip() == "")
+        )
+        &
+        (raw_av["Type d'avis"].isin(["ZU","Z4","ZR","ZP"]))
+    ].copy()
     
     apm = sorted(df[df["Poste travail princ."].astype(str).str.startswith(("SF1","SF2"),na=False)]["Poste travail princ."].dropna().unique().tolist())
     
     return df, avf, apm, now_ts
-
 def save_kpis_to_excel(prows,pcols,qrows,qcols,ano_p_r,ano_p_c,ano_q_r,ano_q_c,sheet_name):
     kpis_dir="kpis"; os.makedirs(kpis_dir,exist_ok=True)
     filepath=os.path.join(kpis_dir,"indicateurs_kpis.xlsx")
