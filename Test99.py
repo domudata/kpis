@@ -946,9 +946,7 @@ def main():
                     h+='<td style="%s">%s</td>'%(s or "",v)
             h+='</tr>'
         return h+'</tbody></table>'
-        
 
-         =====
        def html_anomaly_table(rows, cols, tc):
          h = '
 
