@@ -848,23 +848,23 @@ def main():
         res["anomalies_perf"] = res["anomalies_perf"].fillna(0).astype(int)
 
         res["anomalies_perf"]["TAUX_REALISATION_CORRECTIF/PT"] = (
-            an["TOTAL_OT"] - an["OT_CLOTURES"]
+            an["TOTAL_OT"] - an["OT_CLOTURES"], 0).fillna(0).astype(int)
         )
 
         res["anomalies_perf"]["OT préparation <1 mois"] = (
-            pr["1 mois < <3 mois"] + pr[">3 mois"] + pr["Inconnu"]
+            pr["1 mois < <3 mois"] + pr[">3 mois"] + pr["Inconnu"], 0).fillna(0).astype(int)
         )
 
         res["anomalies_perf"]["OT préparation 1mois< <3mois"] = (
-            pr["1 mois < <3 mois"]
+            pr["1 mois < <3 mois"], 0).fillna(0).astype(int)
         )
 
         res["anomalies_perf"]["OT préparation >3 mois"] = (
-            pr[">3 mois"]
+            pr[">3 mois"], 0).fillna(0).astype(int)
         )
 
         res["anomalies_perf"]["OT planification <1 mois"] = (
-            pl["1 mois < <3 mois"] + pl[">3 mois"] + pl["Inconnu"]
+            pl["1 mois < <3 mois"] + pl[">3 mois"] + pl["Inconnu"], 0).fillna(0).astype(int)
         )
 
         res["anomalies_perf"]["OT planification 1mois< <3mois"] = (
@@ -872,19 +872,19 @@ def main():
         )
 
         res["anomalies_perf"]["OT planification >3 mois"] = (
-            pl[">3 mois"]
+            pl[">3 mois"], 0).fillna(0).astype(int)
         )
 
         res["anomalies_perf"]["OT exécution <1 mois"] = (
-            ex["1 mois < <3 mois"] + ex[">3 mois"] + ex["Inconnu"]
+            ex["1 mois < <3 mois"] + ex[">3 mois"] + ex["Inconnu"], 0).fillna(0).astype(int)
         )
 
         res["anomalies_perf"]["OT exécution 1mois< <3mois"] = (
-            ex["1 mois < <3 mois"]
+            ex["1 mois < <3 mois"], 0).fillna(0).astype(int)
         )
 
         res["anomalies_perf"]["OT exécution >3 mois"] = (
-            ex[">3 mois"]
+            ex[">3 mois"], 0).fillna(0).astype(int)
         )
 
         res["anomalies_perf"]["Performance Graissage"] = (
@@ -898,7 +898,7 @@ def main():
         res["anomalies_perf"]["Performance Appels Systématiques"] = (
             sys_df["_d"] - sys_df["_n"]
         ).clip(lower=0)
-
+        res["anomalies_perf"] = res["anomalies_perf"].fillna(0).astype(int)
         res["anomalies_qual"] = pd.DataFrame(index=posts)
         res["anomalies_qual"] = res["anomalies_qual"].fillna(0).astype(int)
 
