@@ -1007,17 +1007,17 @@ def main():
         
     def is_lb(k): return k in LOWER_BETTER
 
-  def html_kpi_or_anomaly_table(prows, qrows, ano_perf, ano_qual, section="perf"):
-    """Affiche soit le tableau KPI soit le tableau Anomalies selon le choix"""
+    def html_kpi_or_anomaly_table(prows, qrows, ano_perf, ano_qual, section="perf"):
+      """Affiche soit le tableau KPI soit le tableau Anomalies selon le choix"""
     
-    choix = st.radio(
+     choix = st.radio(
         "Affichage :",
         options=["📊 Valeurs KPI", "⚠️ Nombre d'Anomalies"],
         horizontal=True,
         key=f"choix_{section}"
     )
 
-    if choix == "📊 Valeurs KPI":
+     if choix == "📊 Valeurs KPI":
         # Affichage classique des KPIs (utilise ton html_table)
         if section == "perf":
             cols = ["Poste de travail"] + QK + ["Score Performance"]
@@ -1026,7 +1026,7 @@ def main():
             cols = ["Poste de travail"] + PK + ["Score Qualite"]
             st.markdown(html_table(qrows, cols, "qt", ["Score Qualite"]), unsafe_allow_html=True)
 
-    else:
+     else:
         # Affichage des Anomalies (utilise html_anomaly_table_clean)
         if section == "perf":
             df_anom = ano_perf.copy()
@@ -1042,7 +1042,7 @@ def main():
         df_anom.loc["Total général"] = df_anom.sum()
         st.markdown(html_anomaly_table_clean(df_anom, kpi_cols, title, color_class), unsafe_allow_html=True)
 
-    def html_actions_table(kpi_list,actuals,targets,act_map):
+   def html_actions_table(kpi_list,actuals,targets,act_map):
         h='<table class="tw at"><thead><tr><th>KPI</th><th>Valeur Actuelle</th><th>Cible</th><th>Ecart</th><th>Statut</th><th>Action Recommandee</th></tr></thead><tbody>'
         for k in kpi_list:
             av=actuals.get(k,0); tv=targets.get(k,100); diff=av-tv
