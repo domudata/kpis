@@ -949,7 +949,7 @@ def main():
 
 
     def html_anomaly_table(rows, cols, tc):
-    h = '
+     h = '
 
 ' % tc + ''.join('' % c for c in cols) + '' for r in rows: rc = "tr" if r.get("Poste de travail") == "Total" else "" h += '' % rc for c in cols: v = r.get(c, "") if c == "Poste de travail": h += '' % v elif c == "Total Anomalies": h += '' % v else: try: iv = int(v) except Exception: try: iv = int(float(v)) except Exception: iv = 0 bg = get_bar_color(c, 100 if iv == 0 else min(max(iv, 0), 100)) light_bg_colors = {"#10b981", "#38a169", "#059669", "#2563eb", "#3b82f6", "#8b5cf6", "#06b6d4", "#f59e0b"} txt = '#ffffff' if bg in light_bg_colors else '#1e293b' h += '' % (bg, txt, iv) h += '' h += '
 %s
