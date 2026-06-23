@@ -897,7 +897,7 @@ def main():
         res["anomalies_perf"]["Performance Appels Systématiques"] = (
             sys_df["_d"] - sys_df["_n"]
         ).clip(lower=0)
-
+        res["anomalies_perf"] = res["anomalies_perf"].fillna(0).astype(int)
         res["anomalies_qual"] = pd.DataFrame(index=posts)
 
         res["anomalies_qual"]["Taux d'approbation des Avis"] = (
