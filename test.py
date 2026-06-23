@@ -185,37 +185,53 @@ def prepare_data(ot_bytes, av_bytes, date_str):
     return df,avf,apm,now_ts
 
 # ============================================================
-# DATA PERSISTENCE & HISTORIQUE
+# DATA PERSISTANCE & HISTORIQUE
 # ============================================================
 
-def save_kpis_to_excel(prows,pcols,qrows,qcols,ano_p_r,ano_p_c,ano_q_r,ano_q_c,sheet_name):
-    kpis_dir="kpis"; os.makedirs(kpis_dir,exist_ok=True)
-    filepath=os.path.join(kpis_dir,"indicateurs_kpis.xlsx")
-    sn=str(sheet_name).replace("/","-").replace("\\","-").replace("*","").replace("?","").replace("[","").replace("]","")[:31]
-    hf=Font(bold=True,color="FFFFFF",size=10); hfl=PatternFill(start_color="1E3A5F",end_color="1E3A5F",fill_type="solid")
-    tf=Font(bold=True,size=12,color="1E3A5F")
-    tb=Border(left=Side(style='thin'),right=Side(style='thin'),top=Side(style='thin'),bottom=Side(style='thin'))
-    try: wb=load_workbook(filepath)
-    except: wb=Workbook()
-    if "Sheet" in wb.sheetnames: del wb["Sheet"]
-    if sn in wb.sheetnames: del wb[sn]
-    ws=wb.create_sheet(sn); rn=1
-    def ws_sec(title,cols,rows,sr):
-        ws.cell(row=sr,column=1,value=title).font=tf; sr+=1
-        for j,c in enumerate(cols,1):
-            cl=ws.cell(row=sr,column=j,value=c); cl.font=hf; cl.fill=hfl; cl.alignment=Alignment(horizontal='center'); cl.border=tb
-        sr+=1
+def save_kpis_to_excel(prows, pcols, qrows, qcols, sheet_name):
+    kpis_dir = "kpis"
+    os.makedirs(kpis_dir, exist_ok=True)
+    filepath = os.path.join(kpis_dir, "indicateurs_kpis.xlsx")
+    sn = str(sheet_name).replace("/", "-").replace("\\", "-").replace("*", "").replace("?", "").replace("[", "").replace("]", "")[:31]
+    hf = Font(bold=True, color="FFFFFF", size=10)
+    hfl = PatternFill(start_color="1E3A5F", end_color="1E3A5F", fill_type="solid")
+    tf = Font(bold=True, size=12, color="1E3A5F")
+    tb = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+    try:
+        wb = load_workbook(filepath)
+    except:
+        wb = Workbook()
+    if "Sheet" in wb.sheetnames:
+        del wb["Sheet"]
+    if sn in wb.sheetnames:
+        del wb[sn]
+    ws = wb.create_sheet(sn)
+    rn = 1
+
+    def ws_sec(title, cols, rows, sr):
+        ws.cell(row=sr, column=1, value=title).font = tf
+        sr += 1
+        for j, c in enumerate(cols, 1):
+            cl = ws.cell(row=sr, column=j, value=c)
+            cl.font = hf
+            cl.fill = hfl
+            cl.alignment = Alignment(horizontal='center')
+            cl.border = tb
+        sr += 1
         for r in rows:
-            for j,c in enumerate(cols,1):
-                cl=ws.cell(row=sr,column=j,value=r.get(c,"")); cl.border=tb; cl.alignment=Alignment(horizontal='center')
-            sr+=1
-        return sr+1
-    rn=ws_sec("INDICATEURS DE PERFORMANCE",pcols,prows,rn)
-    if ano_p_c and ano_p_r: rn=ws_sec("ANOMALIES PERFORMANCE",ano_p_c,ano_p_r,rn)
-    rn=ws_sec("INDICATEURS DE QUALITE",qcols,qrows,rn)
-    if ano_q_c and ano_q_r: rn=ws_sec("ANOMALIES QUALITE",ano_q_c,ano_q_r,rn)
-    try: wb.save(filepath)
-    except: pass
+            for j, c in enumerate(cols, 1):
+                cl = ws.cell(row=sr, column=j, value=r.get(c, ""))
+                cl.border = tb
+                cl.alignment = Alignment(horizontal='center')
+            sr += 1
+        return sr + 1
+
+    rn = ws_sec("INDICATEURS DE PERFORMANCE", pcols, prows, rn)
+    rn = ws_sec("INDICATEURS DE QUALITE", qcols, qrows, rn)
+    try:
+        wb.save(filepath)
+    except:
+        pass
 
 def load_historical_kpis(filepath):
     if not os.path.exists(filepath): return pd.DataFrame()
@@ -865,7 +881,7 @@ def ks(v, c):
     if c in ["OT préparation 1mois< <3mois","OT planification 1mois< <3mois","OT exécution 1mois< <3mois"]:
         return "background:#c6efce;color:#006100;font-weight:600" if val<=15 else "background:#ffc7ce;color:#9c0006;font-weight:600"
     if c in ["OT préparation >3 mois","OT planification >3 mois","OT exécution >3 mois"]:
-        return "background:#c6efce;color:#006100;font-weight:600" if val<=5 else "background:#ffc7ce;color:#9c0006;font-weight:600"
+        return "background:#c6efce;color:#006100;font-weight:600" if val<=5 else "background:#ffc7ce;color:#9c0006;font-weight:600")
     if c=="TAUX_REALISATION_CORRECTIF/PT":
         return "background:#c6efce;color:#006100;font-weight:600" if val>=85 else ("background:#ffeb9c;color:#9c6500;font-weight:600" if val>=80 else "background:#ffc7ce;color:#9c0006;font-weight:600")
     if c=="Taux d'approbation des Avis":
@@ -1207,7 +1223,7 @@ def main():
                 qrw["Score Qualite"]="%.2f"%qscores.get(poste,0); qrows.append(qrw)
             prows.append({"_t":"cible","Poste de travail":"CIBLE",**{k:"%.0f"%CIBLE.get(k,100) for k in QK},"Score Performance":"%.0f"%100})
             qrows.append({"_t":"cible","Poste de travail":"CIBLE",**{k:"%.0f"%CIBLE.get(k,100) for k in PK},"Score Qualite":"%.0f"%100})
-            # CORRECTION BUG Total général
+            # Total general
             tot_p={"Poste de travail":"Total general"}
             for k in QK:
                 cc=0; tc=0
@@ -1240,7 +1256,7 @@ def main():
             thm_df=dfp[dfp[text_col].astype(str).str.contains("THERMO|THERMOGRAPH",case=False,na=False)] if text_col else pd.DataFrame()
             piv_oms=build_statut_pivot(oms_df,vp); piv_thm=build_statut_pivot(thm_df,vp); piv_all=build_statut_pivot(dfp,vp)
 
-            save_kpis_to_excel(prows,pcols,qrows,qcols,[],[],[],[],[],fichier_date)
+            save_kpis_to_excel(prows, pcols, qrows, qcols, fichier_date)
 
             # Historical
             hist_df=load_historical_kpis(os.path.join("kpis","indicateurs_kpis.xlsx"))
