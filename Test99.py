@@ -133,7 +133,7 @@ def get_date_from_file():
         try:
             with open("date.txt","r",encoding="utf-8") as f: return f.read().strip()
         except Exception: pass
-    return "18/06/2026"
+    return pd.Timestamp.today().strftime("%d/%m/%Y")
 
 def contient_mot(t,lm):
     t=str(t); return any(m in t for l in lm for m in l.split())
@@ -149,20 +149,60 @@ def excr(df):
     return df
 
 @st.cache_data(show_spinner=False)
+def read_excel_safe(bytes_data):
+    """Lit un fichier Excel en détectant automatiquement le vrai format."""
+    bio = io.BytesIO(bytes_data)
+    
+    # Détection du format via les magic bytes
+    header = bytes_data[:8]
+    
+    if header[:4] in (b'PK\x03\x04', b'PK\x05\x06'):
+        # Format ZIP → .xlsx / .xlsm
+        for engine in ['openpyxl', 'calamine']:
+            try:
+                return pd.read_excel(bio, engine=engine)
+            except Exception:
+                bio.seek(0)
+                continue
+    
+    if header == b'\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1':
+        # Format OLE2 → .xls (ancien format binaire)
+        for engine in ['xlrd', 'calamine']:
+            try:
+                return pd.read_excel(bio, engine=engine)
+            except Exception:
+                bio.seek(0)
+                continue
+    
+    # Dernier recours : essai de tous les moteurs
+    for engine in ['openpyxl', 'xlrd', 'calamine']:
+        try:
+            bio.seek(0)
+            return pd.read_excel(bio, engine=engine)
+        except Exception:
+            continue
+    
+    raise ValueError(
+        "Format de fichier non reconnu. Le fichier n'est ni un .xlsx ni un .xls valide.\n"
+        "Vérifiez que le fichier n'est pas corrompu ou protégé par mot de passe."
+    )
+
+
+@st.cache_data(show_spinner=False)
 def prepare_data(ot_bytes, av_bytes, date_str):
-    raw_ot = pd.read_excel(io.BytesIO(ot_bytes))
-    raw_av = pd.read_excel(io.BytesIO(av_bytes))
+    raw_ot = read_excel_safe(ot_bytes)       # ← remplacé
+    raw_av = read_excel_safe(av_bytes)       # ← remplacé
     raw_ot = excr(raw_ot)
     raw_av = excr(raw_av)
     
+    # ... le reste de la fonction reste IDENTIQUE ...
     for c in ["Créé le","Date de début planifiée","Date de clôture","Début réel","Fin réelle"]:
         if c in raw_ot.columns: raw_ot[c]=pd.to_datetime(raw_ot[c],errors="coerce")
     for c in ["Créé le","Début souhaité","Date de la clôture"]:
         if c in raw_av.columns: raw_av[c]=pd.to_datetime(raw_av[c],errors="coerce")
         
-    now_ts = pd.to_datetime(date_str, format="%d/%m/%Y", errors='coerce')
-    if pd.isna(now_ts): now_ts = pd.Timestamp.now()
-    
+   
+    now_ts = pd.Timestamp.today()
     df = raw_ot.copy()
     
     df["Backlog preparation"]=np.where(df["Statut utilisateur"].apply(lambda x:contient_mot(x,MP_KW)),"CARACTERISE","NON CARACTERISE")
@@ -186,18 +226,17 @@ def prepare_data(ot_bytes, av_bytes, date_str):
     if "Statut système" in df.columns: df["Statut OT"]=df["Statut système"].fillna("").astype(str).str.strip().str.split().str[0]
     
     avf = raw_av[
-    (
-        raw_av["Ordre"].isna() |
-        (raw_av["Ordre"].astype(str).str.strip() == "")
-    )
-    &
-    (raw_av["Type d'avis"].isin(["ZU","Z4","ZR","ZP"]))
-].copy()
+        (
+            raw_av["Ordre"].isna() |
+            (raw_av["Ordre"].astype(str).str.strip() == "")
+        )
+        &
+        (raw_av["Type d'avis"].isin(["ZU","Z4","ZR","ZP"]))
+    ].copy()
     
     apm = sorted(df[df["Poste travail princ."].astype(str).str.startswith(("SF1","SF2"),na=False)]["Poste travail princ."].dropna().unique().tolist())
     
     return df, avf, apm, now_ts
-
 def save_kpis_to_excel(prows,pcols,qrows,qcols,ano_p_r,ano_p_c,ano_q_r,ano_q_c,sheet_name):
     kpis_dir="kpis"; os.makedirs(kpis_dir,exist_ok=True)
     filepath=os.path.join(kpis_dir,"indicateurs_kpis.xlsx")
@@ -728,7 +767,13 @@ def main():
         an["TOTAL_OT"]=an[["CLOT","CRÉÉ","LANC","TCLO"]].sum(axis=1)
         an["TAUX_REALISATION_CORRECTIF/PT"]=np.where(an["TOTAL_OT"]==0,100.0,ckpi(an["OT_CLOTURES"],an["TOTAL_OT"]))
         
-        pr=cpiv(df,(df["Statut OT"]=="CRÉÉ")&(df["Statut utilisateur"].str.contains("CRPR",na=False)),"ap",posts)
+        pr = cpiv(
+    df,
+    (df["Statut OT"]=="CRÉÉ") &
+    (df["Statut utilisateur"].str.contains(r"\bCRPR\b", case=False, na=False)),
+    "ap",
+    posts
+)
         for c in ["<1 mois",">3 mois","1 mois < <3 mois","Inconnu"]: pr[c]=pr.get(c,0)
         pr["Total"]=pr[["<1 mois","1 mois < <3 mois",">3 mois","Inconnu"]].sum(axis=1)
         pr["OT préparation <1 mois"]=ckpi(pr["<1 mois"],pr["Total"]); pr["OT préparation >3 mois"]=ckpi(pr[">3 mois"],pr["Total"],0); pr["OT préparation 1mois< <3mois"]=ckpi(pr["1 mois < <3 mois"],pr["Total"],0)
@@ -795,86 +840,7 @@ def main():
             "OT CONFIME":res['ot_confime']["OT CONFIME"],"OT_COR_EGAL":res['ot_cor_egal']["OT_COR_EGAL"],
             "OT Fiabilité":fiab_s,"Total Avis de Panne":avpan_s
         })
-          # =========================
-# TABLEAU ANOMALIES KPI
-# =========================
-
-anom_perf=[]
-anom_qual=[]
-
-for poste in posts:
-
-    rp={"Poste de travail":poste}
-    rq={"Poste de travail":poste}
-
-    rp["TAUX_REALISATION_CORRECTIF/PT"]=len(
-        df[
-            (df["Poste travail princ."]==poste)
-            &(df["Contient SOPL"]==1)
-            &(~df["Statut OT"].isin(["CLOT","TCLO"]))
-        ]
-    )
-
-    rp["OT préparation <1 mois"]=len(
-        df[
-            (df["Poste travail princ."]==poste)
-            &(df["Statut OT"]=="CRÉÉ")
-            &(df["ap"]!="<1 mois")
-        ]
-    )
-
-    rp["OT préparation >3 mois"]=len(
-        df[
-            (df["Poste travail princ."]==poste)
-            &(df["Statut OT"]=="CRÉÉ")
-            &(df["ap"]==">3 mois")
-        ]
-    )
-
-    rq["Taux d'approbation des Avis"]=len(
-        avf[
-            (avf["Poste travail princ."]==poste)
-            &(~avf["Statut utilisateur"].isin(["APRV","APRV AVAU"]))
-        ]
-    )
-
-    rq["OT LANC ESTIME"]=len(
-        df[
-            (df["Poste travail princ."]==poste)
-            &(df["OT LANC ESTIME"]=="NON")
-        ]
-    )
-
-    rq["Backlog préparation caractérisé"]=len(
-        df[
-            (df["Poste travail princ."]==poste)
-            &(df["Backlog preparation"]=="NON CARACTERISE")
-        ]
-    )
-
-    rq["Backlog planification caractérisé"]=len(
-        df[
-            (df["Poste travail princ."]==poste)
-            &(df["Backlog planification"]=="NON CARACTERISE")
-        ]
-    )
-
-    rq["OT CONFIME"]=len(
-        df[
-            (df["Poste travail princ."]==poste)
-            &(df["OT CONFIME"]=="NON")
-        ]
-    )
-
-    rp["Total Anomalies"]=sum(v for k,v in rp.items() if k!="Poste de travail")
-    rq["Total Anomalies"]=sum(v for k,v in rq.items() if k!="Poste de travail")
-
-    anom_perf.append(rp)
-    anom_qual.append(rq)
-
-    res["anom_perf"]=pd.DataFrame(anom_perf)
-    res["anom_qual"]=pd.DataFrame(anom_qual)
-       
+        return res
 
     def get_bar_color(kpi, val):
         try: v = float(val)
@@ -1345,7 +1311,7 @@ for poste in posts:
             ano_map["Backlog planification caractérisé"] = dfp[(dfp["Statut OT"]=="LANC")&(dfp["Backlog planification"]=="NON CARACTERISE")].groupby("Poste travail princ.")["Ordre"].count()
             ano_map["OT CONFIME"] = dfp[dfp["OT CONFIME"]=="NON"].groupby("Poste travail princ.")["Ordre"].count()
             ano_map["OT_COR_EGAL"] = dfp[dfp["OT_COR_EGAL"]=="NON"].groupby("Poste travail princ.")["Ordre"].count()
-            
+            selected_posts_for_anomalies = st.multiselect("Filtrer les postes affichés dans les tableaux d'anomalies", vp, default=vp, key="filter_anom_posts") or vp
             ano_p_rows = []
             for poste in vp:
                 r = {"Poste de travail": poste}
@@ -1569,7 +1535,7 @@ for poste in posts:
 
             logo_b64 = get_logo_base64()
             if logo_b64:
-                st.markdown('<div class="mh"><img src="data:image/png;base64,%s" class="logo" alt="Logo"><h1>Tableau de Bord KPIs Performance & Qualite</h1><span class="db">📅 18/06/2026</span></div>'%logo_b64,unsafe_allow_html=True)
+               st.markdown(f'<div class="mh"><img src="data:image/png;base64,{logo_b64}" class="logo" alt="Logo"><h1>Tableau de Bord KPIs Performance & Qualite</h1><span class="db">📅 {fichier_date}</span></div>', unsafe_allow_html=True)
             else:
                 st.markdown('<div class="mh"><h1>Tableau de Bord KPIs Performance & Qualite</h1><span class="db">📅 18/06/2026</span></div>',unsafe_allow_html=True)
             
@@ -1597,8 +1563,6 @@ for poste in posts:
                 st.markdown('<div class="stl p">Detail des indicateurs de Performance</div>',unsafe_allow_html=True)
                 st.markdown(html_table(prows,pcols,"pt",["Score Performance"]),unsafe_allow_html=True)
                 st.markdown('<div class="stl a">Nombre d\'anomalies par KPI et Poste (à traiter pour atteindre 100%)</div>',unsafe_allow_html=True)
-                st.subheader("Nombre d'anomalies par KPI et Poste")
-                st.dataframe(kpis["anom_perf"],use_container_width=True)
                 st.markdown(html_anomaly_table(ano_p_rows,ano_p_cols,"at"),unsafe_allow_html=True)
                 st.markdown('<div class="stl a">Actions recommandees — Performance</div>',unsafe_allow_html=True)
                 st.markdown(html_actions_table(QK,pa,CIBLE,ACT_MAP),unsafe_allow_html=True)
