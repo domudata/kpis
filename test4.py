@@ -1653,27 +1653,14 @@ def main():
             with tabs[1]:
                 st.markdown('<div class="stl p">Detail des indicateurs de Performance</div>',unsafe_allow_html=True)
                 st.markdown(html_table(prows,pcols,"pt",["Score Performance"]),unsafe_allow_html=True)
-                def html_kpi_or_anomaly_table(prows, qrows, ano_perf, ano_qual, section="perf"):
-                     choix = st.radio("Affichage :", ["📊 Valeurs KPI", "⚠️ Nombre d'Anomalies"], horizontal=True, key=f"choix_{section}")
-                     if choix == "📊 Valeurs KPI":
-                       st.markdown(html_table(prows if section=="perf" else qrows, ["Poste de travail"]+(QK if section=="perf" else PK)+(["Score Performance"] if section=="perf" else ["Score Qualite"]), "pt" if section=="perf" else "qt", ["Score Performance"] if section=="perf" else ["Score Qualite"]), unsafe_allow_html=True)
-                     else:
-                       df = (ano_perf if section=="perf" else ano_qual).copy(); df.loc["Total général"] = df.sum()
-                       st.markdown(html_anomaly_table_clean(df, QK if section=="perf" else PK, "Anomalies Performance" if section=="perf" else "Anomalies Qualité", "pt" if section=="perf" else "qt"), unsafe_allow_html=True)
+                st.markdown("### Nombre d'anomalies par KPI et Poste"); ano_perf=res["anomalies_perf"].copy(); ano_perf.loc["Total général"]=ano_perf.sum(); st.dataframe(ano_perf.style.map(lambda v:"background:#c6efce;color:#006100;font-weight:600" if pd.notna(v) and v==0 else "background:#ffc7ce;color:#9c0006;font-weight:600"),use_container_width=True)
                 st.markdown('<div class="stl a">Actions recommandees — Performance</div>',unsafe_allow_html=True)
                 st.markdown(html_actions_table(QK,pa,CIBLE,ACT_MAP),unsafe_allow_html=True)
 
             with tabs[2]:
                 st.markdown('<div class="stl q">Detail des indicateurs de Qualite</div>',unsafe_allow_html=True)
                 st.markdown(html_table(qrows,qcols,"qt",["Score Qualite"]),unsafe_allow_html=True)
-                def html_kpi_or_anomaly_table(prows, qrows, ano_perf, ano_qual, section="perf"):
-                     choix = st.radio("Affichage :", ["📊 Valeurs KPI", "⚠️ Nombre d'Anomalies"], horizontal=True, key=f"choix_{section}")
-                     if choix == "📊 Valeurs KPI":
-                       st.markdown(html_table(prows if section=="perf" else qrows, ["Poste de travail"]+(QK if section=="perf" else PK)+(["Score Performance"] if section=="perf" else ["Score Qualite"]), "pt" if section=="perf" else "qt", ["Score Performance"] if section=="perf" else ["Score Qualite"]), unsafe_allow_html=True)
-                     else:
-                       df = (ano_perf if section=="perf" else ano_qual).copy(); df.loc["Total général"] = df.sum()
-                       st.markdown(html_anomaly_table_clean(df, QK if section=="perf" else PK, "Anomalies Performance" if section=="perf" else "Anomalies Qualité", "pt" if section=="perf" else "qt"), unsafe_allow_html=True)
-
+                st.markdown("### Nombre d'anomalies par KPI et Poste"); ano_qual=res["anomalies_qual"].copy(); ano_qual.loc["Total général"]=ano_qual.sum(); st.dataframe(ano_qual.style.map(lambda v:"background:#c6efce;color:#006100;font-weight:600" if pd.notna(v) and v==0 else "background:#ffc7ce;color:#9c0006;font-weight:600"),use_container_width=True)
                 
                 st.markdown('<div class="stl a">Actions recommandees — Qualite</div>',unsafe_allow_html=True)
                 st.markdown(html_actions_table(PK,qa,CIBLE,ACT_MAP),unsafe_allow_html=True)
