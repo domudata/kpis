@@ -829,7 +829,7 @@ def main():
         sys_df["Performance Appels Systématiques"]=np.where(sys_df["_d"]==0,100.0,(sys_df["_n"]/sys_df["_d"])*100)
         
         fiab_s=pd.Series(100.0,index=posts); avpan_s=pd.Series(100.0,index=posts)
-            r
+      
             res['ckdf']=pd.DataFrame({
              "TAUX_REALISATION_CORRECTIF/PT":an["TAUX_REALISATION_CORRECTIF/PT"],
              "OT préparation <1 mois":pr["OT préparation <1 mois"],
