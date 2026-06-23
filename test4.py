@@ -1007,44 +1007,40 @@ def main():
         
     def is_lb(k): return k in LOWER_BETTER
 
-    def html_table(rows,cols,tc,sc_col=None):
-        h='<table class="tw %s"><thead><tr>'%tc+''.join('<th>%s</th>'%c for c in cols)+'</tr></thead><tbody>'
-        for r in rows:
-            is_cible = r.get("_t")=="cible"
-            is_total = r.get("_t")=="total"
-            rc="cb" if is_cible else ""
-            h+='<tr class="%s">'%rc
-            for c in cols:
-                v=r.get(c,"")
-                if is_cible:
-                    h+='<td style="background:#1e3a5f;color:#FFFFFF;font-weight:bold;text-align:center;">%s</td>'%v
-                elif is_total:
-                    s=cs(v) if sc_col and c in sc_col else ks(v,c)
-                    total_style = "font-weight:800;font-size:12px;text-align:center;"
-                    if s:
-                        clean_s = s.replace("font-weight:600","").replace("font-weight:700","")
-                        total_style += clean_s
-                    h+='<td style="%s">%s</td>'%(total_style,v)
-                else:
-                    s=cs(v) if sc_col and c in sc_col else ks(v,c)
-                    h+='<td style="%s">%s</td>'%(s or "",v)
-            h+='</tr>'
-        return h+'</tbody></table>'
-        
-    def html_anomaly_table(rows,cols,tc):
-        h='<table class="tw %s"><thead><tr>'%tc+''.join('<th>%s</th>'%c for c in cols)+'</tr></thead><tbody>'
-        for r in rows:
-            rc="tr" if r.get("Poste de travail")=="Total" else ""
-            h+='<tr class="%s">'%rc
-            for c in cols:
-                v=r.get(c,"")
-                if c=="Poste de travail": h+='<td style="font-weight:700">%s</td>'%v
-                elif c=="Total Anomalies": h+='<td style="text-align:center;font-weight:800">%s</td>'%v
-                else:
-                    s=kas(v)
-                    h+='<td style="%s;text-align:center">%s</td>'%(s or "",v)
-            h+='</tr>'
-        return h+'</tbody></table>'
+  def html_kpi_or_anomaly_table(prows, qrows, ano_perf, ano_qual, section="perf"):
+    """Affiche soit le tableau KPI soit le tableau Anomalies selon le choix"""
+    
+    choix = st.radio(
+        "Affichage :",
+        options=["📊 Valeurs KPI", "⚠️ Nombre d'Anomalies"],
+        horizontal=True,
+        key=f"choix_{section}"
+    )
+
+    if choix == "📊 Valeurs KPI":
+        # Affichage classique des KPIs (utilise ton html_table)
+        if section == "perf":
+            cols = ["Poste de travail"] + QK + ["Score Performance"]
+            st.markdown(html_table(prows, cols, "pt", ["Score Performance"]), unsafe_allow_html=True)
+        else:
+            cols = ["Poste de travail"] + PK + ["Score Qualite"]
+            st.markdown(html_table(qrows, cols, "qt", ["Score Qualite"]), unsafe_allow_html=True)
+
+    else:
+        # Affichage des Anomalies (utilise html_anomaly_table_clean)
+        if section == "perf":
+            df_anom = ano_perf.copy()
+            kpi_cols = QK
+            title = "Anomalies Performance"
+            color_class = "pt"
+        else:
+            df_anom = ano_qual.copy()
+            kpi_cols = PK
+            title = "Anomalies Qualité"
+            color_class = "qt"
+
+        df_anom.loc["Total général"] = df_anom.sum()
+        st.markdown(html_anomaly_table_clean(df_anom, kpi_cols, title, color_class), unsafe_allow_html=True)
 
     def html_actions_table(kpi_list,actuals,targets,act_map):
         h='<table class="tw at"><thead><tr><th>KPI</th><th>Valeur Actuelle</th><th>Cible</th><th>Ecart</th><th>Statut</th><th>Action Recommandee</th></tr></thead><tbody>'
