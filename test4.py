@@ -1010,21 +1010,21 @@ def main():
     def html_kpi_or_anomaly_table(prows, qrows, ano_perf, ano_qual, section="perf"):
     """Affiche soit le tableau KPI soit le tableau Anomalies selon le choix"""
     
-    choix = st.radio(
+     choix = st.radio(
         "Affichage :",
         options=["📊 Valeurs KPI", "⚠️ Nombre d'Anomalies"],
         horizontal=True,
         key=f"choix_{section}"
     )
 
-    if choix == "📊 Valeurs KPI":
-        if section == "perf":
+     if choix == "📊 Valeurs KPI":
+         if section == "perf":
             cols = ["Poste de travail"] + QK + ["Score Performance"]
             st.markdown(html_table(prows, cols, "pt", ["Score Performance"]), unsafe_allow_html=True)
-        else:
+         else:
             cols = ["Poste de travail"] + PK + ["Score Qualite"]
             st.markdown(html_table(qrows, cols, "qt", ["Score Qualite"]), unsafe_allow_html=True)
-    else:
+     else:
         df = (ano_perf if section == "perf" else ano_qual).copy()
         df.loc["Total général"] = df.sum()
         title = "Anomalies Performance" if section == "perf" else "Anomalies Qualité"
