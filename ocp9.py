@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 import io, locale, random, time, os, hashlib, json, base64
 from datetime import datetime
-import plotly.express as px
+import plotly.express as anomalies_perf
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from openpyxl import load_workbook, Workbook
@@ -848,43 +848,42 @@ def main():
         res["anomalies_perf"] = res["anomalies_perf"].fillna(0).astype(int)
 
         res["anomalies_perf"]["TAUX_REALISATION_CORRECTIF/PT"] = (
-            an["TOTAL_OT"] - an["OT_CLOTURES"], 0).fillna(0).astype(int)
+            an["TOTAL_OT"] - an["OT_CLOTURES"]
         )
 
         res["anomalies_perf"]["OT préparation <1 mois"] = (
-            pr["1 mois < <3 mois"] + pr[">3 mois"] + pr["Inconnu"], 0).fillna(0).astype(int)
+            pr["1 mois < <3 mois"] + pr[">3 mois"] + pr["Inconnu"]
         )
 
         res["anomalies_perf"]["OT préparation 1mois< <3mois"] = (
-            pr["1 mois < <3 mois"], 0).fillna(0).astype(int)
+            pr["1 mois < <3 mois"]
         )
 
         res["anomalies_perf"]["OT préparation >3 mois"] = (
-            pr[">3 mois"], 0).fillna(0).astype(int)
+            pr[">3 mois"]
         )
 
         res["anomalies_perf"]["OT planification <1 mois"] = (
-            pl["1 mois < <3 mois"] + pl[">3 mois"] + pl["Inconnu"], 0).fillna(0).astype(int)
-        )
+            pl["1 mois < <3 mois"] + pl[">3 mois"] + pl["Inconnu"]
 
         res["anomalies_perf"]["OT planification 1mois< <3mois"] = (
             pl["1 mois < <3 mois"]
         )
 
         res["anomalies_perf"]["OT planification >3 mois"] = (
-            pl[">3 mois"], 0).fillna(0).astype(int)
+            pl[">3 mois"]
         )
 
         res["anomalies_perf"]["OT exécution <1 mois"] = (
-            ex["1 mois < <3 mois"] + ex[">3 mois"] + ex["Inconnu"], 0).fillna(0).astype(int)
+            ex["1 mois < <3 mois"] + ex[">3 mois"] + ex["Inconnu"]
         )
 
         res["anomalies_perf"]["OT exécution 1mois< <3mois"] = (
-            ex["1 mois < <3 mois"], 0).fillna(0).astype(int)
+            ex["1 mois < <3 mois"]
         )
 
         res["anomalies_perf"]["OT exécution >3 mois"] = (
-            ex[">3 mois"], 0).fillna(0).astype(int)
+            ex[">3 mois"]
         )
 
         res["anomalies_perf"]["Performance Graissage"] = (
