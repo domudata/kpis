@@ -845,6 +845,7 @@ def main():
         # ==========================
 
         res["anomalies_perf"] = pd.DataFrame(index=posts)
+        res["anomalies_perf"] = res["anomalies_perf"].fillna(0).astype(int)
 
         res["anomalies_perf"]["TAUX_REALISATION_CORRECTIF/PT"] = (
             an["TOTAL_OT"] - an["OT_CLOTURES"]
@@ -899,6 +900,7 @@ def main():
         ).clip(lower=0)
 
         res["anomalies_qual"] = pd.DataFrame(index=posts)
+        res["anomalies_qual"] = res["anomalies_qual"].fillna(0).astype(int)
 
         res["anomalies_qual"]["Taux d'approbation des Avis"] = (
             tca["Total"] - tca["APRV"]
