@@ -1008,39 +1008,29 @@ def main():
     def is_lb(k): return k in LOWER_BETTER
 
     def html_kpi_or_anomaly_table(prows, qrows, ano_perf, ano_qual, section="perf"):
-      """Affiche soit le tableau KPI soit le tableau Anomalies selon le choix"""
+    """Affiche soit le tableau KPI soit le tableau Anomalies selon le choix"""
     
-     choix = st.radio(
+    choix = st.radio(
         "Affichage :",
         options=["📊 Valeurs KPI", "⚠️ Nombre d'Anomalies"],
         horizontal=True,
         key=f"choix_{section}"
     )
 
-     if choix == "📊 Valeurs KPI":
-        # Affichage classique des KPIs (utilise ton html_table)
+    if choix == "📊 Valeurs KPI":
         if section == "perf":
             cols = ["Poste de travail"] + QK + ["Score Performance"]
             st.markdown(html_table(prows, cols, "pt", ["Score Performance"]), unsafe_allow_html=True)
         else:
             cols = ["Poste de travail"] + PK + ["Score Qualite"]
             st.markdown(html_table(qrows, cols, "qt", ["Score Qualite"]), unsafe_allow_html=True)
-
-     else:
-        # Affichage des Anomalies (utilise html_anomaly_table_clean)
-        if section == "perf":
-            df_anom = ano_perf.copy()
-            kpi_cols = QK
-            title = "Anomalies Performance"
-            color_class = "pt"
-        else:
-            df_anom = ano_qual.copy()
-            kpi_cols = PK
-            title = "Anomalies Qualité"
-            color_class = "qt"
-
-        df_anom.loc["Total général"] = df_anom.sum()
-        st.markdown(html_anomaly_table_clean(df_anom, kpi_cols, title, color_class), unsafe_allow_html=True)
+    else:
+        df = (ano_perf if section == "perf" else ano_qual).copy()
+        df.loc["Total général"] = df.sum()
+        title = "Anomalies Performance" if section == "perf" else "Anomalies Qualité"
+        color_class = "pt" if section == "perf" else "qt"
+        kpi_cols = QK if section == "perf" else PK
+        st.markdown(html_anomaly_table_clean(df, kpi_cols, title, color_class), unsafe_allow_html=True)
 
    def html_actions_table(kpi_list,actuals,targets,act_map):
         h='<table class="tw at"><thead><tr><th>KPI</th><th>Valeur Actuelle</th><th>Cible</th><th>Ecart</th><th>Statut</th><th>Action Recommandee</th></tr></thead><tbody>'
