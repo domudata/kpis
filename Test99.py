@@ -947,21 +947,15 @@ def main():
             h+='</tr>'
         return h+'</tbody></table>'
         
-    def html_anomaly_table(rows,cols,tc):
-        h='<table class="tw %s"><thead><tr>'%tc+''.join('<th>%s</th>'%c for c in cols)+'</tr></thead><tbody>'
-        for r in rows:
-            rc="tr" if r.get("Poste de travail")=="Total" else ""
-            h+='<tr class="%s">'%rc
-            for c in cols:
-                v=r.get(c,"")
-                if c=="Poste de travail": h+='<td style="font-weight:700">%s</td>'%v
-                elif c=="Total Anomalies": h+='<td style="text-align:center;font-weight:800">%s</td>'%v
-                else:
-                    s=kas(v)
-                    h+='<td style="%s;text-align:center">%s</td>'%(s or "",v)
-            h+='</tr>'
-        return h+'</tbody></table>'
 
+         =====
+       def html_anomaly_table(rows, cols, tc):
+         h = '
+
+' % tc + ''.join('' % c for c in cols) + '' for r in rows: rc = "tr" if r.get("Poste de travail") == "Total" else "" h += '' % rc for c in cols: v = r.get(c, "") if c == "Poste de travail": h += '' % v elif c == "Total Anomalies": h += '' % v else: # valeur numérique -> entier try: iv = int(v) except Exception: try: iv = int(float(v)) except Exception: iv = 0 # couleur de fond selon KPI et valeur (normalisée 0-100) bg = get_bar_color(c, 100 if iv == 0 else min(max(iv, 0), 100)) # contraste du texte light_bg_colors = {"#10b981", "#38a169", "#059669", "#2563eb", "#3b82f6", "#8b5cf6", "#06b6d4", "#f59e0b"} txt = '#ffffff' if bg in light_bg_colors else '#1e293b' h += '' % (bg, txt, iv) h += '' h += '
+%s
+%s	%s	%d
+' return h
     def html_actions_table(kpi_list,actuals,targets,act_map):
         h='<table class="tw at"><thead><tr><th>KPI</th><th>Valeur Actuelle</th><th>Cible</th><th>Ecart</th><th>Statut</th><th>Action Recommandee</th></tr></thead><tbody>'
         for k in kpi_list:
@@ -1317,7 +1311,7 @@ def main():
                 r = {"Poste de travail": poste}
                 total = 0
                 for kpi in QK:
-                    cnt = int(ano_map.get(kpi, pd.Series()).get(poste, 0))
+                    cnt = int(ano_map.get(kpi, pd.Series()).get(poste, 0) or 0)
                     r[kpi] = cnt
                     total += cnt
                 r["Total Anomalies"] = total
@@ -1339,7 +1333,7 @@ def main():
                     if kpi in ["OT Fiabilité", "Total Avis de Panne"]:
                         cnt = 0
                     else:
-                        cnt = int(ano_map.get(kpi, pd.Series()).get(poste, 0))
+                        cnt = int(ano_map.get(kpi, pd.Series()).get(poste, 0) or 0)
                     r[kpi] = cnt
                     total += cnt
                 r["Total Anomalies"] = total
