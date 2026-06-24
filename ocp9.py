@@ -770,14 +770,20 @@ def main():
         pr = cpiv(
     df,
     (df["Statut OT"]=="CRÉÉ") &
-    (df["Statut utilisateur"].str.contains(r"\bCRPR\b", case=False, na=False)) &
+    (df["Statut utilisateur"].str.contains(r"\bCRPR\b",case=False,na=False)) &
     (df["Backlog preparation"]=="NON CARACTERISE"),
     "ap",
     posts
 )
-        for c in ["<1 mois",">3 mois","1 mois < <3 mois","Inconnu"]: pr[c]=pr.get(c,0)
-        pr["Total"]=pr[["<1 mois","1 mois < <3 mois",">3 mois","Inconnu"]].sum(axis=1)
-        pr["OT préparation <1 mois"]=ckpi(pr["<1 mois"],pr["Total"]); pr["OT préparation >3 mois"]=ckpi(pr[">3 mois"],pr["Total"],0); pr["OT préparation 1mois< <3mois"]=ckpi(pr["1 mois < <3 mois"],pr["Total"],0)
+
+        for c in ["<1 mois",">3 mois","1 mois < <3 mois","Inconnu"]:
+        pr[c]=pr.get(c,0)
+
+        pr["Total"] = df[df["Statut OT"]=="LANC"].groupby("Poste travail princ.")["Ordre"].count().reindex(posts,fill_value=0)
+
+        pr["OT préparation <1 mois"] = ckpi(pr["<1 mois"],pr["Total"])
+        pr["OT préparation >3 mois"] = ckpi(pr[">3 mois"],pr["Total"],0)
+        pr["OT préparation 1mois< <3mois"] = ckpi(pr["1 mois < <3 mois"],pr["Total"],0)
         
         pl=cpiv(df,(df["Statut OT"]=="LANC")&(df["Statut utilisateur"].str.contains("ATPL",case=False,na=False)),"alp",posts)
         for c in ["<1 mois",">3 mois","1 mois < <3 mois","Inconnu"]: pl[c]=pl.get(c,0)
