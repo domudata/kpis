@@ -775,7 +775,20 @@ def main():
 
         pr["OT préparation <1 mois"] = ckpi(pr["<1 mois"],pr["Total"])
         pr["OT préparation >3 mois"] = ckpi(pr[">3 mois"],pr["Total"],0)
-        pr["OT préparation 1mois< <3mois"] = ckpi(pr["1 mois < <3 mois"],pr["Total"],0)
+        pr["OT préparation 1mois< <3mois"] = ckpi(pr["1 mois < <3 mois"],pr["Total"],0
+        st.write("=== DEBUG PREPARATION ===")
+        st.dataframe(pr[["<1 mois","1 mois < <3 mois",">3 mois","Total"]])
+
+        st.write("=== REPARTITION AP ===")
+        st.write(df["ap"].value_counts(dropna=False))
+
+        st.write("=== FILTRE PREPARATION ===")
+        st.dataframe(
+    df[
+        (df["Statut OT"]=="CRÉÉ") &
+        (df["Statut utilisateur"].str.contains(r"\bCRPR\b",case=False,na=False)) &
+        (df["Backlog preparation"]=="NON CARACTERISE")
+    ][["Ordre","Poste travail princ.","ap","Statut utilisateur","Backlog preparation"]]                                        
         
         pl=cpiv(df,(df["Statut OT"]=="LANC")&(df["Statut utilisateur"].str.contains("ATPL",case=False,na=False)),"alp",posts)
         for c in ["<1 mois",">3 mois","1 mois < <3 mois","Inconnu"]: pl[c]=pl.get(c,0)
