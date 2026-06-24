@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import streamlit as st
-f"{float(v):.2f}"
+
 import streamlit.components.v1 as components
 import pandas as pd
 import numpy as np
