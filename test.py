@@ -855,27 +855,27 @@ def main():
                       })
 
         res["anomalies_perf"]=pd.DataFrame(index=posts)
-        res["anomalies_perf"]["TAUX_REALISATION_CORRECTIF/PT"]=(an["TOTAL_OT"]-an["OT_CLOTURES"]).astype(int)
-        res["anomalies_perf"]["OT préparation <1 mois"]=(pr["1 mois < <3 mois"]+pr[">3 mois"]+pr["Inconnu"]).astype(int)
-        res["anomalies_perf"]["OT préparation 1mois< <3mois"]=pr["1 mois < <3 mois"].astype(int)
-        res["anomalies_perf"]["OT préparation >3 mois"]=pr[">3 mois"].astype(int)
-        res["anomalies_perf"]["OT planification <1 mois"]=(pl["1 mois < <3 mois"]+pl[">3 mois"]+pl["Inconnu"]).astype(int)
-        res["anomalies_perf"]["OT planification 1mois< <3mois"]=pl["1 mois < <3 mois"].astype(int)
-        res["anomalies_perf"]["OT planification >3 mois"]=pl[">3 mois"].astype(int)
-        res["anomalies_perf"]["OT exécution <1 mois"]=(ex["1 mois < <3 mois"]+ex[">3 mois"]+ex["Inconnu"]).astype(int)
-        res["anomalies_perf"]["OT exécution 1mois< <3mois"]=ex["1 mois < <3 mois"].astype(int)
-        res["anomalies_perf"]["OT exécution >3 mois"]=ex[">3 mois"].astype(int)
-        res["anomalies_perf"]["Performance Graissage"]=(g_df["_d"]-g_df["_n"]).clip(lower=0).astype(int)
-        res["anomalies_perf"]["Performance Inspection"]=(ins_df["_d"]-ins_df["_n"]).clip(lower=0).astype(int)
-        res["anomalies_perf"]["Performance Appels Systématiques"]=(sys_df["_d"]-sys_df["_n"]).clip(lower=0).astype(int)
+        res["anomalies_perf"]["TAUX_REALISATION_CORRECTIF/PT"]=(an["TOTAL_OT"]-an["OT_CLOTURES"])
+        res["anomalies_perf"]["OT préparation <1 mois"]=(pr["1 mois < <3 mois"]+pr[">3 mois"]+pr["Inconnu"])
+        res["anomalies_perf"]["OT préparation 1mois< <3mois"]=pr["1 mois < <3 mois"]
+        res["anomalies_perf"]["OT préparation >3 mois"]=pr[">3 mois"]
+        res["anomalies_perf"]["OT planification <1 mois"]=(pl["1 mois < <3 mois"]+pl[">3 mois"]+pl["Inconnu"])
+        res["anomalies_perf"]["OT planification 1mois< <3mois"]=pl["1 mois < <3 mois"]
+        res["anomalies_perf"]["OT planification >3 mois"]=pl[">3 mois"]
+        res["anomalies_perf"]["OT exécution <1 mois"]=(ex["1 mois < <3 mois"]+ex[">3 mois"]+ex["Inconnu"])
+        res["anomalies_perf"]["OT exécution 1mois< <3mois"]=ex["1 mois < <3 mois"]
+        res["anomalies_perf"]["OT exécution >3 mois"]=ex[">3 mois"]
+        res["anomalies_perf"]["Performance Graissage"]=(g_df["_d"]-g_df["_n"]).clip(lower=0)
+        res["anomalies_perf"]["Performance Inspection"]=(ins_df["_d"]-ins_df["_n"]).clip(lower=0)
+        res["anomalies_perf"]["Performance Appels Systématiques"]=(sys_df["_d"]-sys_df["_n"]).clip(lower=0)
 
         res["anomalies_qual"]=pd.DataFrame(index=posts)
-        res["anomalies_qual"]["Taux d'approbation des Avis"]=(tca["Total"]-tca["APRV"]).astype(int)
-        res["anomalies_qual"]["OT LANC ESTIME"]=la["NON"].astype(int)
-        res["anomalies_qual"]["Backlog préparation caractérisé"]=pc["NON CARACTERISE"].astype(int)
-        res["anomalies_qual"]["Backlog planification caractérisé"]=plc["NON CARACTERISE"].astype(int)
-        res["anomalies_qual"]["OT CONFIME"]=res["ot_confime"]["NON"].astype(int)
-        res["anomalies_qual"]["OT_COR_EGAL"]=res["ot_cor_egal"]["NON"].astype(int)
+        res["anomalies_qual"]["Taux d'approbation des Avis"]=(tca["Total"]-tca["APRV"])
+        res["anomalies_qual"]["OT LANC ESTIME"]=la["NON"]
+        res["anomalies_qual"]["Backlog préparation caractérisé"]=pc["NON CARACTERISE"]
+        res["anomalies_qual"]["Backlog planification caractérisé"]=plc["NON CARACTERISE"]
+        res["anomalies_qual"]["OT CONFIME"]=res["ot_confime"]["NON"]
+        res["anomalies_qual"]["OT_COR_EGAL"]=res["ot_cor_egal"]["NON"]
 
         return res
     def get_bar_color(kpi, val):
