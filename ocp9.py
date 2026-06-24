@@ -10,8 +10,8 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-
-# ============================================================
+f
+# ============================================================f
 st.set_page_config(layout="wide", page_title="Dashboard KPI", initial_sidebar_state="expanded")
 # ============================================================
 
@@ -771,11 +771,14 @@ def main():
 
         for c in ["<1 mois",">3 mois","1 mois < <3 mois","Inconnu"]:pr[c]=pr.get(c,0)
 
-        pr["Total"] = df[df["Statut OT"]=="LANC"].groupby("Poste travail princ.")["Ordre"].count().reindex(posts,fill_value=0)
+        tot_pr = cpiv(df,(df["Statut OT"]=="LANC"),"ap",posts)
 
-        pr["OT préparation <1 mois"] = ckpi(pr["<1 mois"],pr["Total"])
-        pr["OT préparation >3 mois"] = ckpi(pr[">3 mois"],pr["Total"],0)
-        pr["OT préparation 1mois< <3mois"] = ckpi(pr["1 mois < <3 mois"],pr["Total"],0
+        for c in ["<1 mois",">3 mois","1 mois < <3 mois","Inconnu"]:
+          tot_pr[c] = tot_pr.get(c,0)
+
+        pr["OT préparation <1 mois"] = ckpi(pr["<1 mois"], tot_pr["<1 mois"])
+        pr["OT préparation >3 mois"] = ckpi(pr[">3 mois"], tot_pr[">3 mois"], 0)
+        pr["OT préparation 1mois< <3mois"] = ckpi(pr["1 mois < <3 mois"], tot_pr["1 mois < <3 mois"], 0)
         st.write("=== DEBUG PREPARATION ===")
         st.dataframe(pr[["<1 mois","1 mois < <3 mois",">3 mois","Total"]])
 
