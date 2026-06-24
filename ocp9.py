@@ -767,17 +767,9 @@ def main():
         an["TOTAL_OT"]=an[["CLOT","CRÉÉ","LANC","TCLO"]].sum(axis=1)
         an["TAUX_REALISATION_CORRECTIF/PT"]=np.where(an["TOTAL_OT"]==0,100.0,ckpi(an["OT_CLOTURES"],an["TOTAL_OT"]))
         
-        pr = cpiv(
-    df,
-    (df["Statut OT"]=="CRÉÉ") &
-    (df["Statut utilisateur"].str.contains(r"\bCRPR\b",case=False,na=False)) &
-    (df["Backlog preparation"]=="NON CARACTERISE"),
-    "ap",
-    posts
-)
+        pr = cpiv(df,(df["Statut OT"]=="CRÉÉ") & (df["Statut utilisateur"].str.contains(r"\bCRPR\b",case=False,na=False)) &(df["Backlog preparation"]=="NON CARACTERISE"),"ap", posts)
 
-        for c in ["<1 mois",">3 mois","1 mois < <3 mois","Inconnu"]:
-        pr[c]=pr.get(c,0)
+        for c in ["<1 mois",">3 mois","1 mois < <3 mois","Inconnu"]:pr[c]=pr.get(c,0)
 
         pr["Total"] = df[df["Statut OT"]=="LANC"].groupby("Poste travail princ.")["Ordre"].count().reindex(posts,fill_value=0)
 
