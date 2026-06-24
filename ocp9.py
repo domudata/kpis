@@ -770,7 +770,8 @@ def main():
         pr = cpiv(
     df,
     (df["Statut OT"]=="CRÉÉ") &
-    (df["Statut utilisateur"].str.contains(r"\bCRPR\b", case=False, na=False)),
+    (df["Statut utilisateur"].str.contains(r"\bCRPR\b", case=False, na=False)) &
+    (df["Backlog preparation"]=="NON CARACTERISE"),
     "ap",
     posts
 )
@@ -840,92 +841,8 @@ def main():
             "OT CONFIME":res['ot_confime']["OT CONFIME"],"OT_COR_EGAL":res['ot_cor_egal']["OT_COR_EGAL"],
             "OT Fiabilité":fiab_s,"Total Avis de Panne":avpan_s
         })
-                 # ==========================
-        # TABLEAU DES ANOMALIES
-        # ==========================
-
-        res["anomalies_perf"] = pd.DataFrame(index=posts)
-
-        res["anomalies_perf"]["TAUX_REALISATION_CORRECTIF/PT"] = (
-            an["TOTAL_OT"] - an["OT_CLOTURES"]
-        )
-
-        res["anomalies_perf"]["OT préparation <1 mois"] = (
-            pr["1 mois < <3 mois"] + pr[">3 mois"] + pr["Inconnu"]
-        )
-
-        res["anomalies_perf"]["OT préparation 1mois< <3mois"] = (
-            pr["1 mois < <3 mois"]
-        )
-
-        res["anomalies_perf"]["OT préparation >3 mois"] = (
-            pr[">3 mois"]
-        )
-
-        res["anomalies_perf"]["OT planification <1 mois"] = (
-            pl["1 mois < <3 mois"] + pl[">3 mois"] + pl["Inconnu"]
-        )
-
-        res["anomalies_perf"]["OT planification 1mois< <3mois"] = (
-            pl["1 mois < <3 mois"]
-        )
-
-        res["anomalies_perf"]["OT planification >3 mois"] = (
-            pl[">3 mois"]
-        )
-
-        res["anomalies_perf"]["OT exécution <1 mois"] = (
-            ex["1 mois < <3 mois"] + ex[">3 mois"] + ex["Inconnu"]
-        )
-
-        res["anomalies_perf"]["OT exécution 1mois< <3mois"] = (
-            ex["1 mois < <3 mois"]
-        )
-
-        res["anomalies_perf"]["OT exécution >3 mois"] = (
-            ex[">3 mois"]
-        )
-
-        res["anomalies_perf"]["Performance Graissage"] = (
-            g_df["_d"] - g_df["_n"]
-        ).clip(lower=0)
-
-        res["anomalies_perf"]["Performance Inspection"] = (
-            ins_df["_d"] - ins_df["_n"]
-        ).clip(lower=0)
-
-        res["anomalies_perf"]["Performance Appels Systématiques"] = (
-            sys_df["_d"] - sys_df["_n"]
-        ).clip(lower=0)
-        res["anomalies_perf"] = res["anomalies_perf"].fillna(0).astype(int)
-        res["anomalies_qual"] = pd.DataFrame(index=posts)
-
-        res["anomalies_qual"]["Taux d'approbation des Avis"] = (
-            tca["Total"] - tca["APRV"]
-        )
-
-        res["anomalies_qual"]["OT LANC ESTIME"] = la["NON"]
-
-        res["anomalies_qual"]["Backlog préparation caractérisé"] = (
-            pc["NON CARACTERISE"]
-        )
-
-        res["anomalies_qual"]["Backlog planification caractérisé"] = (
-            plc["NON CARACTERISE"]
-        )
-
-        res["anomalies_qual"]["OT CONFIME"] = (
-            res["ot_confime"]["NON"]
-        )
-
-        res["anomalies_qual"]["OT_COR_EGAL"] = (
-            res["ot_cor_egal"]["NON"]
-        )
-
-        res["anomalies_qual"]["OT Fiabilité"] = 0
-        res["anomalies_qual"]["Total Avis de Panne"] = 0
-
         return res
+
     def get_bar_color(kpi, val):
         try: v = float(val)
         except: return "#cbd5e0"
@@ -1369,13 +1286,6 @@ def main():
             sf2_q_score = np.mean([qscores[p] for p in sf2_posts]) if sf2_posts else 0
 
             # ANOMALIES
-            # ==============================================================
-
-# ==============================================================
-# FONCTION POUR EXCLURE LES COMPRESSEURS
-# ==============================================================
-           dfp = excr(res['dfp'])  # Exclut les compresseurs des OT
-           avf = excr(res['avf'])  # Exclut les compresseurs des Avis
             ano_map = {}
             ano_map["TAUX_REALISATION_CORRECTIF/PT"] = dfp[(dfp["Nº appel pl.entret."].fillna(0)==0)&(dfp["Contient SOPL"]==1)&(~dfp["Statut OT"].isin(["CLOT","TCLO"]))].groupby("Poste travail princ.")["Ordre"].count()
             prep_filt = (dfp["Statut OT"]=="CRÉÉ")&(dfp["Statut utilisateur"].str.contains("CRPR",na=False))
@@ -1653,15 +1563,16 @@ def main():
             with tabs[1]:
                 st.markdown('<div class="stl p">Detail des indicateurs de Performance</div>',unsafe_allow_html=True)
                 st.markdown(html_table(prows,pcols,"pt",["Score Performance"]),unsafe_allow_html=True)
-                st.markdown("### Nombre d'anomalies par KPI et Poste"); ano_perf=res["anomalies_perf"].copy(); ano_perf.loc["Total général"]=ano_perf.sum(); st.dataframe(ano_perf.style.map(lambda v:"background:#c6efce;color:#006100;font-weight:600" if pd.notna(v) and v==0 else "background:#ffc7ce;color:#9c0006;font-weight:600"),use_container_width=True)
+                st.markdown('<div class="stl a">Nombre d\'anomalies par KPI et Poste (à traiter pour atteindre 100%)</div>',unsafe_allow_html=True)
+                st.markdown(html_anomaly_table(ano_p_rows,ano_p_cols,"at"),unsafe_allow_html=True)
                 st.markdown('<div class="stl a">Actions recommandees — Performance</div>',unsafe_allow_html=True)
                 st.markdown(html_actions_table(QK,pa,CIBLE,ACT_MAP),unsafe_allow_html=True)
 
             with tabs[2]:
                 st.markdown('<div class="stl q">Detail des indicateurs de Qualite</div>',unsafe_allow_html=True)
                 st.markdown(html_table(qrows,qcols,"qt",["Score Qualite"]),unsafe_allow_html=True)
-                st.markdown("### Nombre d'anomalies par KPI et Poste"); ano_qual=res["anomalies_qual"].copy(); ano_qual.loc["Total général"]=ano_qual.sum(); st.dataframe(ano_qual.style.map(lambda v:"background:#c6efce;color:#006100;font-weight:600" if pd.notna(v) and v==0 else "background:#ffc7ce;color:#9c0006;font-weight:600"),use_container_width=True)
-                
+                st.markdown('<div class="stl a">Nombre d\'anomalies par KPI et Poste (à traiter pour atteindre 100%)</div>',unsafe_allow_html=True)
+                st.markdown(html_anomaly_table(ano_q_rows,ano_q_cols,"at"),unsafe_allow_html=True)
                 st.markdown('<div class="stl a">Actions recommandees — Qualite</div>',unsafe_allow_html=True)
                 st.markdown(html_actions_table(PK,qa,CIBLE,ACT_MAP),unsafe_allow_html=True)
 
