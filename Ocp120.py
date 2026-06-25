@@ -771,9 +771,9 @@ def main():
         pr = cpiv(
     df,
     (df["Statut OT"]=="CRÉÉ") &
-    (df["Statut utilisateur"].str.contains("CRPR", case=False, na=False))
+    (df["Statut utilisateur"].str.contains("CRPR", case=False, na=False)),
     "ap",
-    posts
+    posts)
 
         for c in ["<1 mois",">3 mois","1 mois < <3 mois","Inconnu"]: pr[c]=pr.get(c,0)
         pr["Total"]=pr[["<1 mois","1 mois < <3 mois",">3 mois","Inconnu"]].sum(axis=1)
