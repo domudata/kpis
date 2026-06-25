@@ -1632,7 +1632,7 @@ def main():
             total_ano_p=sum([r["Total Anomalies"] for r in ano_p_rows if r.get("Poste de travail")!="Total"])
             total_ano_q=sum([r["Total Anomalies"] for r in ano_q_rows if r.get("Poste de travail")!="Total"])
             total_ot=len(df)
-                        logo_b64 = get_logo_base64()
+            logo_b64 = get_logo_base64()
             if logo_b64:
                st.markdown(f'<div class="mh"><img src="data:image/png;base64,{logo_b64}" class="logo" alt="Logo"><h1>Tableau de Bord KPIs Performance & Qualite</h1><span class="db">📅 {fichier_date}</span></div>', unsafe_allow_html=True)
             else:
