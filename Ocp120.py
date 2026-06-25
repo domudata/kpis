@@ -553,7 +553,10 @@ def inject_custom_css():
         overflow-x: hidden !important;
         width: 100% !important;
     }
-
+    
+        /* Styles pour les cellules de sparklines */
+    .tw td svg { display: block; margin: 0 auto; }
+    .spark-cell { text-align: center; vertical-align: middle; padding: 8px 5px !important; }
     @media(max-width:768px){
         .cr{grid-template-columns:repeat(2,1fr)}
         .mh{padding:8px 10px;gap:8px}
@@ -1746,20 +1749,121 @@ def main():
                 with c_all2: show_pie_pair(piv_all,"Tous les OT")
 
             with tabs[4]:
+                  
                 min_date = var_df["Date precedente"].min() if not var_df.empty else "?"
                 max_date = var_df["Date actuelle"].max() if not var_df.empty else "?"
+
+                # --- 1. Bouton Masquer/Afficher les tableaux de synthèse ---
+                if "show_synth" not in st.session_state:
+                    st.session_state.show_synth = False
+
+                btn_label = "▼ Masquer les détails" if st.session_state.show_synth else "▶ Voir plus de détails"
+                if st.button(btn_label, key="btn_synth"):
+                    st.session_state.show_synth = not st.session_state.show_synth
+                    st.rerun()
+
+                if st.session_state.show_synth:
+                    st.markdown(f'<div class="stl s">Synthèse d\'évolution Performance entre {min_date} et {max_date}</div>',unsafe_allow_html=True)
+                    if synth_perf and any(any(v.get("diff","—")!="—" for v in d.values()) for d in synth_perf.values()):
+                        st.markdown(html_synthese_table(synth_perf,QK,vp),unsafe_allow_html=True)
+                    else:
+                        st.markdown('<div class="es">Pas assez de donnees historiques pour calculer la synthese Performance. Au moins 2 periodes sont necessaires.</div>',unsafe_allow_html=True)
+                        
+                    st.markdown(f'<div class="stl s">Synthèse d\'évolution Qualité entre {min_date} et {max_date}</div>',unsafe_allow_html=True)
+                    if synth_qual and any(any(v.get("diff","—")!="—" for v in d.values()) for d in synth_qual.values()):
+                        st.markdown(html_synthese_table(synth_qual,PK,vp),unsafe_allow_html=True)
+                    else:
+                        st.markdown('<div class="es">Pas assez de donnees historiques pour calculer la synthese Qualite. Au moins 2 periodes sont necessaires.</div>',unsafe_allow_html=True)
                 
-                st.markdown(f'<div class="stl s">Synthèse d\'évolution Performance entre {min_date} et {max_date}</div>',unsafe_allow_html=True)
-                if synth_perf and any(any(v.get("diff","—")!="—" for v in d.values()) for d in synth_perf.values()):
-                    st.markdown(html_synthese_table(synth_perf,QK,vp),unsafe_allow_html=True)
-                else:
-                    st.markdown('<div class="es">Pas assez de donnees historiques pour calculer la synthese Performance. Au moins 2 periodes sont necessaires.</div>',unsafe_allow_html=True)
+                st.markdown("---")
+
+                # --- 2, 3, 4 & 5. Nouveau tableau de suivi par poste avec Sparklines ---
+                st.markdown('<div class="stl s">Suivi Sparklines par Poste de Travail</div>',unsafe_allow_html=True)
+
+                def get_spark_color(v):
+                    if pd.isna(v): return "#cbd5e0"
+                    if v >= 90: return "#10b981" # Vert
+                    elif v >= 80: return "#f59e0b" # Jaune
+                    else: return "#ef4444" # Rouge
+
+                def get_sparkline_html(scores):
+                    n = len(scores)
+                    if n == 0: return ""
+                    W, H = 130, 35
+                    pad = 5
+                    def get_xy(i, v):
+                        x = pad + (i / (n - 1) * (W - 2 * pad)) if n > 1 else W / 2
+                        v_disp = max(0, min(100, v if pd.notna(v) else 0))
+                        y = H - pad - (v_disp / 100 * (H - 2 * pad))
+                        return x, y
+
+                    svg = f'<svg width="{W}" height="{H}" viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg">'
+                    # Lignes (segments)
+                    for i in range(n - 1):
+                        x1, y1 = get_xy(i, scores[i])
+                        x2, y2 = get_xy(i + 1, scores[i+1])
+                        col = get_spark_color(scores[i+1])
+                        svg += f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" y2="{y2:.1f}" stroke="{col}" stroke-width="2.5" />'
+                    # Points
+                    for i, v in enumerate(scores):
+                        x, y = get_xy(i, v)
+                        col = get_spark_color(v)
+                        svg += f'<circle cx="{x:.1f}" cy="{y:.1f}" r="3.5" fill="{col}" />'
+                    svg += '</svg>'
+                    return svg
+
+                def get_comparison_html(scores):
+                    if len(scores) == 0:
+                        return '<span style="color:#94a3b8">N/A</span>'
+                    if len(scores) == 1:
+                        return '<span style="color:#94a3b8">Première mesure disponible</span>'
                     
-                st.markdown(f'<div class="stl s">Synthèse d\'évolution Qualité entre {min_date} et {max_date}</div>',unsafe_allow_html=True)
-                if synth_qual and any(any(v.get("diff","—")!="—" for v in d.values()) for d in synth_qual.values()):
-                    st.markdown(html_synthese_table(synth_qual,PK,vp),unsafe_allow_html=True)
+                    prev = scores[-2]
+                    curr = scores[-1]
+                    if prev == 0:
+                        return '<span style="color:#94a3b8">➜ Stable</span>'
+                    
+                    pct = ((curr - prev) / prev) * 100
+                    if pct > 0.05:
+                        return f'<span style="color:#10b981;font-weight:600">▲ +{pct:.1f} % — Amélioration</span>'
+                    elif pct < -0.05:
+                        return f'<span style="color:#ef4444;font-weight:600">▼ {pct:.1f} % — Dégradation</span>'
+                    else:
+                        return '<span style="color:#94a3b8;font-weight:600">➜ Stable</span>'
+
+                # Préparation des données depuis hist_df
+                if not hist_df.empty and "Poste de travail" in hist_df.columns:
+                    # Filtrer pour ne garder que les postes actuellement sélectionnés et valides
+                    valid_postes = [p for p in vp if p in hist_df["Poste de travail"].unique()]
+                    valid_postes = sorted(valid_postes)
+
+                    perf_df_h = hist_df[(hist_df["_section"]=="perf") & (hist_df["Poste de travail"].isin(valid_postes))]
+                    qual_df_h = hist_df[(hist_df["_section"]=="qual") & (hist_df["Poste de travail"].isin(valid_postes))]
+
+                    # Construction du tableau HTML
+                    h = '<table class="tw st"><thead><tr>'
+                    h += '<th>Poste de travail</th><th>Sparkline Performance</th><th>Comparaison Performance</th>'
+                    h += '<th>Sparkline Qualité</th><th>Comparaison Qualité</th>'
+                    h += '</tr></thead><tbody>'
+
+                    for poste in valid_postes:
+                        p_data = perf_df_h[perf_df_h["Poste de travail"]==poste].sort_values("Date_parsed")
+                        q_data = qual_df_h[qual_df_h["Poste de travail"]==poste].sort_values("Date_parsed")
+                        
+                        p_scores = p_data["Score Performance"].astype(float).tolist() if "Score Performance" in p_data.columns else []
+                        q_scores = q_data["Score Qualite"].astype(float).tolist() if "Score Qualite" in q_data.columns else []
+
+                        h += f'<tr><td style="font-weight:700">{poste}</td>'
+                        h += f'<td class="spark-cell">{get_sparkline_html(p_scores)}</td>'
+                        h += f'<td class="spark-cell">{get_comparison_html(p_scores)}</td>'
+                        h += f'<td class="spark-cell">{get_sparkline_html(q_scores)}</td>'
+                        h += f'<td class="spark-cell">{get_comparison_html(q_scores)}</td>'
+                        h += '</tr>'
+
+                    h += '</tbody></table>'
+                    st.markdown(h, unsafe_allow_html=True)
                 else:
-                    st.markdown('<div class="es">Pas assez de donnees historiques pour calculer la synthese Qualite. Au moins 2 periodes sont necessaires.</div>',unsafe_allow_html=True)
+                    st.markdown('<div class="es">Pas assez de données historiques pour générer les sparklines.</div>', unsafe_allow_html=True)
 
                 st.markdown("---")
                 st.markdown('<div class="stl s">Journal des variations significatives</div>',unsafe_allow_html=True)
