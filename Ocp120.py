@@ -771,7 +771,7 @@ def main():
         pr = cpiv(
     df,
     (df["Statut OT"]=="CRÉÉ") &
-    (df["Statut utilisateur"].str.contains("CRPR", case=False, na=False)), case=False, na=False)),
+    (df["Statut utilisateur"].str.contains("CRPR", case=False, na=False)), case=False, na=False),
     "ap",
     posts
 )
