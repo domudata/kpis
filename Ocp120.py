@@ -417,7 +417,7 @@ def inject_custom_css():
     .cc .cv-var{font-size:13px;font-weight:800;margin-top:6px;line-height:1.2;min-height:16px;letter-spacing:.3px}
     .cc .cv-var.positive{color:#10b981}
     .cc .cv-var.negative{color:#ef4444}
-    .cc .cv-var.neutral{color:#94a3b8}
+    .cc .cv-var.neutral{color:#eab308}
     
     .stl{font-size:16px;font-weight:800;color:var(--primary);margin:10px 0 5px 0;padding-left:12px;border-left:4px solid var(--info);}
     
