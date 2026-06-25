@@ -1632,52 +1632,54 @@ def main():
             total_ano_p=sum([r["Total Anomalies"] for r in ano_p_rows if r.get("Poste de travail")!="Total"])
             total_ano_q=sum([r["Total Anomalies"] for r in ano_q_rows if r.get("Poste de travail")!="Total"])
             total_ot=len(df)
-
-            logo_b64 = get_logo_base64()
+                        logo_b64 = get_logo_base64()
             if logo_b64:
                st.markdown(f'<div class="mh"><img src="data:image/png;base64,{logo_b64}" class="logo" alt="Logo"><h1>Tableau de Bord KPIs Performance & Qualite</h1><span class="db">📅 {fichier_date}</span></div>', unsafe_allow_html=True)
             else:
                 st.markdown('<div class="mh"><h1>Tableau de Bord KPIs Performance & Qualite</h1><span class="db">📅 18/06/2026</span></div>',unsafe_allow_html=True)
             
             # === Variations automatiques depuis hist_df ===
-prev_values = get_previous_card_values(hist_df)
+            prev_values = get_previous_card_values(hist_df)
 
-var_ot = format_card_variation(total_ot,                  prev_values.get("OT Analysés"))
-var_sp = format_card_variation(avg_p_score,               prev_values.get("Score Performance Global"))
-var_sq = format_card_variation(avg_q_score,               prev_values.get("Score Qualité Global"))
-var_at = format_card_variation(total_ano_p + total_ano_q, prev_values.get("Anomalies Totales"))
-var_p1 = format_card_variation(sf1_p_score,               prev_values.get("Performance SF1"))
-var_q1 = format_card_variation(sf1_q_score,               prev_values.get("Qualité SF1"))
-var_p2 = format_card_variation(sf2_p_score,               prev_values.get("Performance SF2"))
-var_q2 = format_card_variation(sf2_q_score,               prev_values.get("Qualité SF2"))
+            var_ot = format_card_variation(total_ot,                  prev_values.get("OT Analysés"))
+            var_sp = format_card_variation(avg_p_score,               prev_values.get("Score Performance Global"))
+            var_sq = format_card_variation(avg_q_score,               prev_values.get("Score Qualité Global"))
+            var_at = format_card_variation(total_ano_p + total_ano_q, prev_values.get("Anomalies Totales"))
+            var_p1 = format_card_variation(sf1_p_score,               prev_values.get("Performance SF1"))
+            var_q1 = format_card_variation(sf1_q_score,               prev_values.get("Qualité SF1"))
+            var_p2 = format_card_variation(sf2_p_score,               prev_values.get("Performance SF2"))
+            var_q2 = format_card_variation(sf2_q_score,               prev_values.get("Qualité SF2"))
 
-st.markdown(
-    '<div class="cr">'
-    '<div class="cc c1"><div class="cv">%d</div>%s<div class="cl">OT Analyses</div></div>'
-    '<div class="cc c2"><div class="cv">%.1f%%</div>%s<div class="cl">Score Performance Global</div></div>'
-    '<div class="cc c3"><div class="cv">%.1f%%</div>%s<div class="cl">Score Qualite Global</div></div>'
-    '<div class="cc c4"><div class="cv">%d</div>%s<div class="cl">Anomalies Totales</div></div>'
-    '</div>' % (total_ot, var_ot,
-                avg_p_score, var_sp,
-                avg_q_score, var_sq,
-                total_ano_p + total_ano_q, var_at),
-    unsafe_allow_html=True
-)
+            st.markdown(
+                '<div class="cr">'
+                '<div class="cc c1"><div class="cv">%d</div>%s<div class="cl">OT Analyses</div></div>'
+                '<div class="cc c2"><div class="cv">%.1f%%</div>%s<div class="cl">Score Performance Global</div></div>'
+                '<div class="cc c3"><div class="cv">%.1f%%</div>%s<div class="cl">Score Qualite Global</div></div>'
+                '<div class="cc c4"><div class="cv">%d</div>%s<div class="cl">Anomalies Totales</div></div>'
+                '</div>' % (total_ot, var_ot,
+                            avg_p_score, var_sp,
+                            avg_q_score, var_sq,
+                            total_ano_p + total_ano_q, var_at),
+                unsafe_allow_html=True
+            )
 
-st.markdown(
-    '<div class="cr">'
-    '<div class="cc c5"><div class="cv">%.1f%%</div>%s<div class="cl">Performance SF1</div></div>'
-    '<div class="cc c6"><div class="cv">%.1f%%</div>%s<div class="cl">Qualite SF1</div></div>'
-    '<div class="cc c7"><div class="cv">%.1f%%</div>%s<div class="cl">Performance SF2</div></div>'
-    '<div class="cc c8"><div class="cv">%.1f%%</div>%s<div class="cl">Qualite SF2</div></div>'
-    '</div>' % (sf1_p_score, var_p1,
-                sf1_q_score, var_q1,
-                sf2_p_score, var_p2,
-                sf2_q_score, var_q2),
-    unsafe_allow_html=True
-)
+            st.markdown(
+                '<div class="cr">'
+                '<div class="cc c5"><div class="cv">%.1f%%</div>%s<div class="cl">Performance SF1</div></div>'
+                '<div class="cc c6"><div class="cv">%.1f%%</div>%s<div class="cl">Qualite SF1</div></div>'
+                '<div class="cc c7"><div class="cv">%.1f%%</div>%s<div class="cl">Performance SF2</div></div>'
+                '<div class="cc c8"><div class="cv">%.1f%%</div>%s<div class="cl">Qualite SF2</div></div>'
+                '</div>' % (sf1_p_score, var_p1,
+                            sf1_q_score, var_q1,
+                            sf2_p_score, var_p2,
+                            sf2_q_score, var_q2),
+                unsafe_allow_html=True
+            )
+
             tabs=st.tabs(["🏠 Tableau de Bord","📈 Performance","✅ Qualite","📂 Backlog","📋 Suivi & Evolution","🎯 Plan d'action"])
 
+      
+            
             with tabs[0]:
                 st.markdown('<div class="stl p">Scores globaux par poste</div>',unsafe_allow_html=True)
                 st.markdown(html_grouped_bars(vp,pscores,qscores,"Comparaison Performance / Qualite par poste"),unsafe_allow_html=True)
