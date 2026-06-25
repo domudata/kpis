@@ -203,7 +203,7 @@ def prepare_data(ot_bytes, av_bytes, date_str):
         if c in raw_av.columns: raw_av[c]=pd.to_datetime(raw_av[c],errors="coerce")
         
    
-    now_ts = pd.to_datetime(date_str, format="%d/%m/%Y", errors="coerce") if pd.isna(now_ts):     now_ts = pd.Timestamp.today()
+    now_ts = pd.to_datetime(date_str, format="%d/%m/%Y", errors="coerce") if pd.notna(pd.to_datetime(date_str, format="%d/%m/%Y", errors="coerce")) else pd.Timestamp.today()
     df = raw_ot.copy()
     
     df["Backlog preparation"]=np.where(df["Statut utilisateur"].apply(lambda x:contient_mot(x,MP_KW)),"CARACTERISE","NON CARACTERISE")
