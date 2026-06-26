@@ -1441,7 +1441,7 @@ with st.sidebar:
             )
 
                metier = st.selectbox(
-            "Métie
+            "Métie",
             ["All", "Mécanique", "Électrique", "Instrumentation", "Génie Civil"]
         )
 
