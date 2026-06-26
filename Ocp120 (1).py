@@ -1389,7 +1389,26 @@ def main():
             sf1_q_score = np.mean([qscores[p] for p in sf1_posts]) if sf1_posts else 0
             sf2_p_score = np.mean([pscores[p] for p in sf2_posts]) if sf2_posts else 0
             sf2_q_score = np.mean([qscores[p] for p in sf2_posts]) if sf2_posts else 0
+            if st.button("🤖 Générer l'analyse IA"):
 
+               prompt = f"""
+                Analyse ces KPI :
+
+                 {ckdf.to_string()}
+
+    Donne :
+    - Une synthèse
+    - Les KPI critiques
+    - Les causes
+    - Les recommandations
+    """
+
+               response = client.responses.create(
+        model="gpt-5.5",
+        input=prompt
+    )
+
+    st.write(response.output_text)
             # ANOMALIES
             ano_map = {}
             ano_map["TAUX_REALISATION_CORRECTIF/PT"] = dfp[(dfp["Nº appel pl.entret."].fillna(0)==0)&(dfp["Contient SOPL"]==1)&(~dfp["Statut OT"].isin(["CLOT","TCLO"]))].groupby("Poste travail princ.")["Ordre"].count()
