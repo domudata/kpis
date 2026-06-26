@@ -12,10 +12,14 @@ from plotly.subplots import make_subplots
 from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openai import OpenAI
+from huggingface_hub import InferenceClient
 
-client = OpenAI(
-    api_key="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"
+client = InferenceClient(
+    provider="hf-inference",
+    api_key="hf_xxxxxxxxxxxxxxxxx"
 )
+
+
 st.set_page_config(layout="wide", page_title="Dashboard KPI", initial_sidebar_state="expanded")
 # ============================================================
 
