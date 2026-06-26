@@ -18,3 +18,4 @@ streamlit
 plotly
 numpy
 openai>=1.0.0
+huggingface_hub
