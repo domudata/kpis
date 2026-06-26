@@ -1390,37 +1390,19 @@ def main():
             sf1_q_score = np.mean([qscores[p] for p in sf1_posts]) if sf1_posts else 0
             sf2_p_score = np.mean([pscores[p] for p in sf2_posts]) if sf2_posts else 0
             sf2_q_score = np.mean([qscores[p] for p in sf2_posts]) if sf2_posts else 0
-            if st.button("🤖 Générer l'analyse IA"):
-             prompt = f"""
-Tu es un expert en maintenance industrielle.
+               if st.button("🤖 Générer l'analyse IA"):
+                 try:
+                   response = client.chat.completions.create(
+                   model="qwen/qwen3.6-plus",
+                   messages=[
+                {"role": "user", "content": prompt}
+            ]
+        )
 
-Analyse les KPI suivants :
+               st.write(response.choices[0].message.content)
 
-{ckdf.to_string()}
-
-Produis :
-
-1. Résumé exécutif
-2. Analyse Performance
-3. Analyse Qualité
-4. Causes des anomalies
-5. Recommandations
-6. Plan d'action
-7. Contenu d'une présentation PowerPoint de 10 slides.
-"""
-             response = client.chat.completions.create(
-    model="qwen/qwen3.6-flash",
-    messages=[
-        {
-            "role": "user",
-            "content": prompt
-        }
-    ]
-)
-
-             st.write(response.choices[0].message.content)
-    
-            # ANOMALIES.  
+                   except Exception as e:
+                       st.error(str(e))         # ANOMALIES.  
             ano_map = {}
             ano_map["TAUX_REALISATION_CORRECTIF/PT"] = dfp[(dfp["Nº appel pl.entret."].fillna(0)==0)&(dfp["Contient SOPL"]==1)&(~dfp["Statut OT"].isin(["CLOT","TCLO"]))].groupby("Poste travail princ.")["Ordre"].count()
             prep_filt = (dfp["Statut OT"]=="CRÉÉ")&(dfp["Statut utilisateur"].str.contains("CRPR",na=False))
