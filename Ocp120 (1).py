@@ -13,7 +13,9 @@ from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openai import OpenAI
 
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+client = OpenAI(
+    api_key="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"
+)
 # ============================================================
 st.set_page_config(layout="wide", page_title="Dashboard KPI", initial_sidebar_state="expanded")
 # ============================================================
