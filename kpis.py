@@ -1441,11 +1441,11 @@ with st.sidebar:
             )
 
                   metier = st.selectbox(
-            "Métier",
+            "Métie
             ["All", "Mécanique", "Électrique", "Instrumentation", "Génie Civil"]
         )
 
-                   if st.button("🚀 Générer la présentation", use_container_width=True)
+              if st.button("🚀 Générer la présentation", use_container_width=True)
             generate_powerpoint(
                 division,
                 atelier,
