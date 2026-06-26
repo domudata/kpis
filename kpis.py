@@ -1427,19 +1427,20 @@ with st.sidebar:
 
               st.markdown("## 🎥 Assistant de présentation")
 
-        division = st.selectbox(
+              
+              division = st.selectbox(
             "Division",
             ["All", "SF1", "SF2"]
         )
 
-        atelier = "All"
+               atelier = "All"
                 if division != "All":
-            atelier = st.selectbox(
+                    atelier = st.selectbox(
                 "Atelier",
                 ["All", "Sulfurique", "Phosphorique", "Centrale"]
             )
 
-        metier = st.selectbox(
+                     metier = st.selectbox(
             "Métier",
             ["All", "Mécanique", "Électrique", "Instrumentation", "Génie Civil"]
         )
