@@ -1433,7 +1433,7 @@ with st.sidebar:
             ["All", "SF1", "SF2"]
         )
 
-               atelier = "All"
+              atelier = "All"
                 if division != "All":
                     atelier = st.selectbox(
                 "Atelier",
