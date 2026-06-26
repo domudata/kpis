@@ -1340,7 +1340,7 @@ with st.sidebar:
         key="show_filters"
     )
     
-              if show_filters:
+    if show_filters:
                   unf=st.toggle("📁 Charger nouveaux fichiers",value=False,key="tf")
                   ot_f=av_f=None
                   if unf:
