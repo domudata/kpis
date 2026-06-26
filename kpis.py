@@ -1445,7 +1445,7 @@ with st.sidebar:
             ["All", "Mécanique", "Électrique", "Instrumentation", "Génie Civil"]
         )
 
-               if st.button("🚀 Générer la présentation", use_container_width=True)
+                   if st.button("🚀 Générer la présentation", use_container_width=True)
             generate_powerpoint(
                 division,
                 atelier,
