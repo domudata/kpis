@@ -1446,7 +1446,7 @@ with st.sidebar:
         )
 
                   if st.button("🚀 Générer la présentation", use_container_width=True):
-            generate_powerpoint(
+                     generate_powerpoint(
                 division,
                 atelier,
                 metier,
