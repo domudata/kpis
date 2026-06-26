@@ -1300,7 +1300,7 @@ def main():
     )
 
     atelier = "All"
-               if division != "All":
+    if division != "All":
         atelier = st.selectbox(
             "Atelier",
             [
