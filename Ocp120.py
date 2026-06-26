@@ -1345,7 +1345,7 @@ def main():
             pscores,
             qscores
         )
-    if st.button("🖥️ Mode Présentation (Slide/PDF)", use_container_width=True):
+     if st.button("🖥️ Mode Présentation (Slide/PDF)", use_container_width=True):
     presentation_dialog()            
         show_filters=st.checkbox("✅ Afficher les filtres",value=True,key="show_filters")
         if show_filters:
