@@ -1286,59 +1286,44 @@ def main():
         if st.button("🔄 Rafraîchir le cache", use_container_width=True):
             st.cache_data.clear()
             st.rerun()
-        if st.button("🖥️ Mode Présentation (Slide/PDF)", use_container_width=True):
-           st.session_state.mode_presentation = True
+            if st.button("🖥️ Mode Présentation (Slide/PDF)", use_container_width=True):
+        st.session_state.mode_presentation = True
 
-        if st.session_state.get("mode_presentation", False):
+    if st.session_state.get("mode_presentation", False):
 
-           st.markdown("## 🎥 Assistant de présentation")
+        st.markdown("## 🎥 Assistant de présentation")
 
-    division = st.selectbox(
-        "Division",
-        ["All", "SF1", "SF2"]
-    )
+        division = st.selectbox("Division", ["All", "SF1", "SF2"])
 
-    atelier = "All"
-             if division != "All":
-        atelier = st.selectbox(
-            "Atelier",
-            [
-                "All",
-                "Sulfurique",
-                "Phosphorique",
-                "Centrale"
-            ]
+        atelier = "All"
+        if division != "All":
+            atelier = st.selectbox(
+                "Atelier",
+                ["All", "Sulfurique", "Phosphorique", "Centrale"]
+            )
+
+        metier = st.selectbox(
+            "Métier",
+            ["All", "Mécanique", "Électrique", "Instrumentation", "Génie Civil"]
         )
 
-    metier = st.selectbox(
-        "Métier",
-        [
-            "All",
-            "Mécanique",
-            "Électrique",
-            "Instrumentation",
-            "Génie Civil"
-        ]
-    )
-
-              if st.button("🚀 Générer la présentation", use_container_width=True):
-
-        generate_powerpoint(
-            division,
-            atelier,
-            metier,
-            df,
-            avdf,
-            ckdf,
-            prows,
-            qrows,
-            ano_p_rows,
-            ano_q_rows,
-            plan_actions_rows,
-            var_df,
-            pscores,
-            qscores
-        )
+        if st.button("🚀 Générer la présentation", use_container_width=True):
+            generate_powerpoint(
+                division,
+                atelier,
+                metier,
+                df,
+                avdf,
+                ckdf,
+                prows,
+                qrows,
+                ano_p_rows,
+                ano_q_rows,
+                plan_actions_rows,
+                var_df,
+                pscores,
+                qscores
+            )
         
             
         show_filters=st.checkbox("✅ Afficher les filtres",value=True,key="show_filters")
