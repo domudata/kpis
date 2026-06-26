@@ -1389,25 +1389,30 @@ def main():
             sf2_p_score = np.mean([pscores[p] for p in sf2_posts]) if sf2_posts else 0
             sf2_q_score = np.mean([qscores[p] for p in sf2_posts]) if sf2_posts else 0
             if st.button("🤖 Générer l'analyse IA"):
+              prompt = f"""
+Tu es un expert en maintenance.
 
-               prompt = f"""
-                Analyse ces KPI :
+Voici les KPI :
 
-                 {ckdf.to_string()}
+{ckdf.to_string()}
 
-    Donne :
-    - Une synthèse
-    - Les KPI critiques
-    - Les causes
-    - Les recommandations
-    """
+Rédige :
+- Un résumé exécutif.
+- Les KPI critiques.
+- Les causes.
+- Les recommandations.
+- Un plan d'action.
+- Le contenu de 10 slides PowerPoint.
+"""
+            response = client.chat.completions.create(
+    model="Qwen/Qwen3-32B-Instruct",
+    messages=[
+        {"role": "user", "content": prompt}
+    ],
+)
 
-               response = client.responses.create(
-        model="gpt-5.5",
-        input=prompt
-    )
-
-               st.write(response.output_text)
+            st.write(response.choices[0].message.content)
+               
             # ANOMALIES.  
             ano_map = {}
             ano_map["TAUX_REALISATION_CORRECTIF/PT"] = dfp[(dfp["Nº appel pl.entret."].fillna(0)==0)&(dfp["Contient SOPL"]==1)&(~dfp["Statut OT"].isin(["CLOT","TCLO"]))].groupby("Poste travail princ.")["Ordre"].count()
