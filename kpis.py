@@ -1434,18 +1434,18 @@ with st.sidebar:
         )
 
               atelier = "All"
-                if division != "All":
-                    atelier = st.selectbox(
+              if division != "All":
+                  atelier = st.selectbox(
                 "Atelier",
                 ["All", "Sulfurique", "Phosphorique", "Centrale"]
             )
 
-                     metier = st.selectbox(
+                  metier = st.selectbox(
             "Métier",
             ["All", "Mécanique", "Électrique", "Instrumentation", "Génie Civil"]
         )
 
-                if st.button("🚀 Générer la présentation", use_container_width=True)
+               if st.button("🚀 Générer la présentation", use_container_width=True)
             generate_powerpoint(
                 division,
                 atelier,
