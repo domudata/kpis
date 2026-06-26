@@ -1408,7 +1408,7 @@ def main():
         input=prompt
     )
 
-    st.write(response.output_text)
+                st.write(response.output_text)
             # ANOMALIES
             ano_map = {}
             ano_map["TAUX_REALISATION_CORRECTIF/PT"] = dfp[(dfp["Nº appel pl.entret."].fillna(0)==0)&(dfp["Contient SOPL"]==1)&(~dfp["Statut OT"].isin(["CLOT","TCLO"]))].groupby("Poste travail princ.")["Ordre"].count()
