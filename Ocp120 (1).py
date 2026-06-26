@@ -1390,7 +1390,7 @@ def main():
             sf1_q_score = np.mean([qscores[p] for p in sf1_posts]) if sf1_posts else 0
             sf2_p_score = np.mean([pscores[p] for p in sf2_posts]) if sf2_posts else 0
             sf2_q_score = np.mean([qscores[p] for p in sf2_posts]) if sf2_posts else 0
-               if st.button("🤖 Générer l'analyse IA"):
+            if st.button("🤖 Générer l'analyse IA"):
                  try:
                    response = client.chat.completions.create(
                    model="qwen/qwen3.6-plus",
