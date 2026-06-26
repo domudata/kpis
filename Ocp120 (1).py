@@ -1415,7 +1415,7 @@ def main():
             ]
         )
 
-            st.write(response.choices[0].message.content)
+                  st.write(response.choices[0].message.content)
 
                except Exception as e:
                     st.error(f"Erreur IA : {e}")      
