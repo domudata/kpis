@@ -1440,7 +1440,7 @@ with st.sidebar:
                 ["All", "Sulfurique", "Phosphorique", "Centrale"]
             )
 
-              metier = st.selectbox(
+               metier = st.selectbox(
             "Métie
             ["All", "Mécanique", "Électrique", "Instrumentation", "Génie Civil"]
         )
