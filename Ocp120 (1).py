@@ -1287,7 +1287,7 @@ def main():
             st.cache_data.clear()
             st.rerun()
 
-        )
+        
             
         show_filters=st.checkbox("✅ Afficher les filtres",value=True,key="show_filters")
         if show_filters:
