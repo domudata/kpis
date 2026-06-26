@@ -1421,11 +1421,11 @@ with st.sidebar:
             res = calc_kpis(df, avdf, now_ts, vp)
             res_d = calc_kpis(df_dash, avdf_dash, now_ts, vp)
             if st.button("🖥️ Mode Présentation (Slide/PDF)", use_container_width=True):
-        st.session_state.mode_presentation = True
+              st.session_state.mode_presentation = True
 
-    if st.session_state.get("mode_presentation", False):
+            if st.session_state.get("mode_presentation", False):
 
-        st.markdown("## 🎥 Assistant de présentation")
+              st.markdown("## 🎥 Assistant de présentation")
 
         division = st.selectbox(
             "Division",
@@ -1433,7 +1433,7 @@ with st.sidebar:
         )
 
         atelier = "All"
-        if division != "All":
+                if division != "All":
             atelier = st.selectbox(
                 "Atelier",
                 ["All", "Sulfurique", "Phosphorique", "Centrale"]
@@ -1444,7 +1444,7 @@ with st.sidebar:
             ["All", "Mécanique", "Électrique", "Instrumentation", "Génie Civil"]
         )
 
-        if st.button("🚀 Générer la présentation", use_container_width=True)
+                if st.button("🚀 Générer la présentation", use_container_width=True)
             generate_powerpoint(
                 division,
                 atelier,
