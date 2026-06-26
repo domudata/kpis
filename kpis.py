@@ -1334,7 +1334,7 @@ with st.sidebar:
         st.rerun()
 
     
-        show_filters = st.checkbox(
+    show_filters = st.checkbox(
         "✅ Afficher les filtres",
         value=True,
         key="show_filters"
