@@ -17,3 +17,4 @@ python-calamine
 streamlit
 plotly
 numpy
+openai>=1.0.0
