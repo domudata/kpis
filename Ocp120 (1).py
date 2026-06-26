@@ -1389,29 +1389,26 @@ def main():
             sf2_p_score = np.mean([pscores[p] for p in sf2_posts]) if sf2_posts else 0
             sf2_q_score = np.mean([qscores[p] for p in sf2_posts]) if sf2_posts else 0
             if st.button("🤖 Générer l'analyse IA"):
-              prompt = f"""
-Tu es un expert en maintenance.
 
-Voici les KPI :
+    prompt = f"""
+    Analyse les KPI suivants :
 
-{ckdf.to_string()}
+    {ckdf.to_string()}
 
-Rédige :
-- Un résumé exécutif.
-- Les KPI critiques.
-- Les causes.
-- Les recommandations.
-- Un plan d'action.
-- Le contenu de 10 slides PowerPoint.
-"""
-            response = client.chat.completions.create(
-    model="Qwen/Qwen3-32B-Instruct",
-    messages=[
-        {"role": "user", "content": prompt}
-    ],
-)
+    Donne :
+    - Synthèse
+    - Recommandations
+    - Plan d'action
+    """
 
-            st.write(response.choices[0].message.content)
+    response = client.chat.completions.create(
+        model="Qwen/Qwen3-32B-Instruct",
+        messages=[
+            {"role": "user", "content": prompt}
+        ]
+    )
+
+    st.write(response.choices[0].message.content)
                
             # ANOMALIES.  
             ano_map = {}
