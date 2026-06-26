@@ -14,8 +14,7 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openai import OpenAI
 
 client = OpenAI(
-    api_key="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"
-)
+    api_key="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"
 # ============================================================
 st.set_page_config(layout="wide", page_title="Dashboard KPI", initial_sidebar_state="expanded")
 # ============================================================
