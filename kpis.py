@@ -1393,7 +1393,7 @@ df_full, av_full, apm, now_ts = prepare_data(
     av_bytes,
     fichier_date
 )
-          if not df_full.empty:
+    if not df_full.empty:
               try:
                   if unf and ot_f is not None and av_f is not None:
                       df_full, av_full, apm, now_ts = prepare_data(ot_f.getvalue(), av_f.getvalue(), fichier_date)
