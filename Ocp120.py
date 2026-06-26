@@ -1288,11 +1288,11 @@ def main():
             st.rerun()
 
         if st.button("🖥️ Mode Présentation (Slide/PDF)", use_container_width=True):
-    st.session_state.mode_presentation = True
+           st.session_state.mode_presentation = True
 
-if st.session_state.get("mode_presentation", False):
+        if st.session_state.get("mode_presentation", False):
 
-    st.markdown("## 🎥 Assistant de présentation")
+            st.markdown("## 🎥 Assistant de présentation")
 
     division = st.selectbox(
         "Division",
@@ -1300,7 +1300,7 @@ if st.session_state.get("mode_presentation", False):
     )
 
     atelier = "All"
-    if division != "All":
+               if division != "All":
         atelier = st.selectbox(
             "Atelier",
             [
