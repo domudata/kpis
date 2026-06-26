@@ -1409,7 +1409,7 @@ Produis :
 7. Contenu d'une présentation PowerPoint de 10 slides.
 """
              response = client.chat.completions.create(
-    model="qwen/qwen3.6-plus:free",
+    model="qwen/qwen3.6-flash",
     messages=[
         {
             "role": "user",
