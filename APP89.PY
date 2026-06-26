@@ -1276,27 +1276,37 @@ def main():
         df_full, av_full, apm, now_ts = pd.DataFrame(), pd.DataFrame(), [], pd.Timestamp.now()
 
     # ===================== SIDEBAR =====================
-    with st.sidebar:
-        logo_b64 = get_logo_base64()
-        if logo_b64:
-            st.markdown('<div style="display:flex;justify-content:center;padding:10px 0 15px 0;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:10px;"><img src="data:image/png;base64,%s" style="max-width:100%%;height:auto;max-height:200px;object-fit:contain;border-radius:4px;"></div>'%logo_b64,unsafe_allow_html=True)
-        else:
-            st.markdown("""<div style="padding:10px 0 4px 0"><div style="font-size:22px;margin-bottom:2px">⚙️</div><div style="font-size:14px;font-weight:800;color:white">Filtres & Parametres</div><div style="font-size:11px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:1px">Configuration</div></div>""",unsafe_allow_html=True)
-        
-        if st.button("🔄 Rafraîchir le cache", use_container_width=True):
-            st.cache_data.clear()
-            st.rerun()
-        if st.button("🖥️ Mode Présentation (Slide/PDF)", use_container_width=True):
-            st.session_state.mode_presentation = True
+with st.sidebar:
+    logo_b64 = get_logo_base64()
+    if logo_b64:
+        st.markdown(
+            '<div style="display:flex;justify-content:center;padding:10px 0 15px 0;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:10px;"><img src="data:image/png;base64,%s" style="max-width:100%%;height:auto;max-height:200px;object-fit:contain;border-radius:4px;"></div>' % logo_b64,
+            unsafe_allow_html=True
+        )
+    else:
+        st.markdown(
+            """<div style="padding:10px 0 4px 0"><div style="font-size:22px;margin-bottom:2px">⚙️</div><div style="font-size:14px;font-weight:800;color:white">Filtres & Parametres</div><div style="font-size:11px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:1px">Configuration</div></div>""",
+            unsafe_allow_html=True
+        )
 
-        if st.session_state.get("mode_presentation", False):
+    if st.button("🔄 Rafraîchir le cache", use_container_width=True):
+        st.cache_data.clear()
+        st.rerun()
 
-            st.markdown("## 🎥 Assistant de présentation")
+    if st.button("🖥️ Mode Présentation (Slide/PDF)", use_container_width=True):
+        st.session_state.mode_presentation = True
 
-         division = st.selectbox("Division", ["All", "SF1", "SF2"])
+    if st.session_state.get("mode_presentation", False):
 
-         atelier = "All"
-         if division != "All":
+        st.markdown("## 🎥 Assistant de présentation")
+
+        division = st.selectbox(
+            "Division",
+            ["All", "SF1", "SF2"]
+        )
+
+        atelier = "All"
+        if division != "All":
             atelier = st.selectbox(
                 "Atelier",
                 ["All", "Sulfurique", "Phosphorique", "Centrale"]
@@ -1307,7 +1317,8 @@ def main():
             ["All", "Mécanique", "Électrique", "Instrumentation", "Génie Civil"]
         )
 
-          if st.button("🚀 Générer la présentation", use_container_width=True):
+        if st.button("🚀 Générer la présentation", use_container_width=True):
+
             generate_powerpoint(
                 division,
                 atelier,
@@ -1324,9 +1335,13 @@ def main():
                 pscores,
                 qscores
             )
-        
-            
-        show_filters=st.checkbox("✅ Afficher les filtres",value=True,key="show_filters")
+
+    show_filters = st.checkbox(
+        "✅ Afficher les filtres",
+        value=True,
+        key="show_filters"
+    )
+    
         if show_filters:
             unf=st.toggle("📁 Charger nouveaux fichiers",value=False,key="tf")
             ot_f=av_f=None
