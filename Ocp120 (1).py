@@ -19,7 +19,7 @@ client = OpenAI(
 st.set_page_config(layout="wide", page_title="Dashboard KPI", initial_sidebar_state="expanded")
 # ============================================================
 
-QK = ["TAUX_REALISATION_CORRECTIF/PT","OT préparation <1 OFmois","OT préparation >3 mois",
+QK = ["TAUX_REALISATION_CORRECTIF/PT","OT préparation <1 mois","OT préparation >3 mois",
       "OT préparation 1mois< <3mois","OT planification <1 mois","OT planification >3 mois",
       "OT planification 1mois< <3mois","OT exécution <1 mois","OT exécution >3 mois",
       "OT exécution 1mois< <3mois",
