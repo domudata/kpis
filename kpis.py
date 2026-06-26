@@ -1340,73 +1340,86 @@ with st.sidebar:
         key="show_filters"
     )
     
-        if show_filters:
-            unf=st.toggle("📁 Charger nouveaux fichiers",value=False,key="tf")
-            ot_f=av_f=None
-            if unf:
-                pwd = st.text_input("Mot de passe administrateur", type="password")
-                if pwd == "779900":
-                    ot_f = st.file_uploader("Fichier OT", type=["xlsx"], key="uot")
-                    av_f = st.file_uploader("Fichier AVIS", type=["xlsx"], key="uav")
-                    new_date = st.text_input("Entrez la date (JJ/MM/AAAA)", value=fichier_date)
-                    if st.button("💾 Sauvegarder et Appliquer"):
-                        try:
-                            datetime.strptime(new_date, "%d/%m/%Y")
-                            if ot_f is not None:
-                                with open("ot.xlsx", "wb") as f: f.write(ot_f.getbuffer())
-                            if av_f is not None:
-                                with open("avis.xlsx", "wb") as f: f.write(av_f.getbuffer())
-                            with open("date.txt", "w", encoding="utf-8") as f: f.write(new_date)
-                            st.success("Fichiers et date mis à jour avec succès !")
-                            time.sleep(2)
-                            st.cache_data.clear()
-                            st.rerun()
-                        except ValueError:
-                            st.error("Format de date invalide. Veuillez utiliser JJ/MM/AAAA.")
-                elif pwd != "":
-                    st.error("Mot de passe incorrect.")
-            else:
-                st.markdown("""<div style="background:rgba(255,255,255,.1);padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.15)"><div style="font-size:11px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:1px">Donnees</div><div style="font-size:14px;color:white;font-weight:600;margin-top:2px">📅 %s</div></div>"""%fichier_date,unsafe_allow_html=True)
-            st.markdown("---"); st.markdown("**🎯 Postes**")
-            sp=st.multiselect("Poste",["All"]+apm,["All"],key="sp")
-            st.markdown("**🏭 Atelier**")
-            sa=st.multiselect("Atelier",["All","Sulfurique (PS)","Phosphorique (PP)","Centrale (CU)","Engrais (TSP/REX)","Feed (MCP/DCP)"],["All"],key="sa")
-            st.markdown("**🏢 Division**")
-            sd=st.multiselect("Division",["All","SF1","SF2"],["All"],key="sd")
-            st.markdown("---"); st.markdown("**📅 Periode**")
-            dr=st.date_input("Date debut planifiee",value=(datetime(2025,1,1).date(),datetime.today().date()),format="DD/MM/YYYY",key="dr")
-        else:
-            unf=False; ot_f=av_f=None; sp=["All"]; sa=["All"]; sd=["All"]
-            dr=(datetime(2025,1,1).date(),datetime.today().date())
+              if show_filters:
+                  unf=st.toggle("📁 Charger nouveaux fichiers",value=False,key="tf")
+                  ot_f=av_f=None
+                  if unf:
+                      pwd = st.text_input("Mot de passe administrateur", type="password")
+                      if pwd == "779900":
+                          ot_f = st.file_uploader("Fichier OT", type=["xlsx"], key="uot")
+                          av_f = st.file_uploader("Fichier AVIS", type=["xlsx"], key="uav")
+                          new_date = st.text_input("Entrez la date (JJ/MM/AAAA)", value=fichier_date)
+                          if st.button("💾 Sauvegarder et Appliquer"):
+                              try:
+                                  datetime.strptime(new_date, "%d/%m/%Y")
+                                  if ot_f is not None:
+                                      with open("ot.xlsx", "wb") as f: f.write(ot_f.getbuffer())
+                                  if av_f is not None:
+                                      with open("avis.xlsx", "wb") as f: f.write(av_f.getbuffer())
+                                  with open("date.txt", "w", encoding="utf-8") as f: f.write(new_date)
+                                  st.success("Fichiers et date mis à jour avec succès !")
+                                  time.sleep(2)
+                                  st.cache_data.clear()
+                                  st.rerun()
+                              except ValueError:
+                                  st.error("Format de date invalide. Veuillez utiliser JJ/MM/AAAA.")
+                      elif pwd != "":
+                          st.error("Mot de passe incorrect.")
+                  else:
+                      st.markdown("""<div style="background:rgba(255,255,255,.1);padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.15)"><div style="font-size:11px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:1px">Donnees</div><div style="font-size:14px;color:white;font-weight:600;margin-top:2px">📅 %s</div></div>"""%fichier_date,unsafe_allow_html=True)
+                  st.markdown("---"); st.markdown("**🎯 Postes**")
+                  sp=st.multiselect("Poste",["All"]+apm,["All"],key="sp")
+                  st.markdown("**🏭 Atelier**")
+                  sa=st.multiselect("Atelier",["All","Sulfurique (PS)","Phosphorique (PP)","Centrale (CU)","Engrais (TSP/REX)","Feed (MCP/DCP)"],["All"],key="sa")
+                  st.markdown("**🏢 Division**")
+                  sd=st.multiselect("Division",["All","SF1","SF2"],["All"],key="sd")
+                  st.markdown("---"); st.markdown("**📅 Periode**")
+                  dr=st.date_input("Date debut planifiee",value=(datetime(2025,1,1).date(),datetime.today().date()),format="DD/MM/YYYY",key="dr")
+              else:
+                  unf=False; ot_f=av_f=None; sp=["All"]; sa=["All"]; sd=["All"]
+                  dr=(datetime(2025,1,1).date(),datetime.today().date())
+      
+          # ===================== APPLY FAST FILTERS & CALCULATIONS =====================
+fichier_date = get_date_from_file()
 
-    # ===================== APPLY FAST FILTERS & CALCULATIONS =====================
-    if not df_full.empty:
-        try:
-            if unf and ot_f is not None and av_f is not None:
-                df_full, av_full, apm, now_ts = prepare_data(ot_f.getvalue(), av_f.getvalue(), fichier_date)
-                
-            if "All" in sp or not sp: sp=apm
-            if "All" in sa or not sa: sa=["All"]
-            if "All" in sd or not sd: sd=["All"]
-            sdt=pd.to_datetime(dr[0]) if len(dr)==2 else pd.to_datetime(datetime(2025,1,1))
-            edt=pd.to_datetime(dr[1]) if len(dr)==2 else pd.to_datetime(datetime.today())
+with open("ot.xlsx", "rb") as f:
+    ot_bytes = f.read()
 
-            def mf(poste):
-                p=str(poste).upper()
-                if "All" not in sa:
-                    m=False
-                    if "Sulfurique (PS)" in sa and "PS" in p: m=True
-                    if "Phosphorique (PP)" in sa and "PP" in p: m=True
-                    if "Engrais (TSP/REX)" in sa and ("TSP" in p or "REX" in p): m=True
-                    if "Feed (MCP/DCP)" in sa and ("MCP" in p or "DCP" in p): m=True
-                    if "Centrale (CU)" in sa and "CU" in p: m=True
-                    if not m: return False
-                if "All" not in sd:
-                    m=False
-                    if "SF1" in sd and "SF1" in p: m=True
-                    if "SF2" in sd and "SF2" in p: m=True
-                    if not m: return False
-                return True
+with open("avis.xlsx", "rb") as f:
+    av_bytes = f.read()
+
+df_full, av_full, apm, now_ts = prepare_data(
+    ot_bytes,
+    av_bytes,
+    fichier_date
+)
+          if not df_full.empty:
+              try:
+                  if unf and ot_f is not None and av_f is not None:
+                      df_full, av_full, apm, now_ts = prepare_data(ot_f.getvalue(), av_f.getvalue(), fichier_date)
+                      
+                  if "All" in sp or not sp: sp=apm
+                  if "All" in sa or not sa: sa=["All"]
+                  if "All" in sd or not sd: sd=["All"]
+                  sdt=pd.to_datetime(dr[0]) if len(dr)==2 else pd.to_datetime(datetime(2025,1,1))
+                  edt=pd.to_datetime(dr[1]) if len(dr)==2 else pd.to_datetime(datetime.today())
+      
+                  def mf(poste):
+                      p=str(poste).upper()
+                      if "All" not in sa:
+                          m=False
+                          if "Sulfurique (PS)" in sa and "PS" in p: m=True
+                          if "Phosphorique (PP)" in sa and "PP" in p: m=True
+                          if "Engrais (TSP/REX)" in sa and ("TSP" in p or "REX" in p): m=True
+                          if "Feed (MCP/DCP)" in sa and ("MCP" in p or "DCP" in p): m=True
+                          if "Centrale (CU)" in sa and "CU" in p: m=True
+                          if not m: return False
+                      if "All" not in sd:
+                          m=False
+                          if "SF1" in sd and "SF1" in p: m=True
+                          if "SF2" in sd and "SF2" in p: m=True
+                          if not m: return False
+                      return True
 
             vp=[p for p in apm if mf(p) and p in sp]
             
