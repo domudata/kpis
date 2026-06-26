@@ -12,13 +12,11 @@ from plotly.subplots import make_subplots
 from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openai import OpenAI
-from huggingface_hub import InferenceClient
 
-client = InferenceClient(
-    provider="hf-inference",
-    api_key="hf_xxxxxxxxxxxxxxxxx"
+client = OpenAI(
+    api_key="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",
+    base_url="https://openrouter.ai/api/v1"
 )
-
 
 st.set_page_config(layout="wide", page_title="Dashboard KPI", initial_sidebar_state="expanded")
 # ============================================================
@@ -1393,27 +1391,35 @@ def main():
             sf2_p_score = np.mean([pscores[p] for p in sf2_posts]) if sf2_posts else 0
             sf2_q_score = np.mean([qscores[p] for p in sf2_posts]) if sf2_posts else 0
             if st.button("🤖 Générer l'analyse IA"):
+             prompt = f"""
+Tu es un expert en maintenance industrielle.
 
-              prompt = f"""
-    Analyse les KPI suivants :
+Analyse les KPI suivants :
 
-    {ckdf.to_string()}
+{ckdf.to_string()}
 
-    Donne :
-    - Synthèse
-    - Recommandations
-    - Plan d'action
-    """
+Produis :
 
-              response = client.chat.completions.create(
-        model="Qwen/Qwen3-32B-Instruct",
-        messages=[
-            {"role": "user", "content": prompt} 
-        ]
-    )
+1. Résumé exécutif
+2. Analyse Performance
+3. Analyse Qualité
+4. Causes des anomalies
+5. Recommandations
+6. Plan d'action
+7. Contenu d'une présentation PowerPoint de 10 slides.
+"""
+             response = client.chat.completions.create(
+    model="qwen/qwen3.6-plus:free",
+    messages=[
+        {
+            "role": "user",
+            "content": prompt
+        }
+    ]
+)
 
-              st.write(response.choices[0].message.content)
-               
+             st.write(response.choices[0].message.content)
+    
             # ANOMALIES.  
             ano_map = {}
             ano_map["TAUX_REALISATION_CORRECTIF/PT"] = dfp[(dfp["Nº appel pl.entret."].fillna(0)==0)&(dfp["Contient SOPL"]==1)&(~dfp["Statut OT"].isin(["CLOT","TCLO"]))].groupby("Poste travail princ.")["Ordre"].count()
