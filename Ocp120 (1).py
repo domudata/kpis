@@ -19,7 +19,7 @@ client = OpenAI(
 st.set_page_config(layout="wide", page_title="Dashboard KPI", initial_sidebar_state="expanded")
 # ============================================================
 
-QK = ["TAUX_REALISATION_CORRECTIF/PT","OT préparation <1 mois","OT préparation >3 mois",
+QK = ["TAUX_REALISATION_CORRECTIF/PT","OT préparation <1 OFmois","OT préparation >3 mois",
       "OT préparation 1mois< <3mois","OT planification <1 mois","OT planification >3 mois",
       "OT planification 1mois< <3mois","OT exécution <1 mois","OT exécution >3 mois",
       "OT exécution 1mois< <3mois",
@@ -1390,7 +1390,7 @@ def main():
             sf2_q_score = np.mean([qscores[p] for p in sf2_posts]) if sf2_posts else 0
             if st.button("🤖 Générer l'analyse IA"):
 
-    prompt = f"""
+              prompt = f"""
     Analyse les KPI suivants :
 
     {ckdf.to_string()}
@@ -1401,14 +1401,14 @@ def main():
     - Plan d'action
     """
 
-    response = client.chat.completions.create(
+              response = client.chat.completions.create(
         model="Qwen/Qwen3-32B-Instruct",
         messages=[
-            {"role": "user", "content": prompt}
+            {"role": "user", "content": prompt} 
         ]
     )
 
-    st.write(response.choices[0].message.content)
+              st.write(response.choices[0].message.content)
                
             # ANOMALIES.  
             ano_map = {}
