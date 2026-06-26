@@ -1375,7 +1375,7 @@ with st.sidebar:
                   sd=st.multiselect("Division",["All","SF1","SF2"],["All"],key="sd")
                   st.markdown("---"); st.markdown("**📅 Periode**")
                   dr=st.date_input("Date debut planifiee",value=(datetime(2025,1,1).date(),datetime.today().date()),format="DD/MM/YYYY",key="dr")
-              else:
+    else:
                   unf=False; ot_f=av_f=None; sp=["All"]; sa=["All"]; sd=["All"]
                   dr=(datetime(2025,1,1).date(),datetime.today().date())
       
