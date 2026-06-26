@@ -1336,7 +1336,7 @@ with st.sidebar:
                 qscores
             )
 
-    show_filters = st.checkbox(
+        show_filters = st.checkbox(
         "✅ Afficher les filtres",
         value=True,
         key="show_filters"
