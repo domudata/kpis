@@ -699,6 +699,46 @@ def format_card_variation(current, previous):
         return '<div class="cv-var negative">▼ −%.1f %%</div>' % abs(pct)
     else:
         return '<div class="cv-var neutral">➜ 0.0 %</div>'
+def generate_powerpoint(
+        division,
+        atelier,
+        metier,
+        df,
+        avdf,
+        ckdf,
+        prows,
+        qrows,
+        ano_p_rows,
+        ano_q_rows,
+        plan_actions_rows,
+        var_df,
+        pscores,
+        qscores):
+
+    # création des 4 slides
+
+    # Slide 1
+    # Taux moyens Performance
+    # Taux moyens Qualité
+    # Comparaison Performance/Qualité
+
+    # Slide 2
+    # Tableau KPI Performance
+    # Tableau anomalies
+    # Tableau KPI Qualité
+    # Tableau anomalies
+
+    # Slide 3
+    # Actions recommandées
+    # Courbe évolution Performance
+    # Courbe évolution Qualité
+
+    # Slide 4
+    # Plan d'action
+
+    # enregistrer presentation.pptx
+
+    return "presentation.pptx"
 def main():
     try: locale.setlocale(locale.LC_ALL,'fr_FR.UTF-8')
     except Exception:
