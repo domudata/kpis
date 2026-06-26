@@ -1288,7 +1288,63 @@ def main():
             st.rerun()
 
         if st.button("🖥️ Mode Présentation (Slide/PDF)", use_container_width=True):
-            components.html("<script>window.parent.print();</script>", height=0, width=0)
+    st.session_state.mode_presentation = True
+
+if st.session_state.get("mode_presentation", False):
+
+    st.markdown("## 🎥 Assistant de présentation")
+
+    division = st.selectbox(
+        "Division",
+        ["All", "SF1", "SF2"]
+    )
+
+    atelier = "All"
+    if division != "All":
+        atelier = st.selectbox(
+            "Atelier",
+            [
+                "All",
+                "Sulfurique",
+                "Phosphorique",
+                "Centrale"
+            ]
+        )
+
+    metier = st.selectbox(
+        "Métier",
+        [
+            "All",
+            "Mécanique",
+            "Électrique",
+            "Instrumentation",
+            "Génie Civil"
+        ]
+    )
+
+    if st.button("🚀 Générer la présentation"):
+
+        # appliquer les mêmes filtres que le dashboard
+        # division
+        # atelier
+        # métier
+
+        generate_powerpoint(
+            division,
+            atelier,
+            metier,
+            df,
+            avdf,
+            ckdf,
+            prows,
+            qrows,
+            ano_p_rows,
+            ano_q_rows,
+            plan_actions_rows,
+            var_df,
+            pscores,
+            qscores
+        )
             
         show_filters=st.checkbox("✅ Afficher les filtres",value=True,key="show_filters")
         if show_filters:
