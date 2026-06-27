@@ -18,3 +18,58 @@ def ask_qwen(prompt):
     )
 
     return response.choices[0].message.content
+def analyse_kpi(
+    ckdf,
+    pscores,
+    qscores,
+    division,
+    atelier,
+    metier,
+    date_debut,
+    date_fin
+):
+
+    prompt = f"""
+Tu es un ingénieur maintenance senior.
+
+Contexte
+
+Division : {division}
+Atelier : {atelier}
+Métier : {metier}
+
+Période
+
+Du {date_debut}
+Au {date_fin}
+
+Voici les KPI :
+
+{ckdf.to_markdown()}
+
+Score Performance
+
+{pscores}
+
+Score Qualité
+
+{qscores}
+
+Analyse uniquement les KPI.
+
+Réponds en JSON.
+
+Format :
+
+{{
+"resume":"",
+"kpi_critiques":"",
+"points_forts":"",
+"points_faibles":"",
+"conclusion":""
+}}
+"""
+
+    txt = ask_qwen(prompt)
+
+    return txt
