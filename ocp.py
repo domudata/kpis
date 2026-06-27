@@ -11,8 +11,13 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openai import OpenAI
 
-# ============================================================
+client = OpenAI(
+    api_key="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",
+    base_url="https://openrouter.ai/api/v1"
+)
+
 st.set_page_config(layout="wide", page_title="Dashboard KPI", initial_sidebar_state="expanded")
 # ============================================================
 
@@ -413,6 +418,11 @@ def inject_custom_css():
     .cc.c6{border-left-color:#06b6d4}.cc.c6 .cv{color:#0891b2}
     .cc.c7{border-left-color:#f59e0b}.cc.c7 .cv{color:#d97706}
     .cc.c8{border-left-color:#f97316}.cc.c8 .cv{color:#ea580c}
+
+    .cc .cv-var{font-size:13px;font-weight:800;margin-top:6px;line-height:1.2;min-height:16px;letter-spacing:.3px}
+    .cc .cv-var.positive{color:#10b981}
+    .cc .cv-var.negative{color:#ef4444}
+    .cc .cv-var.neutral{color:#eab308}
     
     .stl{font-size:16px;font-weight:800;color:var(--primary);margin:10px 0 5px 0;padding-left:12px;border-left:4px solid var(--info);}
     
@@ -548,7 +558,10 @@ def inject_custom_css():
         overflow-x: hidden !important;
         width: 100% !important;
     }
-
+    
+        /* Styles pour les cellules de sparklines */
+    .tw td svg { display: block; margin: 0 auto; }
+    .spark-cell { text-align: center; vertical-align: middle; padding: 8px 5px !important; }
     @media(max-width:768px){
         .cr{grid-template-columns:repeat(2,1fr)}
         .mh{padding:8px 10px;gap:8px}
@@ -597,6 +610,100 @@ def inject_custom_css():
     </style>""",unsafe_allow_html=True)
 
 # ============================================================
+def get_previous_card_values(hist_df):
+    """Récupère les valeurs précédentes des 8 KPI du header depuis hist_df.
+    La 'valeur précédente' = avant-dernière date enregistrée dans le fichier historique.
+    """
+    prev = {
+        "OT Analysés": None,
+        "Score Performance Global": None,
+        "Score Qualité Global": None,
+        "Anomalies Totales": None,
+        "Performance SF1": None,
+        "Qualité SF1": None,
+        "Performance SF2": None,
+        "Qualité SF2": None,
+    }
+    if hist_df is None or hist_df.empty or "Date_parsed" not in hist_df.columns:
+        return prev
+
+    dates_parsed = sorted(hist_df["Date_parsed"].dropna().unique())
+    if len(dates_parsed) < 2:
+        return prev  # Aucune période précédente → tout restera None → gris 0.0 %
+
+    prev_date = dates_parsed[-2]
+    prev_data = hist_df[hist_df["Date_parsed"] == prev_date]
+    prev_perf = prev_data[prev_data["_section"] == "perf"]
+    prev_qual = prev_data[prev_data["_section"] == "qual"]
+
+    # Score Performance Global (ligne "Total general" de la section Performance)
+    if not prev_perf.empty and "Score Performance" in prev_perf.columns:
+        tg = prev_perf[prev_perf["Poste de travail"].astype(str) == "Total general"]
+        if not tg.empty:
+            try:
+                prev["Score Performance Global"] = float(tg.iloc[0]["Score Performance"])
+            except Exception:
+                pass
+
+    # Score Qualité Global (ligne "Total general" de la section Qualité)
+    if not prev_qual.empty and "Score Qualite" in prev_qual.columns:
+        tg = prev_qual[prev_qual["Poste de travail"].astype(str) == "Total general"]
+        if not tg.empty:
+            try:
+                prev["Score Qualité Global"] = float(tg.iloc[0]["Score Qualite"])
+            except Exception:
+                pass
+
+    # Moyennes SF1 / SF2 pour Performance et Qualité
+    for section_df, score_col, key_prefix in [
+        (prev_perf, "Score Performance", "Performance"),
+        (prev_qual, "Score Qualite", "Qualité"),
+    ]:
+        if score_col not in section_df.columns:
+            continue
+        sf1_vals, sf2_vals = [], []
+        for _, row in section_df.iterrows():
+            poste = str(row.get("Poste de travail", ""))
+            if poste in ("Total general", "CIBLE", "", "nan", "None"):
+                continue
+            try:
+                v = float(row[score_col])
+            except Exception:
+                continue
+            if poste.startswith("SF1"):
+                sf1_vals.append(v)
+            elif poste.startswith("SF2"):
+                sf2_vals.append(v)
+        if sf1_vals:
+            prev[f"{key_prefix} SF1"] = sum(sf1_vals) / len(sf1_vals)
+        if sf2_vals:
+            prev[f"{key_prefix} SF2"] = sum(sf2_vals) / len(sf2_vals)
+
+    # OT Analysés et Anomalies Totales ne sont pas stockés dans hist_df
+    # → restent None → affichage "➜ 0.0 %"
+    return prev
+
+
+def format_card_variation(current, previous):
+    """Génère le HTML de la variation à afficher sous la valeur d'une carte KPI."""
+    # Pas de valeur précédente → gris 0.0 %
+    if previous is None:
+        return '<div class="cv-var neutral">➜ 0.0 %</div>'
+    try:
+        current = float(current)
+        previous = float(previous)
+    except (ValueError, TypeError):
+        return '<div class="cv-var neutral">➜ 0.0 %</div>'
+    if previous == 0:
+        return '<div class="cv-var neutral">➜ 0.0 %</div>'
+
+    pct = ((current - previous) / previous) * 100
+    if pct > 0.05:
+        return '<div class="cv-var positive">▲ +%.1f %%</div>' % pct
+    elif pct < -0.05:
+        return '<div class="cv-var negative">▼ −%.1f %%</div>' % abs(pct)
+    else:
+        return '<div class="cv-var neutral">➜ 0.0 %</div>'
 def main():
     try: locale.setlocale(locale.LC_ALL,'fr_FR.UTF-8')
     except Exception:
@@ -1185,8 +1292,7 @@ def main():
             st.cache_data.clear()
             st.rerun()
 
-        if st.button("🖥️ Mode Présentation (Slide/PDF)", use_container_width=True):
-            components.html("<script>window.parent.print();</script>", height=0, width=0)
+        
             
         show_filters=st.checkbox("✅ Afficher les filtres",value=True,key="show_filters")
         if show_filters:
@@ -1284,8 +1390,7 @@ def main():
             sf1_q_score = np.mean([qscores[p] for p in sf1_posts]) if sf1_posts else 0
             sf2_p_score = np.mean([pscores[p] for p in sf2_posts]) if sf2_posts else 0
             sf2_q_score = np.mean([qscores[p] for p in sf2_posts]) if sf2_posts else 0
-
-            # ANOMALIES
+            
             ano_map = {}
             ano_map["TAUX_REALISATION_CORRECTIF/PT"] = dfp[(dfp["Nº appel pl.entret."].fillna(0)==0)&(dfp["Contient SOPL"]==1)&(~dfp["Statut OT"].isin(["CLOT","TCLO"]))].groupby("Poste travail princ.")["Ordre"].count()
             prep_filt = (dfp["Statut OT"]=="CRÉÉ")&(dfp["Statut utilisateur"].str.contains("CRPR",na=False))
@@ -1533,18 +1638,54 @@ def main():
             total_ano_p=sum([r["Total Anomalies"] for r in ano_p_rows if r.get("Poste de travail")!="Total"])
             total_ano_q=sum([r["Total Anomalies"] for r in ano_q_rows if r.get("Poste de travail")!="Total"])
             total_ot=len(df)
-
             logo_b64 = get_logo_base64()
             if logo_b64:
                st.markdown(f'<div class="mh"><img src="data:image/png;base64,{logo_b64}" class="logo" alt="Logo"><h1>Tableau de Bord KPIs Performance & Qualite</h1><span class="db">📅 {fichier_date}</span></div>', unsafe_allow_html=True)
             else:
                 st.markdown('<div class="mh"><h1>Tableau de Bord KPIs Performance & Qualite</h1><span class="db">📅 18/06/2026</span></div>',unsafe_allow_html=True)
             
-            st.markdown('<div class="cr"><div class="cc c1"><div class="cv">%d</div><div class="cl">OT Analyses</div></div><div class="cc c2"><div class="cv">%.1f%%</div><div class="cl">Score Performance Global</div></div><div class="cc c3"><div class="cv">%.1f%%</div><div class="cl">Score Qualite Global</div></div><div class="cc c4"><div class="cv">%d</div><div class="cl">Anomalies Totales</div></div></div>'%(total_ot,avg_p_score,avg_q_score,total_ano_p+total_ano_q),unsafe_allow_html=True)
-            st.markdown('<div class="cr"><div class="cc c5"><div class="cv">%.1f%%</div><div class="cl">Performance SF1</div></div><div class="cc c6"><div class="cv">%.1f%%</div><div class="cl">Qualite SF1</div></div><div class="cc c7"><div class="cv">%.1f%%</div><div class="cl">Performance SF2</div></div><div class="cc c8"><div class="cv">%.1f%%</div><div class="cl">Qualite SF2</div></div></div>'%(sf1_p_score,sf1_q_score,sf2_p_score,sf2_q_score),unsafe_allow_html=True)
+            # === Variations automatiques depuis hist_df ===
+            prev_values = get_previous_card_values(hist_df)
+
+            var_ot = format_card_variation(total_ot,                  prev_values.get("OT Analysés"))
+            var_sp = format_card_variation(avg_p_score,               prev_values.get("Score Performance Global"))
+            var_sq = format_card_variation(avg_q_score,               prev_values.get("Score Qualité Global"))
+            var_at = format_card_variation(total_ano_p + total_ano_q, prev_values.get("Anomalies Totales"))
+            var_p1 = format_card_variation(sf1_p_score,               prev_values.get("Performance SF1"))
+            var_q1 = format_card_variation(sf1_q_score,               prev_values.get("Qualité SF1"))
+            var_p2 = format_card_variation(sf2_p_score,               prev_values.get("Performance SF2"))
+            var_q2 = format_card_variation(sf2_q_score,               prev_values.get("Qualité SF2"))
+
+            st.markdown(
+                '<div class="cr">'
+                '<div class="cc c1"><div class="cv">%d</div>%s<div class="cl">OT Analyses</div></div>'
+                '<div class="cc c2"><div class="cv">%.1f%%</div>%s<div class="cl">Score Performance Global</div></div>'
+                '<div class="cc c3"><div class="cv">%.1f%%</div>%s<div class="cl">Score Qualite Global</div></div>'
+                '<div class="cc c4"><div class="cv">%d</div>%s<div class="cl">Anomalies Totales</div></div>'
+                '</div>' % (total_ot, var_ot,
+                            avg_p_score, var_sp,
+                            avg_q_score, var_sq,
+                            total_ano_p + total_ano_q, var_at),
+                unsafe_allow_html=True
+            )
+
+            st.markdown(
+                '<div class="cr">'
+                '<div class="cc c5"><div class="cv">%.1f%%</div>%s<div class="cl">Performance SF1</div></div>'
+                '<div class="cc c6"><div class="cv">%.1f%%</div>%s<div class="cl">Qualite SF1</div></div>'
+                '<div class="cc c7"><div class="cv">%.1f%%</div>%s<div class="cl">Performance SF2</div></div>'
+                '<div class="cc c8"><div class="cv">%.1f%%</div>%s<div class="cl">Qualite SF2</div></div>'
+                '</div>' % (sf1_p_score, var_p1,
+                            sf1_q_score, var_q1,
+                            sf2_p_score, var_p2,
+                            sf2_q_score, var_q2),
+                unsafe_allow_html=True
+            )
 
             tabs=st.tabs(["🏠 Tableau de Bord","📈 Performance","✅ Qualite","📂 Backlog","📋 Suivi & Evolution","🎯 Plan d'action"])
 
+      
+            
             with tabs[0]:
                 st.markdown('<div class="stl p">Scores globaux par poste</div>',unsafe_allow_html=True)
                 st.markdown(html_grouped_bars(vp,pscores,qscores,"Comparaison Performance / Qualite par poste"),unsafe_allow_html=True)
@@ -1611,20 +1752,121 @@ def main():
                 with c_all2: show_pie_pair(piv_all,"Tous les OT")
 
             with tabs[4]:
+                  
                 min_date = var_df["Date precedente"].min() if not var_df.empty else "?"
                 max_date = var_df["Date actuelle"].max() if not var_df.empty else "?"
+
+                # --- 1. Bouton Masquer/Afficher les tableaux de synthèse ---
+                if "show_synth" not in st.session_state:
+                    st.session_state.show_synth = False
+
+                btn_label = "▼ Masquer les détails" if st.session_state.show_synth else "▶ Voir plus de détails"
+                if st.button(btn_label, key="btn_synth"):
+                    st.session_state.show_synth = not st.session_state.show_synth
+                    st.rerun()
+
+                if st.session_state.show_synth:
+                    st.markdown(f'<div class="stl s">Synthèse d\'évolution Performance entre {min_date} et {max_date}</div>',unsafe_allow_html=True)
+                    if synth_perf and any(any(v.get("diff","—")!="—" for v in d.values()) for d in synth_perf.values()):
+                        st.markdown(html_synthese_table(synth_perf,QK,vp),unsafe_allow_html=True)
+                    else:
+                        st.markdown('<div class="es">Pas assez de donnees historiques pour calculer la synthese Performance. Au moins 2 periodes sont necessaires.</div>',unsafe_allow_html=True)
+                        
+                    st.markdown(f'<div class="stl s">Synthèse d\'évolution Qualité entre {min_date} et {max_date}</div>',unsafe_allow_html=True)
+                    if synth_qual and any(any(v.get("diff","—")!="—" for v in d.values()) for d in synth_qual.values()):
+                        st.markdown(html_synthese_table(synth_qual,PK,vp),unsafe_allow_html=True)
+                    else:
+                        st.markdown('<div class="es">Pas assez de donnees historiques pour calculer la synthese Qualite. Au moins 2 periodes sont necessaires.</div>',unsafe_allow_html=True)
                 
-                st.markdown(f'<div class="stl s">Synthèse d\'évolution Performance entre {min_date} et {max_date}</div>',unsafe_allow_html=True)
-                if synth_perf and any(any(v.get("diff","—")!="—" for v in d.values()) for d in synth_perf.values()):
-                    st.markdown(html_synthese_table(synth_perf,QK,vp),unsafe_allow_html=True)
-                else:
-                    st.markdown('<div class="es">Pas assez de donnees historiques pour calculer la synthese Performance. Au moins 2 periodes sont necessaires.</div>',unsafe_allow_html=True)
+                st.markdown("---")
+
+                # --- 2, 3, 4 & 5. Nouveau tableau de suivi par poste avec Sparklines ---
+                st.markdown('<div class="stl s">Suivi Sparklines par Poste de Travail</div>',unsafe_allow_html=True)
+
+                def get_spark_color(v):
+                    if pd.isna(v): return "#cbd5e0"
+                    if v >= 90: return "#10b981" # Vert
+                    elif v >= 80: return "#f59e0b" # Jaune
+                    else: return "#ef4444" # Rouge
+
+                def get_sparkline_html(scores):
+                    n = len(scores)
+                    if n == 0: return ""
+                    W, H = 130, 35
+                    pad = 5
+                    def get_xy(i, v):
+                        x = pad + (i / (n - 1) * (W - 2 * pad)) if n > 1 else W / 2
+                        v_disp = max(0, min(100, v if pd.notna(v) else 0))
+                        y = H - pad - (v_disp / 100 * (H - 2 * pad))
+                        return x, y
+
+                    svg = f'<svg width="{W}" height="{H}" viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg">'
+                    # Lignes (segments)
+                    for i in range(n - 1):
+                        x1, y1 = get_xy(i, scores[i])
+                        x2, y2 = get_xy(i + 1, scores[i+1])
+                        col = get_spark_color(scores[i+1])
+                        svg += f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" y2="{y2:.1f}" stroke="{col}" stroke-width="2.5" />'
+                    # Points
+                    for i, v in enumerate(scores):
+                        x, y = get_xy(i, v)
+                        col = get_spark_color(v)
+                        svg += f'<circle cx="{x:.1f}" cy="{y:.1f}" r="3.5" fill="{col}" />'
+                    svg += '</svg>'
+                    return svg
+
+                def get_comparison_html(scores):
+                    if len(scores) == 0:
+                        return '<span style="color:#94a3b8">N/A</span>'
+                    if len(scores) == 1:
+                        return '<span style="color:#94a3b8">Première mesure disponible</span>'
                     
-                st.markdown(f'<div class="stl s">Synthèse d\'évolution Qualité entre {min_date} et {max_date}</div>',unsafe_allow_html=True)
-                if synth_qual and any(any(v.get("diff","—")!="—" for v in d.values()) for d in synth_qual.values()):
-                    st.markdown(html_synthese_table(synth_qual,PK,vp),unsafe_allow_html=True)
+                    prev = scores[-2]
+                    curr = scores[-1]
+                    if prev == 0:
+                        return '<span style="color:#94a3b8">➜ Stable</span>'
+                    
+                    pct = ((curr - prev) / prev) * 100
+                    if pct > 0.05:
+                        return f'<span style="color:#10b981;font-weight:600">▲ +{pct:.1f} % — Amélioration</span>'
+                    elif pct < -0.05:
+                        return f'<span style="color:#ef4444;font-weight:600">▼ {pct:.1f} % — Dégradation</span>'
+                    else:
+                        return '<span style="color:#94a3b8;font-weight:600">➜ Stable</span>'
+
+                # Préparation des données depuis hist_df
+                if not hist_df.empty and "Poste de travail" in hist_df.columns:
+                    # Filtrer pour ne garder que les postes actuellement sélectionnés et valides
+                    valid_postes = [p for p in vp if p in hist_df["Poste de travail"].unique()]
+                    valid_postes = sorted(valid_postes)
+
+                    perf_df_h = hist_df[(hist_df["_section"]=="perf") & (hist_df["Poste de travail"].isin(valid_postes))]
+                    qual_df_h = hist_df[(hist_df["_section"]=="qual") & (hist_df["Poste de travail"].isin(valid_postes))]
+
+                    # Construction du tableau HTML
+                    h = '<table class="tw st"><thead><tr>'
+                    h += '<th>Poste de travail</th><th>Sparkline Performance</th><th>Comparaison Performance</th>'
+                    h += '<th>Sparkline Qualité</th><th>Comparaison Qualité</th>'
+                    h += '</tr></thead><tbody>'
+
+                    for poste in valid_postes:
+                        p_data = perf_df_h[perf_df_h["Poste de travail"]==poste].sort_values("Date_parsed")
+                        q_data = qual_df_h[qual_df_h["Poste de travail"]==poste].sort_values("Date_parsed")
+                        
+                        p_scores = p_data["Score Performance"].astype(float).tolist() if "Score Performance" in p_data.columns else []
+                        q_scores = q_data["Score Qualite"].astype(float).tolist() if "Score Qualite" in q_data.columns else []
+
+                        h += f'<tr><td style="font-weight:700">{poste}</td>'
+                        h += f'<td class="spark-cell">{get_sparkline_html(p_scores)}</td>'
+                        h += f'<td class="spark-cell">{get_comparison_html(p_scores)}</td>'
+                        h += f'<td class="spark-cell">{get_sparkline_html(q_scores)}</td>'
+                        h += f'<td class="spark-cell">{get_comparison_html(q_scores)}</td>'
+                        h += '</tr>'
+
+                    h += '</tbody></table>'
+                    st.markdown(h, unsafe_allow_html=True)
                 else:
-                    st.markdown('<div class="es">Pas assez de donnees historiques pour calculer la synthese Qualite. Au moins 2 periodes sont necessaires.</div>',unsafe_allow_html=True)
+                    st.markdown('<div class="es">Pas assez de données historiques pour générer les sparklines.</div>', unsafe_allow_html=True)
 
                 st.markdown("---")
                 st.markdown('<div class="stl s">Journal des variations significatives</div>',unsafe_allow_html=True)
