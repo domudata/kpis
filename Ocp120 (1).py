@@ -13,10 +13,10 @@ from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openai import OpenAI
 
-client = OpenAI(
-    api_key="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",
-    base_url="https://openrouter.ai/api/v1"
-)
+from openai import OpenAI
+
+# >>> COLLER L'IMPORT DE L'AGENT ICI <<<
+from ai_agent import generate_analysis_from_dashboard
 
 st.set_page_config(layout="wide", page_title="Dashboard KPI", initial_sidebar_state="expanded")
 # ============================================================
@@ -1915,6 +1915,103 @@ def main():
         st.markdown('<div class="es">📁 Veuillez charger les fichiers OT et AVIS via le panneau de filtres.</div>',unsafe_allow_html=True)
 
     st.markdown('<div class="footer">Bureau Méthodes Maroc Chimie – © 2026 Tous droits réservés</div>', unsafe_allow_html=True)
+
+if __name__ == "__main__":
+    main()
+        # ====================================================================
+    # VOTRE CODE EXISTANT (Affichage des tableaux, graphiques, export Excel)
+    # ====================================================================
+    # ... (vos st.markdown, vos graphiques plotly, votre bouton export Excel) ...
+
+
+    # ====================================================================
+    # >>> COLLER LE BLOC IA ICI (À la toute fin de la fonction main()) <<<
+    # ====================================================================
+    
+    st.markdown("<br><hr style='border:2px solid #e2e8f0'><br>", unsafe_allow_html=True)
+    
+    if st.button("🤖 Générer l'Analyse IA pour le Directeur", type="primary", use_container_width=True):
+        
+        # Vérifie que les variables existent bien (évite les erreurs si aucun fichier n'est chargé)
+        if 'prows' not in locals() or not prows:
+            st.error("Veuillez d'abord charger les fichiers Excel pour générer l'analyse.")
+        else:
+            result = generate_analysis_from_dashboard(
+                st=st,
+                division=division if 'division' in locals() else "Non définie",
+                atelier=atelier if 'atelier' in locals() else "Non défini",
+                metier=metier if 'metier' in locals() else "Non défini",
+                date_debut=date_debut if 'date_debut' in locals() else "01/01/2024",
+                date_fin=date_fin if 'date_fin' in locals() else "31/01/2024",
+                kpi_perf_rows=prows,
+                kpi_perf_cols=pcols,
+                kpi_qual_rows=qrows,
+                kpi_qual_cols=qcols,
+                ano_perf_rows=ano_p_r if 'ano_p_r' in locals() else [],
+                ano_perf_cols=ano_p_c if 'ano_p_c' in locals() else [],
+                ano_qual_rows=ano_q_r if 'ano_q_r' in locals() else [],
+                ano_qual_cols=ano_q_c if 'ano_q_c' in locals() else [],
+                var_df=var_df if 'var_df' in locals() else None,
+                best_ranking_df=best_rank if 'best_rank' in locals() else None,
+                worst_ranking_df=worst_rank if 'worst_rank' in locals() else None,
+                score_perf=score_perf_global if 'score_perf_global' in locals() else 0.0,
+                score_qual=score_qual_global if 'score_qual_global' in locals() else 0.0,
+                total_ot=total_ot if 'total_ot' in locals() else 0,
+                total_anomalies=total_anomalies if 'total_anomalies' in locals() else 0
+            )
+            
+            # Stocker le résultat dans session_state
+            st.session_state['ai_analysis'] = result
+
+    # Afficher le résultat si l'analyse a été générée
+    if 'ai_analysis' in st.session_state and st.session_state['ai_analysis']:
+        analysis = st.session_state['ai_analysis']
+        
+        # Vérifier s'il y a eu une erreur
+        if "Erreur" in analysis.get("slide1", {}).get("conclusion", ""):
+            st.warning("L'analyse n'a pas pu aboutir entièrement.")
+        else:
+            st.markdown("<div class='stl'>🤖 Résultat de l'Analyse IA</div>", unsafe_allow_html=True)
+            
+            # Affichage des slides sous forme d'expander pour ne pas polluer l'écran
+            with st.expander("📑 Slide 1 : État des performances", expanded=False):
+                st.info(analysis["slide1"]["conclusion"])
+                
+            with st.expander("⚠️ Slide 2 : Anomalies", expanded=False):
+                st.info(analysis["slide2"]["conclusion"])
+                
+            with st.expander("📈 Slide 3 : Tendances", expanded=False):
+                st.info(analysis["slide3"]["conclusion"])
+                
+            with st.expander("🔍 Slide 4 : Causes racines", expanded=False):
+                for cause in analysis["slide4"]["root_causes"]:
+                    col1, col2 = st.columns([4, 1])
+                    col1.write(f"• {cause['cause']}")
+                    col2.markdown(f"**{cause['criticite']}**")
+                    
+            with st.expander("🛠️ Slide 5 : Plan d'action", expanded=False):
+                if analysis["slide5"]["recommendations"]:
+                    # Créer un DataFrame pour afficher joliment le plan d'action
+                    df_actions = pd.DataFrame(analysis["slide5"]["recommendations"])
+                    st.dataframe(df_actions, use_container_width=True, hide_index=True)
+                else:
+                    st.info("Aucune action spécifique générée.")
+                    
+            with st.expander("🎯 Slide 6 : Conclusion Exécutive", expanded=True):
+                st.success(analysis["slide6"]["final_conclusion"])
+                
+            # Bouton pour copier le JSON brut (utile pour intégrer dans PowerPoint)
+            json_str = json.dumps(analysis, indent=2, ensure_ascii=False)
+            st.download_button(
+                label="📥 Télécharger le JSON (pour PowerPoint)",
+                data=json_str,
+                file_name="analyse_ia_kpi.json",
+                mime="application/json"
+            )
+
+# ====================================================================
+# FIN DE LA FONCTION main()
+# ====================================================================
 
 if __name__ == "__main__":
     main()
