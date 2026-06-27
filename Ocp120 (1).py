@@ -1283,6 +1283,7 @@ def main():
     # ===================== SIDEBAR =====================
     with st.sidebar:
         logo_b64 = get_logo_base64()
+        key="btn_refresh_cache"
         if logo_b64:
             st.markdown('<div style="display:flex;justify-content:center;padding:10px 0 15px 0;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:10px;"><img src="data:image/png;base64,%s" style="max-width:100%%;height:auto;max-height:200px;object-fit:contain;border-radius:4px;"></div>'%logo_b64,unsafe_allow_html=True)
         else:
