@@ -1971,7 +1971,7 @@ def main():
             with st.expander("🎯 Slide 6 : Conclusion Exécutive", expanded=True): 
                 st.success(analysis["slide6"]["final_conclusion"])
             
-            # ================= BOUTONS DE TELECHARGEMENT =================
+                       # ================= BOUTONS DE TELECHARGEMENT =================
             col_json, col_pptx = st.columns(2)
             
             with col_json:
@@ -1984,17 +1984,32 @@ def main():
                 )
                 
             with col_pptx:
-                # Génération du PowerPoint à la volée
                 try:
-                    pptx_bytes = create_pptx(analysis)
+                    # On rassemble les DataFrames nécessaires pour le PPTX
+                    df_perf_pptx = pd.DataFrame(prows, columns=pcols) if prows else pd.DataFrame()
+                    df_qual_pptx = pd.DataFrame(qrows, columns=qcols) if qrows else pd.DataFrame()
+                    df_ano_p_pptx = pd.DataFrame(ano_p_r, columns=ano_p_c) if ano_p_r else pd.DataFrame()
+                    df_ano_q_pptx = pd.DataFrame(ano_q_r, columns=ano_q_c) if ano_q_r else pd.DataFrame()
+                    df_var_pptx = var_df if 'var_df' in locals() else None
+                    
+                    # Appel de la fonction de génération
+                    pptx_bytes = create_pptx(
+                        json_data=analysis,
+                        df_perf=df_perf_pptx,
+                        df_qual=df_qual_pptx,
+                        df_ano_p=df_ano_p_pptx,
+                        df_ano_q=df_ano_q_pptx,
+                        df_var=df_var_pptx
+                    )
+                    
                     st.download_button(
-                        label="📽️ Télécharger la Présentation PowerPoint",
+                        label="📽️ Télécharger la Présentation (9 Slides)",
                         data=pptx_bytes,
-                        file_name="Analyse_KPI_Maintenance.pptx",
+                        file_name="Analyse_KPI_Maintenance_Complete.pptx",
                         mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
                         use_container_width=True
                     )
                 except Exception as e:
-                    st.error(f"Erreur de génération PPTX: {e}")
+                    st.error(f"Erreur de génération PPTX : {e}")
 if __name__ == "__main__":
     main()
