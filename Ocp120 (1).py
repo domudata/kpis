@@ -12,8 +12,7 @@ from plotly.subplots import make_subplots
 from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openai import OpenAI
-
-from openai import OpenAI
+from ppt_generator import create_pptx
 
 # >>> COLLER L'IMPORT DE L'AGENT ICI <<<
 from ai_agent import generate_analysis_from_dashboard
@@ -1914,8 +1913,8 @@ def main():
         st.markdown('<div class="es">📁 Veuillez charger les fichiers OT et AVIS via le panneau de filtres.</div>',unsafe_allow_html=True)
 
     st.markdown('<div class="footer">Bureau Méthodes Maroc Chimie – © 2026 Tous droits réservés</div>', unsafe_allow_html=True)
-        # ====================================================================
-    # BLOC IA - A COLLER À LA TOUTE FIN DE LA FONCTION main()
+    # ====================================================================
+    # BLOC IA - À LA TOUTE FIN DE LA FONCTION main()
     # ====================================================================
     st.markdown("<br><hr style='border:2px solid #e2e8f0'><br>", unsafe_allow_html=True)
     
@@ -1952,10 +1951,12 @@ def main():
 
     if 'ai_analysis' in st.session_state and st.session_state['ai_analysis']:
         analysis = st.session_state['ai_analysis']
+        
         if "Erreur" in analysis.get("slide1", {}).get("conclusion", ""):
             st.warning("L'analyse n'a pas pu aboutir.")
         else:
             st.markdown("<div class='stl'>🤖 Résultat de l'Analyse IA</div>", unsafe_allow_html=True)
+            
             with st.expander("📑 Slide 1 : État des performances"): st.info(analysis["slide1"]["conclusion"])
             with st.expander("⚠️ Slide 2 : Anomalies"): st.info(analysis["slide2"]["conclusion"])
             with st.expander("📈 Slide 3 : Tendances"): st.info(analysis["slide3"]["conclusion"])
@@ -1967,8 +1968,33 @@ def main():
             with st.expander("🛠️ Slide 5 : Plan d'action"):
                 if analysis["slide5"]["recommendations"]:
                     st.dataframe(pd.DataFrame(analysis["slide5"]["recommendations"]), use_container_width=True, hide_index=True)
-            with st.expander("🎯 Slide 6 : Conclusion Exécutive", expanded=True): st.success(analysis["slide6"]["final_conclusion"])
-            st.download_button("📥 Télécharger le JSON", data=json.dumps(analysis, indent=2, ensure_ascii=False), file_name="analyse_ia_kpi.json", mime="application/json")
-
+            with st.expander("🎯 Slide 6 : Conclusion Exécutive", expanded=True): 
+                st.success(analysis["slide6"]["final_conclusion"])
+            
+            # ================= BOUTONS DE TELECHARGEMENT =================
+            col_json, col_pptx = st.columns(2)
+            
+            with col_json:
+                st.download_button(
+                    label="📥 Télécharger le JSON (Brut)",
+                    data=json.dumps(analysis, indent=2, ensure_ascii=False),
+                    file_name="analyse_ia_kpi.json",
+                    mime="application/json",
+                    use_container_width=True
+                )
+                
+            with col_pptx:
+                # Génération du PowerPoint à la volée
+                try:
+                    pptx_bytes = create_pptx(analysis)
+                    st.download_button(
+                        label="📽️ Télécharger la Présentation PowerPoint",
+                        data=pptx_bytes,
+                        file_name="Analyse_KPI_Maintenance.pptx",
+                        mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                        use_container_width=True
+                    )
+                except Exception as e:
+                    st.error(f"Erreur de génération PPTX: {e}")
 if __name__ == "__main__":
     main()
