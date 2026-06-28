@@ -66,19 +66,95 @@ QUICK_SUGGESTIONS = ["🔍 Quels KPI sont critiques ?","⚡ Analyse les anomalie
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  CATALOGUE COMPLET DES MODÈLES IA
+# ═══════════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
+#  CATALOGUE COMPLET DES MODÈLES IA (Noms exacts OpenRouter à jour)
 # ═══════════════════════════════════════════════════════════════════════════════
 MODELS_CATALOG = {
-    "── OpenAI ──": ["gpt-4o","gpt-4o-mini","gpt-4-turbo","gpt-4","gpt-3.5-turbo","o1-preview","o1-mini"],
-    "── Anthropic ──": ["anthropic/claude-sonnet-4","anthropic/claude-3.5-sonnet","anthropic/claude-3.5-haiku","anthropic/claude-3-opus"],
-    "── Google ──": ["google/gemini-pro-1.5","google/gemini-flash-1.5","google/gemini-2.0-flash-exp:free","google/gemma-2-9b-it:free"],
-    "── Meta ──": ["meta-llama/llama-3.1-405b-instruct","meta-llama/llama-3.1-70b-instruct","meta-llama/llama-3.3-70b-instruct","meta-llama/llama-3.2-3b-instruct:free"],
-    "── Mistral ──": ["mistralai/mistral-large","mistralai/mistral-small","mistralai/mixtral-8x22b-instruct","mistralai/mistral-7b-instruct:free"],
-    "── Qwen ──": ["qwen/qwen-2.5-72b-instruct","qwen/qwen-2.5-32b-instruct","qwen/qwen-2.5-7b-instruct","qwen/qwen-2.5-coder-32b-instruct"],
-    "── DeepSeek ──": ["deepseek/deepseek-chat","deepseek/deepseek-reasoner"],
-    "── Autres ──": ["x-ai/grok-2-1212","cohere/command-r-plus","microsoft/phi-4"],
-    "── 🆓 Gratuits ──": ["google/gemini-2.0-flash-exp:free","meta-llama/llama-3.2-3b-instruct:free","mistralai/mistral-7b-instruct:free","qwen/qwen-2.5-1.5b-instruct:free"]
+    "── OpenAI ──": [
+        "openai/gpt-4o",
+        "openai/gpt-4o-mini",
+        "openai/gpt-4-turbo",
+        "openai/gpt-4",
+        "openai/gpt-3.5-turbo",
+        "openai/o1-preview",
+        "openai/o1-mini",
+    ],
+    "── Anthropic ──": [
+        "anthropic/claude-sonnet-4",
+        "anthropic/claude-3.5-sonnet",
+        "anthropic/claude-3.5-haiku",
+        "anthropic/claude-3-opus",
+        "anthropic/claude-3-sonnet",
+        "anthropic/claude-3-haiku",
+    ],
+    "── Google ──": [
+        "google/gemini-2.0-flash-exp:free",
+        "google/gemini-1.5-pro",
+        "google/gemini-1.5-flash",
+        "google/gemini-1.5-flash-8b",
+        "google/gemma-2-9b-it:free",
+        "google/gemma-2-27b-it:free",
+    ],
+    "── Meta ──": [
+        "meta-llama/llama-3.1-405b-instruct",
+        "meta-llama/llama-3.1-70b-instruct",
+        "meta-llama/llama-3.1-8b-instruct",
+        "meta-llama/llama-3.3-70b-instruct",
+        "meta-llama/llama-3.2-3b-instruct:free",
+        "meta-llama/llama-3.2-1b-instruct:free",
+    ],
+    "── Mistral ──": [
+        "mistralai/mistral-large",
+        "mistralai/mistral-small",
+        "mistralai/mistral-nemo",
+        "mistralai/mixtral-8x22b-instruct",
+        "mistralai/mixtral-8x7b-instruct",
+        "mistralai/mistral-7b-instruct:free",
+    ],
+    "── Qwen (Alibaba) ──": [
+        "qwen/qwen-2.5-72b-instruct",
+        "qwen/qwen-2.5-32b-instruct",
+        "qwen/qwen-2.5-14b-instruct",
+        "qwen/qwen-2.5-7b-instruct",
+        "qwen/qwen-2.5-coder-32b-instruct",
+        "qwen/qwen-2.5-1.5b-instruct:free",
+    ],
+    "── DeepSeek ──": [
+        "deepseek/deepseek-chat",
+        "deepseek/deepseek-r1",
+    ],
+    "── Microsoft ──": [
+        "microsoft/phi-4",
+        "microsoft/phi-3.5-moe-instruct",
+        "microsoft/phi-3-medium-128k-instruct",
+        "microsoft/phi-3-mini-128k-instruct",
+    ],
+    "── xAI ──": [
+        "x-ai/grok-2-1212",
+        "x-ai/grok-2-vision-1212",
+    ],
+    "── Cohere ──": [
+        "cohere/command-r-plus",
+        "cohere/command-r",
+    ],
+    "── Nvidia ──": [
+        "nvidia/llama-3.1-nemotron-70b-instruct",
+    ],
+    "── Autres ──": [
+        "perplexity/llama-3.1-sonar-large-128k-online",
+        "openrouter/quasar-alpha",
+    ],
+    "── 🆓 Gratuits ──": [
+        "google/gemini-2.0-flash-exp:free",
+        "meta-llama/llama-3.2-3b-instruct:free",
+        "meta-llama/llama-3.2-1b-instruct:free",
+        "mistralai/mistral-7b-instruct:free",
+        "qwen/qwen-2.5-1.5b-instruct:free",
+        "google/gemma-2-9b-it:free",
+        "google/gemma-2-27b-it:free",
+    ],
 }
-
 # ═══════════════════════════════════════════════════════════════════════════════
 #  FONCTIONS UTILITAIRES — LECTURE & PRÉPARATION DES DONNÉES
 # ═══════════════════════════════════════════════════════════════════════════════
