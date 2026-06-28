@@ -12,10 +12,21 @@ from plotly.subplots import make_subplots
 from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openai import OpenAI
-from ppt_generator import create_pptx
+# Ajoutez ces imports à vos imports existants
+import google.generativeai as genai
+from io import StringIO
+import json
+import re
+from datetime import datetime
+try:
+    from pptx import Presentation
+    from pptx.util import Inches, Pt
+    from pptx.dml.color import RGBColor
+    from pptx.enum.text import PP_ALIGN
+    PPTX_AVAILABLE = True
+except ImportError:
+    PPTX_AVAILABLE = False
 
-# >>> COLLER L'IMPORT DE L'AGENT ICI <<<
-from ai_agent import generate_analysis_from_dashboard
 
 st.set_page_config(layout="wide", page_title="Dashboard KPI", initial_sidebar_state="expanded")
 # ============================================================
@@ -1278,20 +1289,21 @@ def main():
         df_full, av_full, apm, now_ts = prepare_data(ot_bytes, av_bytes, fichier_date)
     else:
         df_full, av_full, apm, now_ts = pd.DataFrame(), pd.DataFrame(), [], pd.Timestamp.now()
-       # ===================== SIDEBAR =====================
+
+    # ===================== SIDEBAR =====================
     with st.sidebar:
         logo_b64 = get_logo_base64()
-        
         if logo_b64:
             st.markdown('<div style="display:flex;justify-content:center;padding:10px 0 15px 0;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:10px;"><img src="data:image/png;base64,%s" style="max-width:100%%;height:auto;max-height:200px;object-fit:contain;border-radius:4px;"></div>'%logo_b64,unsafe_allow_html=True)
         else:
             st.markdown("""<div style="padding:10px 0 4px 0"><div style="font-size:22px;margin-bottom:2px">⚙️</div><div style="font-size:14px;font-weight:800;color:white">Filtres & Parametres</div><div style="font-size:11px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:1px">Configuration</div></div>""",unsafe_allow_html=True)
         
-        # >>> LE KEY EST BIEN DANS LES PARENTHESES DU BOUTON ICI <<<
-        if st.button("🔄 Rafraîchir le cache", key="btn_refresh_cache_unique", use_container_width=True):
+        if st.button("🔄 Rafraîchir le cache", use_container_width=True):
             st.cache_data.clear()
             st.rerun()
 
+        
+            
         show_filters=st.checkbox("✅ Afficher les filtres",value=True,key="show_filters")
         if show_filters:
             unf=st.toggle("📁 Charger nouveaux fichiers",value=False,key="tf")
@@ -1302,7 +1314,7 @@ def main():
                     ot_f = st.file_uploader("Fichier OT", type=["xlsx"], key="uot")
                     av_f = st.file_uploader("Fichier AVIS", type=["xlsx"], key="uav")
                     new_date = st.text_input("Entrez la date (JJ/MM/AAAA)", value=fichier_date)
-                    if st.button("💾 Sauvegarder et Appliquer", key="btn_save_files"):
+                    if st.button("💾 Sauvegarder et Appliquer"):
                         try:
                             datetime.strptime(new_date, "%d/%m/%Y")
                             if ot_f is not None:
@@ -1913,103 +1925,55 @@ def main():
         st.markdown('<div class="es">📁 Veuillez charger les fichiers OT et AVIS via le panneau de filtres.</div>',unsafe_allow_html=True)
 
     st.markdown('<div class="footer">Bureau Méthodes Maroc Chimie – © 2026 Tous droits réservés</div>', unsafe_allow_html=True)
-    # ====================================================================
-    # BLOC IA - À LA TOUTE FIN DE LA FONCTION main()
-    # ====================================================================
-    st.markdown("<br><hr style='border:2px solid #e2e8f0'><br>", unsafe_allow_html=True)
-    
-    if st.button("🤖 Générer l'Analyse IA pour le Directeur", key="btn_ai_analysis", type="primary", use_container_width=True):
-        
-        if 'prows' not in locals() or not prows:
-            st.error("Veuillez d'abord charger les fichiers Excel pour générer l'analyse.")
-        else:
-            with st.spinner("Analyse IA en cours..."):
-                result = generate_analysis_from_dashboard(
-                    st=st,
-                    division=division if 'division' in locals() else "Non définie",
-                    atelier=atelier if 'atelier' in locals() else "Non défini",
-                    metier=metier if 'metier' in locals() else "Non défini",
-                    date_debut=dr[0] if 'dr' in locals() else "01/01/2024",
-                    date_fin=dr[1] if 'dr' in locals() else "31/12/2024",
-                    kpi_perf_rows=prows,
-                    kpi_perf_cols=pcols,
-                    kpi_qual_rows=qrows,
-                    kpi_qual_cols=qcols,
-                    ano_perf_rows=ano_p_r if 'ano_p_r' in locals() else [],
-                    ano_perf_cols=ano_p_c if 'ano_p_c' in locals() else [],
-                    ano_qual_rows=ano_q_r if 'ano_q_r' in locals() else [],
-                    ano_qual_cols=ano_q_c if 'ano_q_c' in locals() else [],
-                    var_df=var_df if 'var_df' in locals() else None,
-                    best_ranking_df=best_rank if 'best_rank' in locals() else None,
-                    worst_ranking_df=worst_rank if 'worst_rank' in locals() else None,
-                    score_perf=score_perf_global if 'score_perf_global' in locals() else 0.0,
-                    score_qual=score_qual_global if 'score_qual_global' in locals() else 0.0,
-                    total_ot=total_ot if 'total_ot' in locals() else 0,
-                    total_anomalies=total_anomalies if 'total_anomalies' in locals() else 0
-                )
-                st.session_state['ai_analysis'] = result
+     def setup_gemini_client(api_key):
+    """Configure le client Gemini"""
+    try:
+        genai.configure(api_key=AQ.Ab8RN6JjkiKeDmngyTzLh01EDyHnXgeHzhoQq9O-D9d2rKDWvw)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        return model
+    except Exception as e:
+        st.error(f"Erreur de configuration Gemini : {str(e)}")
+        return None
 
-    if 'ai_analysis' in st.session_state and st.session_state['ai_analysis']:
-        analysis = st.session_state['ai_analysis']
-        
-        if "Erreur" in analysis.get("slide1", {}).get("conclusion", ""):
-            st.warning("L'analyse n'a pas pu aboutir.")
-        else:
-            st.markdown("<div class='stl'>🤖 Résultat de l'Analyse IA</div>", unsafe_allow_html=True)
-            
-            with st.expander("📑 Slide 1 : État des performances"): st.info(analysis["slide1"]["conclusion"])
-            with st.expander("⚠️ Slide 2 : Anomalies"): st.info(analysis["slide2"]["conclusion"])
-            with st.expander("📈 Slide 3 : Tendances"): st.info(analysis["slide3"]["conclusion"])
-            with st.expander("🔍 Slide 4 : Causes racines"):
-                for cause in analysis["slide4"]["root_causes"]:
-                    c1, c2 = st.columns([4, 1])
-                    c1.write(f"• {cause['cause']}")
-                    c2.markdown(f"**{cause['criticite']}**")
-            with st.expander("🛠️ Slide 5 : Plan d'action"):
-                if analysis["slide5"]["recommendations"]:
-                    st.dataframe(pd.DataFrame(analysis["slide5"]["recommendations"]), use_container_width=True, hide_index=True)
-            with st.expander("🎯 Slide 6 : Conclusion Exécutive", expanded=True): 
-                st.success(analysis["slide6"]["final_conclusion"])
-            
-                       # ================= BOUTONS DE TELECHARGEMENT =================
-            col_json, col_pptx = st.columns(2)
-            
-            with col_json:
-                st.download_button(
-                    label="📥 Télécharger le JSON (Brut)",
-                    data=json.dumps(analysis, indent=2, ensure_ascii=False),
-                    file_name="analyse_ia_kpi.json",
-                    mime="application/json",
-                    use_container_width=True
-                )
-                
-            with col_pptx:
-                try:
-                    # On rassemble les DataFrames nécessaires pour le PPTX
-                    df_perf_pptx = pd.DataFrame(prows, columns=pcols) if prows else pd.DataFrame()
-                    df_qual_pptx = pd.DataFrame(qrows, columns=qcols) if qrows else pd.DataFrame()
-                    df_ano_p_pptx = pd.DataFrame(ano_p_r, columns=ano_p_c) if ano_p_r else pd.DataFrame()
-                    df_ano_q_pptx = pd.DataFrame(ano_q_r, columns=ano_q_c) if ano_q_r else pd.DataFrame()
-                    df_var_pptx = var_df if 'var_df' in locals() else None
-                    
-                    # Appel de la fonction de génération
-                    pptx_bytes = create_pptx(
-                        json_data=analysis,
-                        df_perf=df_perf_pptx,
-                        df_qual=df_qual_pptx,
-                        df_ano_p=df_ano_p_pptx,
-                        df_ano_q=df_ano_q_pptx,
-                        df_var=df_var_pptx
-                    )
-                    
-                    st.download_button(
-                        label="📽️ Télécharger la Présentation (9 Slides)",
-                        data=pptx_bytes,
-                        file_name="Analyse_KPI_Maintenance_Complete.pptx",
-                        mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                        use_container_width=True
-                    )
-                except Exception as e:
-                    st.error(f"Erreur de génération PPTX : {e}")
+def get_data_context(df, av_df, kpi_df, posts, pscores, qscores, anomaly_data=None):
+    """Prépare le contexte des données pour l'IA"""
+    context = {
+        "donnees_generales": {
+            "nb_ot_total": len(df) if not df.empty else 0,
+            "nb_avis_total": len(av_df) if not av_df.empty else 0,
+            "nb_postes": len(posts),
+            "postes": posts,
+            "periode": {
+                "debut": df["Date de début planifiée"].min().strftime("%d/%m/%Y") if not df.empty and "Date de début planifiée" in df.columns else "N/A",
+                "fin": df["Date de début planifiée"].max().strftime("%d/%m/%Y") if not df.empty and "Date de début planifiée" in df.columns else "N/A"
+            }
+        },
+        "scores_performance": pscores,
+        "scores_qualite": qscores,
+        "kpis_detailles": kpi_df.to_dict('index') if not kpi_df.empty else {},
+        "top_postes_performance": sorted(pscores.items(), key=lambda x: x[1], reverse=True)[:3] if pscores else [],
+        "bottom_postes_performance": sorted(pscores.items(), key=lambda x: x[1])[:3] if pscores else [],
+        "top_postes_qualite": sorted(qscores.items(), key=lambda x: x[1], reverse=True)[:3] if qscores else [],
+        "bottom_postes_qualite": sorted(qscores.items(), key=lambda x: x[1])[:3] if qscores else [],
+        "statuts_ot": df["Statut OT"].value_counts().to_dict() if not df.empty and "Statut OT" in df.columns else {},
+        "moyenne_performance": np.mean(list(pscores.values())) if pscores else 0,
+        "moyenne_qualite": np.mean(list(qscores.values())) if qscores else 0
+    }
+    
+    if anomaly_data:
+        context["anomalies"] = {}
+        for kpi, data in anomaly_data.items():
+            if hasattr(data, 'sum'):
+                context["anomalies"][kpi] = int(data.sum())
+    
+    return context
+
+def ask_ai_agent(question, context, api_key):
+    """Interroge l'IA avec le contexte des données"""
+    if not api_key:
+        return "❌ Veuillez configurer votre clé API Gemini dans les paramètres."
+    
+
 if __name__ == "__main__":
+      
     main()
