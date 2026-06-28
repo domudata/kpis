@@ -1956,7 +1956,7 @@ def get_data_context(df, av_df, kpi_df, posts, pscores, qscores, anomaly_data=No
         "top_postes_performance": sorted(pscores.items(), key=lambda x: x[1], reverse=True)[:3] if pscores else [],
         "bottom_postes_performance": sorted(pscores.items(), key=lambda x: x[1])[:3] if pscores else [],
         "top_postes_qualite": sorted(qscores.items(), key=lambda x: x[1], reverse=True)[:3] if qscores else [],
-        "bottom_postes_qualite": sorted(qscores.items(), key=lambda x: x[1])[:3 if qscores else [],
+        "bottom_postes_qualite": sorted(qscores.items(), key=lambda x: x[1])[:3] if qscores else [],
         "statuts_ot": df["Statut OT"].value_counts().to_dict() if not df.empty and "Statut OT" in df.columns else {},
         "moyenne_performance": np.mean(list(pscores.values())) if pscores else 0,
         "moyenne_qualite": np.mean(list(qscores.values())) if qscores else 0
@@ -1986,8 +1986,8 @@ def analyze_question_intent(question):
     elif any(word in question_lower for word in ['tendance', 'évolution', 'historique']):
         return 'tendances'
     elif any(word in question_lower for word in ['recommandation', 'action', 'amélioration']):
-        return 'recommand
-
+        return 'recommandations'
+    elif any(word in question_lower for word in ['kpi', 'indicateur', 'performance',
 
 
 if __name__ == "__main__":
