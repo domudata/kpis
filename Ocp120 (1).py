@@ -1927,8 +1927,10 @@ def main():
     st.markdown('<div class="footer">Bureau Méthodes Maroc Chimie – © 2026 Tous droits réservés</div>', unsafe_allow_html=True)
 def setup_gemini_client(api_key):
     """Configure le client Gemini"""
+    if not GEMINI_AVAILABLE:
+        return None
     try:
-        genai.configure(api_key=AQ.Ab8RN6JjkiKeDmngyTzLh01EDyHnXgeHzhoQq9O-D9d2rKDWvw)
+        genai.configure(api_key=api_key)
         model = genai.GenerativeModel('gemini-1.5-flash')
         return model
     except Exception as e:
@@ -1968,11 +1970,8 @@ def get_data_context(df, av_df, kpi_df, posts, pscores, qscores, anomaly_data=No
     
     return context
 
-def ask_ai_agent(question, context, api_key):
-    """Interroge l'IA avec le contexte des données"""
-    if not api_key:
-        return "❌ Veuillez configurer votre clé API Gemini dans les paramètres."
-    
+def ask_
+
 
 if __name__ == "__main__":
       
