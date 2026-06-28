@@ -3,9 +3,9 @@
 """
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║  🤖 AI COPILOT — Assistant IA Maintenance Industrielle                       ║
-║  Page indépendante se connectant directement aux données de l'app.          ║
+║  Page indépendante avec support natif Google Gemini, OpenAI & OpenRouter.    ║
 ║  Exécution :  streamlit run ai_copilot.py                                   ║
-║  Prérequis : pip install openai python-pptx python-docx                      ║
+║  Prérequis : pip install openai google-generativeai python-pptx python-docx  ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """
 
@@ -19,15 +19,21 @@ import io
 import os
 import json
 import re
-import html as html_lib
 from datetime import datetime
 from openai import OpenAI
 
+# Support natif Google Gemini
+try:
+    import google.generativeai as genai
+    GEMINI_NATIVE_AVAILABLE = True
+except ImportError:
+    GEMINI_NATIVE_AVAILABLE = False
+
 try:
     from pptx import Presentation
-    from pptx.util import Inches, Pt, Emu
+    from pptx.util import Inches, Pt
     from pptx.dml.color import RGBColor
-    from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
+    from pptx.enum.text import PP_ALIGN
     from pptx.enum.shapes import MSO_SHAPE
     PPTX_AVAILABLE = True
 except ImportError:
@@ -35,8 +41,7 @@ except ImportError:
 
 try:
     from docx import Document as DocxDocument
-    from docx.shared import Pt as DocxPt, Inches as DocxInches, RGBColor as DocxRGB
-    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.shared import Pt as DocxPt, RGBColor as DocxRGB
     DOCX_AVAILABLE = True
 except ImportError:
     DOCX_AVAILABLE = False
@@ -65,96 +70,19 @@ MPLAN_KW = ["ATPL ATEI","ATPL ATAL","ATPL ATER","ATPL AGAR","ATPL ATHS","ATEI","
 QUICK_SUGGESTIONS = ["🔍 Quels KPI sont critiques ?","⚡ Analyse les anomalies détectées","📊 Compare SF1 et SF2","🛠️ Propose un plan d'action","📉 Pourquoi les KPI de performance sont-ils faibles ?","📋 Quels sont les postes les plus problématiques ?","📈 Analyse les tendances des KPI","🎯 Résume la situation de la maintenance"]
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  CATALOGUE COMPLET DES MODÈLES IA
-# ═══════════════════════════════════════════════════════════════════
-# ═══════════════════════════════════════════════════════════════════════════════
-#  CATALOGUE COMPLET DES MODÈLES IA (Noms exacts OpenRouter à jour)
+#  CATALOGUE DES MODÈLES (Pour OpenRouter/OpenAI)
 # ═══════════════════════════════════════════════════════════════════════════════
 MODELS_CATALOG = {
-    "── OpenAI ──": [
-        "openai/gpt-4o",
-        "openai/gpt-4o-mini",
-        "openai/gpt-4-turbo",
-        "openai/gpt-4",
-        "openai/gpt-3.5-turbo",
-        "openai/o1-preview",
-        "openai/o1-mini",
-    ],
-    "── Anthropic ──": [
-        "anthropic/claude-sonnet-4",
-        "anthropic/claude-3.5-sonnet",
-        "anthropic/claude-3.5-haiku",
-        "anthropic/claude-3-opus",
-        "anthropic/claude-3-sonnet",
-        "anthropic/claude-3-haiku",
-    ],
-    "── Google ──": [
-        "google/gemini-2.0-flash-exp:free",
-        "google/gemini-1.5-pro",
-        "google/gemini-1.5-flash",
-        "google/gemini-1.5-flash-8b",
-        "google/gemma-2-9b-it:free",
-        "google/gemma-2-27b-it:free",
-    ],
-    "── Meta ──": [
-        "meta-llama/llama-3.1-405b-instruct",
-        "meta-llama/llama-3.1-70b-instruct",
-        "meta-llama/llama-3.1-8b-instruct",
-        "meta-llama/llama-3.3-70b-instruct",
-        "meta-llama/llama-3.2-3b-instruct:free",
-        "meta-llama/llama-3.2-1b-instruct:free",
-    ],
-    "── Mistral ──": [
-        "mistralai/mistral-large",
-        "mistralai/mistral-small",
-        "mistralai/mistral-nemo",
-        "mistralai/mixtral-8x22b-instruct",
-        "mistralai/mixtral-8x7b-instruct",
-        "mistralai/mistral-7b-instruct:free",
-    ],
-    "── Qwen (Alibaba) ──": [
-        "qwen/qwen-2.5-72b-instruct",
-        "qwen/qwen-2.5-32b-instruct",
-        "qwen/qwen-2.5-14b-instruct",
-        "qwen/qwen-2.5-7b-instruct",
-        "qwen/qwen-2.5-coder-32b-instruct",
-        "qwen/qwen-2.5-1.5b-instruct:free",
-    ],
-    "── DeepSeek ──": [
-        "deepseek/deepseek-chat",
-        "deepseek/deepseek-r1",
-    ],
-    "── Microsoft ──": [
-        "microsoft/phi-4",
-        "microsoft/phi-3.5-moe-instruct",
-        "microsoft/phi-3-medium-128k-instruct",
-        "microsoft/phi-3-mini-128k-instruct",
-    ],
-    "── xAI ──": [
-        "x-ai/grok-2-1212",
-        "x-ai/grok-2-vision-1212",
-    ],
-    "── Cohere ──": [
-        "cohere/command-r-plus",
-        "cohere/command-r",
-    ],
-    "── Nvidia ──": [
-        "nvidia/llama-3.1-nemotron-70b-instruct",
-    ],
-    "── Autres ──": [
-        "perplexity/llama-3.1-sonar-large-128k-online",
-        "openrouter/quasar-alpha",
-    ],
-    "── 🆓 Gratuits ──": [
-        "google/gemini-2.0-flash-exp:free",
-        "meta-llama/llama-3.2-3b-instruct:free",
-        "meta-llama/llama-3.2-1b-instruct:free",
-        "mistralai/mistral-7b-instruct:free",
-        "qwen/qwen-2.5-1.5b-instruct:free",
-        "google/gemma-2-9b-it:free",
-        "google/gemma-2-27b-it:free",
-    ],
+    "── OpenAI ──": ["openai/gpt-4o","openai/gpt-4o-mini","openai/gpt-4-turbo","openai/gpt-4","openai/gpt-3.5-turbo","openai/o1-preview","openai/o1-mini"],
+    "── Anthropic ──": ["anthropic/claude-sonnet-4","anthropic/claude-3.5-sonnet","anthropic/claude-3.5-haiku","anthropic/claude-3-opus"],
+    "── Google ──": ["google/gemini-2.0-flash-exp:free","google/gemini-1.5-pro","google/gemini-1.5-flash","google/gemma-2-9b-it:free"],
+    "── Meta ──": ["meta-llama/llama-3.1-405b-instruct","meta-llama/llama-3.1-70b-instruct","meta-llama/llama-3.3-70b-instruct","meta-llama/llama-3.2-3b-instruct:free"],
+    "── Mistral ──": ["mistralai/mistral-large","mistralai/mistral-small","mistralai/mixtral-8x22b-instruct","mistralai/mistral-7b-instruct:free"],
+    "── Qwen ──": ["qwen/qwen-2.5-72b-instruct","qwen/qwen-2.5-32b-instruct","qwen/qwen-2.5-7b-instruct"],
+    "── DeepSeek ──": ["deepseek/deepseek-chat","deepseek/deepseek-r1"],
+    "── 🆓 Gratuits ──": ["google/gemini-2.0-flash-exp:free","meta-llama/llama-3.2-3b-instruct:free","mistralai/mistral-7b-instruct:free","qwen/qwen-2.5-1.5b-instruct:free","google/gemma-2-9b-it:free"]
 }
+
 # ═══════════════════════════════════════════════════════════════════════════════
 #  FONCTIONS UTILITAIRES — LECTURE & PRÉPARATION DES DONNÉES
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -248,37 +176,31 @@ def calc_kpis(df_i, av_i, posts):
         piv["Realises"] = piv["CLOT"] + piv["TCLO"]; piv["Total"] = piv[["CLOT","CRÉÉ","LANC","TCLO"]].sum(axis=1)
         return piv
 
-    # 1. TAUX REALISATION
     filt_corr = (df["Nº appel pl.entret."].fillna(0)==0) & (df["Contient SOPL"]==1)
     an = cpiv(df, filt_corr, "Statut OT", posts)
     for c in ["CLOT","CRÉÉ","LANC","TCLO"]: an[c] = an.get(c, 0)
     an["OT_CLOTURES"]=an["CLOT"]+an["TCLO"]; an["TOTAL_OT"]=an[["CLOT","CRÉÉ","LANC","TCLO"]].sum(axis=1)
     an["TAUX_REALISATION_CORRECTIF/PT"]=np.where(an["TOTAL_OT"]==0,100.0,ckpi(an["OT_CLOTURES"],an["TOTAL_OT"])); res['an']=an
 
-    # 2-4. PREPARATION
     pr = cpiv(df, (df["Statut OT"]=="CRÉÉ") & (df["Statut utilisateur"].str.contains(r"\bCRPR\b",case=False,na=False)), "ap", posts)
     for c in ["<1 mois",">3 mois","1 mois < <3 mois","Inconnu"]: pr[c]=pr.get(c,0)
     pr["Total"]=pr[["<1 mois","1 mois < <3 mois",">3 mois","Inconnu"]].sum(axis=1)
     pr["OT préparation <1 mois"]=ckpi(pr["<1 mois"],pr["Total"]); pr["OT préparation >3 mois"]=ckpi(pr[">3 mois"],pr["Total"],0); pr["OT préparation 1mois< <3mois"]=ckpi(pr["1 mois < <3 mois"],pr["Total"],0); res['pr']=pr
 
-    # 5-7. PLANIFICATION
     pl = cpiv(df, (df["Statut OT"]=="LANC") & (df["Statut utilisateur"].str.contains("ATPL",case=False,na=False)), "alp", posts)
     for c in ["<1 mois",">3 mois","1 mois < <3 mois","Inconnu"]: pl[c]=pl.get(c,0)
     pl["Total"]=pl[["<1 mois","1 mois < <3 mois",">3 mois","Inconnu"]].sum(axis=1)
     pl["OT planification <1 mois"]=ckpi(pl["<1 mois"],pl["Total"]); pl["OT planification >3 mois"]=ckpi(pl[">3 mois"],pl["Total"],0); pl["OT planification 1mois< <3mois"]=ckpi(pl["1 mois < <3 mois"],pl["Total"],0); res['pl']=pl
 
-    # 8-10. EXECUTION
     ex = cpiv(df, (df["Statut OT"]=="LANC") & (df["Contient SOPL"]==1), "aex", posts)
     for c in ["<1 mois",">3 mois","1 mois < <3 mois","Inconnu"]: ex[c]=ex.get(c,0)
     ex["Total"]=ex[["<1 mois","1 mois < <3 mois",">3 mois","Inconnu"]].sum(axis=1)
     ex["OT exécution <1 mois"]=ckpi(ex["<1 mois"],ex["Total"]); ex["OT exécution >3 mois"]=ckpi(ex[">3 mois"],ex["Total"],0); ex["OT exécution 1mois< <3mois"]=ckpi(ex["1 mois < <3 mois"],ex["Total"],0); res['ex']=ex
 
-    # 11. OT LANC ESTIME
     la = pd.pivot_table(df[df["Statut OT"]=="LANC"],index="Poste travail princ.",columns="OT LANC ESTIME",values="Ordre",aggfunc="count",fill_value=0).reindex(posts,fill_value=0)
     for c in ["OUI","NON"]: la[c]=la.get(c,0)
     la["Total"]=la["OUI"]+la["NON"]; la["OT LANC ESTIME"]=ckpi(la["OUI"],la["Total"]); res['la']=la
 
-    # 12-13. BACKLOGS
     pc = pd.pivot_table(df[df["Statut OT"]=="CRÉÉ"],index="Poste travail princ.",columns="Backlog preparation",values="Ordre",aggfunc="count",fill_value=0).reindex(posts,fill_value=0)
     for c in ["CARACTERISE","NON CARACTERISE"]: pc[c]=pc.get(c,0)
     pc["Total"]=pc["CARACTERISE"]+pc["NON CARACTERISE"]; pc["Backlog préparation caractérisé"]=ckpi(pc["CARACTERISE"],pc["Total"]); res['pc']=pc
@@ -287,7 +209,6 @@ def calc_kpis(df_i, av_i, posts):
     for c in ["CARACTERISE","NON CARACTERISE"]: pcl[c]=pcl.get(c,0)
     pcl["Total"]=pcl["CARACTERISE"]+pcl["NON CARACTERISE"]; pcl["Backlog planification caractérisé"]=ckpi(pcl["CARACTERISE"],pcl["Total"]); res['pcl']=pcl
 
-    # 14-15. CONFIME & COR_EGAL
     cf = pd.pivot_table(df,index="Poste travail princ.",columns="OT CONFIME",values="Ordre",aggfunc="count",fill_value=0).reindex(posts,fill_value=0)
     for c in ["OUI","NON"]: cf[c]=cf.get(c,0)
     cf["Total"]=cf["OUI"]+cf["NON"]; cf["OT CONFIME"]=ckpi(cf["OUI"],cf["Total"]); res['cf']=cf
@@ -296,23 +217,19 @@ def calc_kpis(df_i, av_i, posts):
     for c in ["OUI","NON"]: ce[c]=ce.get(c,0)
     ce["Total"]=ce["OUI"]+ce["NON"]; ce["OT_COR_EGAL"]=ckpi(ce["OUI"],ce["Total"]); res['ce']=ce
 
-    # 16-18. PERFORMANCES TYPE
     gra = statut_pivot(df[df["_tw_num"]==350], posts); gra["Performance Graissage"]=ckpi(gra["Realises"],gra["Total"]); res['gra']=gra
     ins = statut_pivot(df[df["_tw_num"].isin([290,300,310])], posts); ins["Performance Inspection"]=ckpi(ins["Realises"],ins["Total"]); res['ins']=ins
     app_sys = statut_pivot(df[df["_tw_num"]==360], posts); app_sys["Performance Appels Systématiques"]=ckpi(app_sys["Realises"],app_sys["Total"]); res['app_sys']=app_sys
 
-    # 19. FIABILITE
     fiab = pd.pivot_table(df[df["Statut OT"].isin(["CLOT","TCLO"])],index="Poste travail princ.",columns="OT_COR_EGAL",values="Ordre",aggfunc="count",fill_value=0).reindex(posts,fill_value=0)
     for c in ["OUI","NON"]: fiab[c]=fiab.get(c,0)
     fiab["Total"]=fiab["OUI"]+fiab["NON"]; fiab["OT Fiabilité"]=ckpi(fiab["OUI"],fiab["Total"]); res['fiab']=fiab
 
-    # 20. TAUX APPROBATION AVIS
     av_by_poste = av_i.groupby("Poste travail princ." if "Poste travail princ." in av_i.columns else av_i.columns[0]).size().reindex(posts, fill_value=0)
     total_av = df.groupby("Poste travail princ.").size().reindex(posts, fill_value=0)
     taux_approb = pd.Series(np.where((total_av+av_by_poste)==0,100.0,ckpi(total_av,total_av+av_by_poste)),index=posts,name="Taux d'approbation des Avis")
     res['taux_approb']=taux_approb; res['av_count']=av_by_poste; res['dfp']=df
 
-    # ASSEMBLAGE
     perf_data = {"TAUX_REALISATION_CORRECTIF/PT":res['an']["TAUX_REALISATION_CORRECTIF/PT"],"OT préparation <1 mois":res['pr']["OT préparation <1 mois"],"OT préparation >3 mois":res['pr']["OT préparation >3 mois"],"OT préparation 1mois< <3mois":res['pr']["OT préparation 1mois< <3mois"],"OT planification <1 mois":res['pl']["OT planification <1 mois"],"OT planification >3 mois":res['pl']["OT planification >3 mois"],"OT planification 1mois< <3mois":res['pl']["OT planification 1mois< <3mois"],"OT exécution <1 mois":res['ex']["OT exécution <1 mois"],"OT exécution >3 mois":res['ex']["OT exécution >3 mois"],"OT exécution 1mois< <3mois":res['ex']["OT exécution 1mois< <3mois"],"Performance Graissage":res['gra']["Performance Graissage"],"Performance Inspection":res['ins']["Performance Inspection"],"Performance Appels Systématiques":res['app_sys']["Performance Appels Systématiques"]}
     res['perf_df'] = pd.DataFrame(perf_data, index=posts)
     
@@ -435,7 +352,7 @@ def build_ai_context(kpis, posts, date_str, hist_df, var_df):
     return "\n".join(ctx)
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  IA — PROMPTS & APPEL API
+#  IA — PROMPTS & APPEL API (GEMINI NATIF + OPENAI/OPENROUTER)
 # ═══════════════════════════════════════════════════════════════════════════════
 SYSTEM_PROMPT = """Tu es **AI Copilot**, un assistant IA expert en maintenance industrielle spécialisé SAP PM.
 ## RÈGLES STRICTES
@@ -468,14 +385,54 @@ CONTENU:
 Diapositives : 1.Titre et date, 2.Contexte, 3.Performance, 4.Qualité, 5.Anomalies, 6.Causes, 7.Plan d'action, 8.Conclusion. Contenu factuel et percutant."""
 
 def ask_ai(question, context, history, api_key, base_url, model, temperature, max_tokens):
+    """Fonction d'appel IA avec support natif Gemini et OpenAI."""
+    
+    # ── CHEMIN 1 : GEMINI DIRECT (Natif) ──
+    if base_url == "gemini-direct":
+        if not GEMINI_NATIVE_AVAILABLE:
+            return "❌ **Librairie manquante** : Exécutez `pip install google-generativeai` dans votre terminal."
+        if not api_key:
+            return "❌ Veuillez entrer votre clé API Gemini dans la barre latérale."
+        try:
+            gemini_model_name = model.replace("google/", "")
+            genai.configure(api_key=api_key)
+            
+            gemini_model = genai.GenerativeModel(
+                model_name=gemini_model_name,
+                system_instruction=SYSTEM_PROMPT + "\n\n## DONNÉES DE CONTEXTE\n\n" + context,
+                generation_config=genai.types.GenerationConfig(
+                    temperature=temperature,
+                    max_output_tokens=max_tokens
+                )
+            )
+            
+            gemini_history = [
+                {"role": "user" if msg["role"] == "user" else "model", "parts": [msg["content"]]}
+                for msg in history[-10:] if msg["role"] in ("user", "assistant")
+            ]
+            
+            chat_session = gemini_model.start_chat(history=gemini_history)
+            response = chat_session.send_message(question)
+            return response.text
+        except Exception as e:
+            return f"❌ **Erreur API Gemini** : {str(e)}\n\nVérifiez que votre clé API Google est valide et que le modèle est activé dans Google AI Studio."
+
+    # ── CHEMIN 2 : OPENAI / OPENROUTER / LOCAL (Standard) ──
     messages = [{"role": "system", "content": SYSTEM_PROMPT + "\n\n## DONNÉES DE CONTEXTE\n\n" + context}]
     for msg in history[-10:]:
-        if msg["role"] in ("user", "assistant"): messages.append({"role": msg["role"], "content": msg["content"]})
+        if msg["role"] in ("user", "assistant"): 
+            messages.append({"role": msg["role"], "content": msg["content"]})
     messages.append({"role": "user", "content": question})
+    
     try:
-        client_kwargs = {"base_url": base_url, "api_key": api_key if api_key and api_key.strip() else "not-needed"}
+        client_kwargs = {
+            "base_url": base_url, 
+            "api_key": api_key if api_key and api_key.strip() else "not-needed"
+        }
         client = OpenAI(**client_kwargs)
-        response = client.chat.completions.create(model=model, messages=messages, temperature=temperature, max_tokens=max_tokens)
+        response = client.chat.completions.create(
+            model=model, messages=messages, temperature=temperature, max_tokens=max_tokens
+        )
         return response.choices[0].message.content
     except Exception as e:
         return f"❌ **Erreur API** : {str(e)}\n\nVérifiez votre clé API et l'URL dans la barre latérale."
@@ -504,7 +461,7 @@ def create_powerpoint(content, date_str):
     if not PPTX_AVAILABLE: return None
     try:
         prs = Presentation(); prs.slide_width = Inches(13.333); prs.slide_height = Inches(7.5)
-        PRIMARY, WHITE, LIGHT_BG, ACCENT, DARK = RGBColor(0x1E,0x3A,0x5F), RGBColor(0xFF,0xFF,0xFF), RGBColor(0xF0,0xF4,0xF8), RGBColor(0x25,0x63,0xEB), RGBColor(0x1E,0x29,0x3B)
+        PRIMARY, WHITE, LIGHT_BG, DARK = RGBColor(0x1E,0x3A,0x5F), RGBColor(0xFF,0xFF,0xFF), RGBColor(0xF0,0xF4,0xF8), RGBColor(0x1E,0x29,0x3B)
         slides_data = [s.strip() for s in re.split(r'===SLIDE===', content) if s.strip()]
         for idx, slide_text in enumerate(slides_data):
             slide = prs.slides.add_slide(prs.slide_layouts[6])
@@ -541,7 +498,7 @@ def inject_copilot_css():
     .stApp { background: #f0f4f8; }
     div[data-testid="stSidebar"] { background: linear-gradient(180deg, #1e40af 0%, #1e3a8a 50%, #1e3a5f 100%) !important; }
     div[data-testid="stSidebar"] * { color: rgba(255,255,255,0.9) !important; }
-    div[data-testid="stSidebar"] .stSelectbox label, div[data-testid="stSidebar"] .stTextInput label, div[data-testid="stSidebar"] .stFileUploader label { color: rgba(255,255,255,0.9) !important; font-weight: 600; font-size: 13px; text-transform: uppercase; }
+    div[data-testid="stSidebar"] .stSelectbox label, div[data-testid="stSidebar"] .stTextInput label { color: rgba(255,255,255,0.9) !important; font-weight: 600; font-size: 13px; text-transform: uppercase; }
     div[data-testid="stSidebar"] div[data-testid="stWidget"] { background: rgba(255,255,255,0.1); border-radius: 6px; padding: 5px 10px; margin-bottom: 5px; border: 1px solid rgba(255,255,255,0.15); }
     div[data-testid="stSidebar"] .stSelectbox > div > div, div[data-testid="stSidebar"] .stTextInput > div > div { background: rgba(255,255,255,0.95) !important; border-radius: 5px; }
     .copilot-header { background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 60%, #3b82f6 100%); padding: 24px 32px; border-radius: 14px; margin-bottom: 12px; box-shadow: 0 8px 32px rgba(30,58,95,0.2); display: flex; align-items: center; gap: 16px; }
@@ -558,14 +515,19 @@ def inject_copilot_css():
 
 def render_sidebar():
     st.sidebar.markdown("## ⚙️ Configuration")
+    
     with st.sidebar.expander("📂 Sources de données", expanded=True):
         source_mode = st.radio("Mode", ["Auto-détection", "Upload manuel"], label_visibility="collapsed", key="source_mode")
         ot_file, av_file = None, None
         if source_mode == "Auto-détection":
             ot_path, av_path = detect_files()
-            if ot_path: st.success(f"✅ OT : `{ot_path}`"); ot_file = open(ot_path, "rb").read()
+            if ot_path: 
+                st.success(f"✅ OT : `{ot_path}`"); 
+                with open(ot_path, "rb") as f: ot_file = f.read()
             else: st.warning("❌ Fichier OT non trouvé")
-            if av_path: st.success(f"✅ Avis : `{av_path}`"); av_file = open(av_path, "rb").read()
+            if av_path: 
+                st.success(f"✅ Avis : `{av_path}`")
+                with open(av_path, "rb") as f: av_file = f.read()
             else: st.warning("❌ Fichier Avis non trouvé")
             if not ot_path or not av_path: st.info("💡 Placez les fichiers .xlsx à côté de ce script.")
         else:
@@ -578,26 +540,50 @@ def render_sidebar():
         api_key = st.text_input("Clé API", type="password", value=st.session_state.get("saved_api_key",""), key="api_key_input")
         st.session_state.saved_api_key = api_key
         
-        providers = {"🌐 OpenAI":"https://api.openai.com/v1","🔀 OpenRouter":"https://openrouter.ai/api/v1","🖥️ Ollama (Local)":"http://localhost:11434/v1","🖥️ LM Studio (Local)":"http://localhost:1234/v1","⚙️ Personnalisée":"custom"}
+        # Liste des prestataires (Gemini Direct en premier)
+        providers = {
+            "🧠 Google Gemini (Direct)": "gemini-direct",
+            "🌐 OpenAI": "https://api.openai.com/v1",
+            "🔀 OpenRouter": "https://openrouter.ai/api/v1",
+            "🖥️ Ollama (Local)": "http://localhost:11434/v1",
+            "🖥️ LM Studio (Local)": "http://localhost:1234/v1",
+            "⚙️ Personnalisée": "custom"
+        }
         provider = st.selectbox("Prestataire", list(providers.keys()), key="provider_select")
-        base_url = providers[provider] if providers[provider] != "custom" else st.text_input("URL Base", value=st.session_state.get("saved_base_url",""), key="base_url_input")
-        st.session_state.saved_base_url = base_url
-
-        use_custom = st.toggle("✏️ Saisie manuelle du modèle", value=False)
-        if use_custom:
-            model = st.text_input("Modèle", value=st.session_state.get("saved_model","gpt-4o"), key="custom_model_input")
+        base_url = providers[provider]
+        
+        if base_url == "custom":
+            base_url = st.text_input("URL Base", value=st.session_state.get("saved_base_url",""), key="base_url_input")
+            st.session_state.saved_base_url = base_url
         else:
-            display_labels, label_to_model = [], {}
-            for section, models in MODELS_CATALOG.items():
-                display_labels.append(section)
-                for m in models:
-                    tag = " 🆓" if ":free" in m else ""
-                    display_labels.append(f"  {m}{tag}"); label_to_model[f"  {m}{tag}"] = m
-            selected_label = st.selectbox("Modèle", display_labels, index=1, key="model_select")
-            model = label_to_model.get(selected_label, next(iter(MODELS_CATALOG.values()))[0] if selected_label in MODELS_CATALOG else "gpt-4o")
+            st.session_state.saved_base_url = base_url
+
+        # Sélection du modèle selon le prestataire
+        if base_url == "gemini-direct":
+            st.caption("💡 Modèles Google Gemini natifs (rapide et économique)")
+            model = st.selectbox(
+                "Modèle Gemini",
+                ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-1.5-flash-8b", "gemini-pro"],
+                key="gemini_model_select"
+            )
+            if not GEMINI_NATIVE_AVAILABLE:
+                st.error("⚠️ Installez la lib : `pip install google-generativeai`")
+        else:
+            use_custom = st.toggle("✏️ Saisie manuelle du modèle", value=False)
+            if use_custom:
+                model = st.text_input("Modèle", value=st.session_state.get("saved_model","gpt-4o"), key="custom_model_input")
+            else:
+                display_labels, label_to_model = [], {}
+                for section, models in MODELS_CATALOG.items():
+                    display_labels.append(section)
+                    for m in models:
+                        tag = " 🆓" if ":free" in m else ""
+                        display_labels.append(f"  {m}{tag}"); label_to_model[f"  {m}{tag}"] = m
+                selected_label = st.selectbox("Modèle", display_labels, index=1, key="model_select")
+                model = label_to_model.get(selected_label, "gpt-4o")
+                
         st.session_state.saved_model = model
         
-        if "localhost" in base_url: st.caption("🖥️ Mode local détecté (Clé API optionnelle)")
         temperature = st.slider("Température", 0.0, 1.0, 0.3, 0.05)
         max_tokens = st.slider("Max Tokens", 256, 8192, 4096, 256)
 
@@ -607,7 +593,8 @@ def render_sidebar():
             st.success("✅ Données prêtes")
             st.metric("OT", len(kpis.get('dfp', pd.DataFrame())))
             st.metric("Postes", len(posts))
-        else: st.error("❌ Aucune donnée")
+        else: 
+            st.error("❌ Aucune donnée")
 
     return ot_file, av_file, api_key, base_url, model, temperature, max_tokens
 
@@ -649,13 +636,13 @@ def render_main():
                 dl = msg["download"]
                 st.download_button(label=dl["label"], data=dl["data"], file_name=dl["filename"], mime=dl["mime"], key=f"dl_{id(dl)}")
 
-    api_key, base_url = st.session_state.get("saved_api_key",""), st.session_state.get("saved_base_url","https://api.openai.com/v1")
-    model, temperature = st.session_state.get("current_model","gpt-4o"), st.session_state.get("current_temperature",0.3)
+    api_key, base_url = st.session_state.get("saved_api_key",""), st.session_state.get("saved_base_url","gemini-direct")
+    model, temperature = st.session_state.get("current_model","gemini-1.5-pro"), st.session_state.get("current_temperature",0.3)
     max_tokens, context = st.session_state.get("current_max_tokens",4096), st.session_state.get("ai_context","")
 
     if st.session_state.get("generate_report"):
         st.session_state.generate_report = False
-        if not api_key and "localhost" not in base_url: st.error("❌ Clé API requise.")
+        if not api_key and base_url != "gemini-direct": st.error("❌ Clé API requise.")
         else:
             with st.spinner("📝 Génération du rapport..."):
                 st.session_state.copilot_messages.append({"role":"user","content":"📄 Génère un rapport complet."})
@@ -667,7 +654,7 @@ def render_main():
 
     if st.session_state.get("generate_pptx"):
         st.session_state.generate_pptx = False
-        if not api_key and "localhost" not in base_url: st.error("❌ Clé API requise.")
+        if not api_key and base_url != "gemini-direct": st.error("❌ Clé API requise.")
         else:
             with st.spinner("📽️ Génération du PowerPoint..."):
                 st.session_state.copilot_messages.append({"role":"user","content":"📽️ Génère une présentation PowerPoint."})
@@ -679,11 +666,11 @@ def render_main():
 
     if pending := st.session_state.get("pending_question"):
         st.session_state.pending_question = None
-        if not api_key and "localhost" not in base_url: st.error("❌ Clé API requise.")
+        if not api_key and base_url != "gemini-direct": st.error("❌ Clé API requise.")
         else: _process_question(pending, context, api_key, base_url, model, temperature, max_tokens); st.rerun()
 
     if prompt := st.chat_input("Posez votre question...", key="copilot_input", disabled=not st.session_state.get("data_loaded")):
-        if not api_key and "localhost" not in base_url: st.error("❌ Clé API requise.")
+        if not api_key and base_url != "gemini-direct": st.error("❌ Clé API requise.")
         else: _process_question(prompt, context, api_key, base_url, model, temperature, max_tokens); st.rerun()
 
 # ═══════════════════════════════════════════════════════════════════════════════
