@@ -1936,7 +1936,6 @@ def setup_gemini_client(api_key):
     except Exception as e:
         st.error(f"Erreur de configuration Gemini : {str(e)}")
         return None
-
 def get_data_context(df, av_df, kpi_df, posts, pscores, qscores, anomaly_data=None):
     """Prépare le contexte des données pour l'IA"""
     context = {
@@ -1987,7 +1986,9 @@ def analyze_question_intent(question):
         return 'tendances'
     elif any(word in question_lower for word in ['recommandation', 'action', 'amélioration']):
         return 'recommandations'
-    elif any(word in question_lower for word in ['kpi', 'indicateur', 'performance',
+    elif any(word in question_lower for word in ['kpi', 'indicateur', 'performance', 'qualite']):
+        return 'analyse_kpi'
+    elif any
 
 
 if __name__ == "__main__":
