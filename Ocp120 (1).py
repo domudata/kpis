@@ -1930,7 +1930,7 @@ def setup_gemini_client(api_key):
     if not GEMINI_AVAILABLE:
         return None
     try:
-        genai.configure(api_key=api_key)
+        genai.configure(api_key=AQ.Ab8RN6JjkiKeDmngyTzLh01EDyHnXgeHzhoQq9O-D9d2rKDWvw)
         model = genai.GenerativeModel('gemini-1.5-flash')
         return model
     except Exception as e:
