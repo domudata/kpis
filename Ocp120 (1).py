@@ -1930,7 +1930,7 @@ def setup_gemini_client(api_key):
     if not GEMINI_AVAILABLE:
         return None
     try:
-        genai.configure(api_key=AQ.Ab8RN6JjkiKeDmngyTzLh01EDyHnXgeHzhoQq9O-D9d2rKDWvw)
+        genai.configure(api_key=api_key)
         model = genai.GenerativeModel('gemini-1.5-flash')
         return model
     except Exception as e:
@@ -1970,7 +1970,7 @@ def get_data_context(df, av_df, kpi_df, posts, pscores, qscores, anomaly_data=No
     
     return context
 
-def ask_
+
 
 
 if __name__ == "__main__":
