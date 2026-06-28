@@ -1950,13 +1950,13 @@ def get_data_context(df, av_df, kpi_df, posts, pscores, qscores, anomaly_data=No
                 "fin": df["Date de début planifiée"].max().strftime("%d/%m/%Y") if not df.empty and "Date de début planifiée" in df.columns else "N/A"
             }
         },
-        "scores_performance": pscores,
-        "scores_qualite": qscores,
+        "scores_performance": pscores or {},
+        "scores_qualite": qscores or {},
         "kpis_detailles": kpi_df.to_dict('index') if not kpi_df.empty else {},
         "top_postes_performance": sorted(pscores.items(), key=lambda x: x[1], reverse=True)[:3] if pscores else [],
         "bottom_postes_performance": sorted(pscores.items(), key=lambda x: x[1])[:3] if pscores else [],
         "top_postes_qualite": sorted(qscores.items(), key=lambda x: x[1], reverse=True)[:3] if qscores else [],
-        "bottom_postes_qualite": sorted(qscores.items(), key=lambda x: x[1])[:3] if qscores else [],
+        "bottom_postes_qualite": sorted(qscores.items(), key=lambda x: x[1])[:3 if qscores else [],
         "statuts_ot": df["Statut OT"].value_counts().to_dict() if not df.empty and "Statut OT" in df.columns else {},
         "moyenne_performance": np.mean(list(pscores.values())) if pscores else 0,
         "moyenne_qualite": np.mean(list(qscores.values())) if qscores else 0
@@ -1970,6 +1970,23 @@ def get_data_context(df, av_df, kpi_df, posts, pscores, qscores, anomaly_data=No
     
     return context
 
+def analyze_question_intent(question):
+    """Analyse l'intention de la question utilisateur"""
+    question_lower = question.lower()
+    
+    # Analyse des intentions
+    if any(word in question_lower for word in ['rapport', 'synthèse', 'résumé']):
+        return 'rapport'
+    elif any(word in question_lower for word in ['présentation', 'powerpoint', 'pptx', 'slides']):
+        return 'presentation'
+    elif any(word in question_lower for word in ['compare', 'comparaison', 'différence']):
+        return 'comparaison'
+    elif any(word in question_lower for word in ['anomalie', 'problème', 'critique']):
+        return 'anomalies'
+    elif any(word in question_lower for word in ['tendance', 'évolution', 'historique']):
+        return 'tendances'
+    elif any(word in question_lower for word in ['recommandation', 'action', 'amélioration']):
+        return 'recommand
 
 
 
