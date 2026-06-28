@@ -1928,15 +1928,7 @@ def main():
 def setup_gemini_client(api_key):
     """Configure le client Gemini"""
     if not GEMINI_AVAILABLE:
-        return None
-    try:
-        genai.configure(api_key=AQ.Ab8RN6JjkiKeDmngyTzLh01EDyHnXgeHzhoQq9O-D9d2rKDWvw)
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        return model
-    except Exception as e:
-        st.error(f"Erreur de configuration Gemini : {str(e)}")
-        return None
-def get_data_context(df, av_df, kpi_df, posts, pscores, qscores, anomaly_data=None):
+        retdef get_data_context(df, av_df, kpi_df, posts, pscores, qscores, anomaly_data=None):
     """Prépare le contexte des données pour l'IA"""
     context = {
         "donnees_generales": {
@@ -1973,7 +1965,6 @@ def analyze_question_intent(question):
     """Analyse l'intention de la question utilisateur"""
     question_lower = question.lower()
     
-    # Analyse des intentions
     if any(word in question_lower for word in ['rapport', 'synthèse', 'résumé']):
         return 'rapport'
     elif any(word in question_lower for word in ['présentation', 'powerpoint', 'pptx', 'slides']):
@@ -1986,9 +1977,23 @@ def analyze_question_intent(question):
         return 'tendances'
     elif any(word in question_lower for word in ['recommandation', 'action', 'amélioration']):
         return 'recommandations'
-    elif any(word in question_lower for word in ['kpi', 'indicateur', 'performance', 'qualite']):
+    else:
         return 'analyse_kpi'
-    elif any
+
+def generate_ai_response(question, context, intent):
+    """Génère une réponse intelligente basée sur le contexte"""
+    response = ""
+    
+    if intent == 'rapport':
+        response = generate_rapport(context)
+urn None
+    try:
+        genai.configure(api_key=AQ.Ab8RN6JjkiKeDmngyTzLh01EDyHnXgeHzhoQq9O-D9d2rKDWvw)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        return model
+    except Exception as e:
+        st.error(f"Erreur de configuration Gemini : {str(e)}")
+        return None
 
 
 if __name__ == "__main__":
