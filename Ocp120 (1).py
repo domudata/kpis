@@ -1925,7 +1925,7 @@ def main():
         st.markdown('<div class="es">📁 Veuillez charger les fichiers OT et AVIS via le panneau de filtres.</div>',unsafe_allow_html=True)
 
     st.markdown('<div class="footer">Bureau Méthodes Maroc Chimie – © 2026 Tous droits réservés</div>', unsafe_allow_html=True)
-     def setup_gemini_client(api_key):
+def setup_gemini_client(api_key):
     """Configure le client Gemini"""
     try:
         genai.configure(api_key=AQ.Ab8RN6JjkiKeDmngyTzLh01EDyHnXgeHzhoQq9O-D9d2rKDWvw)
