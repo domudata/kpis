@@ -1572,62 +1572,46 @@ def main():
             # SYNTHESE DATA
             synth_perf={}; synth_qual={}
             if not var_df.empty and "Date precedente" in var_df.columns:
-                for poste in vp:
-                    synth_perf[poste]={}; synth_qual[poste]={}
-                    pv=var_df[var_df["Poste"]==poste]
-                    for kpi in QK:
-                        kpi_v=pv[pv["KPI"]==kpi]
-                        if not kpi_v.empty:
-                            last=kpi_v.iloc[-1]
-                            synth_perf[poste][kpi]={"diff":"%+.1f"%last["Ecart"]}
-                        else:
-                            synth_perf[poste][kpi]={"diff":"—"}
-                    for kpi in PK:
-                        kpi_v=pv[pv["KPI"]==kpi]
-                        if not kpi_v.empty:
-                            last=kpi_v.iloc[-1]
-                            synth_qual[poste][kpi]={"diff":"%+.1f"%last["Ecart"]}
-                        else:
-                            synth_qual[poste][kpi]={"diff":"—"}
+               # ==========================================
+# CONSTRUCTION DONNÉES PLAN D'ACTIONS (1 ligne par Poste + KPI)
+# ==========================================
+plan_actions_rows = []
 
+for poste in vp:
+    if poste not in ckdf.index:
+        continue
 
-            # ==========================================
-            # CONSTRUCTION DONNÉES PLAN D'ACTIONS (1 ligne par Poste + KPI)
-            # ==========================================
-            plan_actions_rows = []
-            for poste in vp:
-                if poste not in ckdf.index:
-                    continue
-                poste_data = ckdf.loc[poste]
+    poste_data = ckdf.loc[poste]
 
-                for kpi in ALL_KPI:
-                    actual = float(poste_data.get(kpi, 100))
-                    target = CIBLE.get(kpi, 100)
-                    lower  = is_lb(kpi)
+    # KPI existants
+    for kpi in ALL_KPI:
+        actual = float(poste_data.get(kpi, 100))
+        target = CIBLE.get(kpi, 100)
+        lower = is_lb(kpi)
 
-                    if lower:
-                        needs_action = actual > target
-                    else:
-                        needs_action = actual < target
-                    ecart = actual - target
+        if lower:
+            needs_action = actual > target
+        else:
+            needs_action = actual < target
 
-                    nb_anom = int(ano_map.get(kpi, pd.Series()).get(poste, 0))
+        ecart = actual - target
+        nb_anom = int(ano_map.get(kpi, pd.Series()).get(poste, 0))
 
-                    if needs_action or nb_anom > 0:
-                        plan_actions_rows.append({
-                            "poste": poste,
-                            "kpi": kpi,
-                            "needs_action": needs_action,
-                            "ecart": ecart,
-                            "nb_anom": nb_anom,
-                            "responsable": KPI_RESP_MAP.get(kpi, "Non assigné"),
-                            "action": ACT_MAP.get(kpi, ""),
-                            "delai": ""
-                        })
-                          # ======================================
-    # NOUVEAU : Backlog Exécution
+        if needs_action or nb_anom > 0:
+            plan_actions_rows.append({
+                "poste": poste,
+                "kpi": kpi,
+                "needs_action": needs_action,
+                "ecart": ecart,
+                "nb_anom": nb_anom,
+                "responsable": KPI_RESP_MAP.get(kpi, "Non assigné"),
+                "action": ACT_MAP.get(kpi, ""),
+                "delai": ""
+            })
+
     # ======================================
-
+    # Backlog Exécution
+    # ======================================
     backlog_exec = dfp[
         (dfp["Poste travail princ."] == poste) &
         (dfp["Statut OT"] == "LANC") &
@@ -1637,7 +1621,6 @@ def main():
     nb_backlog = len(backlog_exec)
 
     if nb_backlog > 0:
-
         age_moyen = round(backlog_exec["amex"].mean(), 1)
 
         plan_actions_rows.append({
@@ -1647,15 +1630,12 @@ def main():
             "ecart": age_moyen,
             "nb_anom": nb_backlog,
             "responsable": "Chef d'atelier",
-            "action": "Clôturer les OT du backlog d'exécution.",
+            "action": "Clôturer les OT du backlog d'exécution",
             "delai": ""
         })
-                    
 
-            sf1_rows = [r for r in plan_actions_rows if str(r["poste"]).startswith("SF1")]
-            sf2_rows = [r for r in plan_actions_rows if str(r["poste"]).startswith("SF2")]
-
-
+sf1_rows = [r for r in plan_actions_rows if str(r["poste"]).startswith("SF1")]
+sf2_rows = [r for r in plan_actions_rows if str(r["poste"]).startswith("SF2")]
             # RENDER
             avg_p_score=sum(pa.values())/len(pa) if pa else 0
             avg_q_score=sum(qa.values())/len(qa) if qa else 0
