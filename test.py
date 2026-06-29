@@ -1539,36 +1539,69 @@ def main():
             ano_p_cols = ["Poste de travail"] + QK + ["Total Anomalies"]
             ano_q_cols = ["Poste de travail"] + PK + ["Total Anomalies"]
             save_kpis_to_excel(prows,pcols,qrows,qcols,ano_p_rows,ano_p_cols,ano_q_rows,ano_q_cols,fichier_date)
-
             # ANOMALIES DETAILED EXPORT (Pour les liens de téléchargement du Plan d'action)
-            anomaly_dfs = {}
-            anomaly_dfs["TAUX_REALISATION_CORRECTIF/PT"] = dfp[(dfp["Nº appel pl.entret."].fillna(0)==0)&(dfp["Contient SOPL"]==1)&(~dfp["Statut OT"].isin(["CLOT","TCLO"]))].copy()
-            anomaly_dfs["OT préparation <1 mois"] = dfp[prep_filt & (dfp["ap"]!="<1 mois")].copy()
-            anomaly_dfs["OT préparation >3 mois"] = dfp[prep_filt & (dfp["ap"]==">3 mois")].copy()
-            anomaly_dfs["OT préparation 1mois< <3mois"] = dfp[prep_filt & (dfp["ap"]=="1 mois < <3 mois")].copy()
-            anomaly_dfs["OT planification <1 mois"] = dfp[plan_filt & (dfp["alp"]!="<1 mois")].copy()
-            anomaly_dfs["OT planification >3 mois"] = dfp[plan_filt & (dfp["alp"]==">3 mois")].copy()
-            anomaly_dfs["OT planification 1mois< <3mois"] = dfp[plan_filt & (dfp["alp"]=="1 mois < <3 mois")].copy()
-            anomaly_dfs["OT exécution <1 mois"] = dfp[exec_filt & (dfp["aex"]!="<1 mois")].copy()
-            anomaly_dfs["OT exécution >3 mois"] = dfp[exec_filt & (dfp["aex"]==">3 mois")].copy()
-            anomaly_dfs["OT exécution 1mois< <3mois"] = dfp[exec_filt & (dfp["aex"]=="1 mois < <3 mois")].copy()
-            anomaly_dfs["Performance Graissage"] = dfp[perf_filt & (dfp["_tw_num"]==350)].copy()
-            anomaly_dfs["Performance Inspection"] = dfp[perf_filt & (dfp["_tw_num"].isin([290,300,310]))&(dfp["Date de début planifiée"]<=now_ts)].copy()
-            anomaly_dfs["Performance Systématiques"] = dfp[perf_filt & (dfp["_tw_num"]==360)&(dfp["Date de début planifiée"]<=now_ts)].copy()
-            anomaly_dfs["Taux d'approbation des Avis"] = avf[~avf["Statut utilisateur"].isin(["APRV","APRV AVAU"])].copy()
-            anomaly_dfs["OT LANC ESTIME"] = dfp[(dfp["Statut OT"]=="LANC")&(dfp["OT LANC ESTIME"]=="NON")].copy()
-            anomaly_dfs["Backlog préparation caractérisé"] = dfp[(dfp["Statut OT"]=="CRÉÉ")&(dfp["Backlog preparation"]=="NON CARACTERISE")].copy()
-            anomaly_dfs["Backlog planification caractérisé"] = dfp[(dfp["Statut OT"]=="LANC") & (dfp["Contient SOPL"]==0) & (dfp["Backlog planification"]=="NON CARACTERISE")].copy()
-            anomaly_dfs["OT CONFIME"] = dfp[dfp["OT CONFIME"]=="NON"].copy()
-            anomaly_dfs["OT_COR_EGAL"] = dfp[dfp["OT_COR_EGAL"]=="NON"].copy()
-            anomaly_dfs["Backlog exécution"] = dfp[(dfp["Statut OT"]=="LANC") & (dfp["Contient SOPL"]==1)].copy()
-            
-            hist_filepath=os.path.join("kpis","indicateurs_kpis.xlsx")
-            hist_df=load_historical_kpis(hist_filepath)
-            var_df=calculate_variations(hist_df)
-            journal_df=generate_journal(var_df)
-            top5_df,bot5_df=calculate_rankings(var_df)
-            # ==========================================
+anomaly_dfs = {}
+
+anomaly_dfs["TAUX_REALISATION_CORRECTIF/PT"] = dfp[
+    (dfp["Nº appel pl.entret."].fillna(0) == 0) &
+    (dfp["Contient SOPL"] == 1) &
+    (~dfp["Statut OT"].isin(["CLOT", "TCLO"]))
+].copy()
+
+anomaly_dfs["OT préparation <1 mois"] = dfp[prep_filt & (dfp["ap"] != "<1 mois")].copy()
+anomaly_dfs["OT préparation >3 mois"] = dfp[prep_filt & (dfp["ap"] == ">3 mois")].copy()
+anomaly_dfs["OT préparation 1mois< <3mois"] = dfp[prep_filt & (dfp["ap"] == "1 mois < <3 mois")].copy()
+
+anomaly_dfs["OT planification <1 mois"] = dfp[plan_filt & (dfp["alp"] != "<1 mois")].copy()
+anomaly_dfs["OT planification >3 mois"] = dfp[plan_filt & (dfp["alp"] == ">3 mois")].copy()
+anomaly_dfs["OT planification 1mois< <3mois"] = dfp[plan_filt & (dfp["alp"] == "1 mois < <3 mois")].copy()
+
+anomaly_dfs["OT exécution <1 mois"] = dfp[exec_filt & (dfp["aex"] != "<1 mois")].copy()
+anomaly_dfs["OT exécution >3 mois"] = dfp[exec_filt & (dfp["aex"] == ">3 mois")].copy()
+anomaly_dfs["OT exécution 1mois< <3mois"] = dfp[exec_filt & (dfp["aex"] == "1 mois < <3 mois")].copy()
+
+anomaly_dfs["Performance Graissage"] = dfp[perf_filt & (dfp["_tw_num"] == 350)].copy()
+anomaly_dfs["Performance Inspection"] = dfp[
+    perf_filt & 
+    (dfp["_tw_num"].isin([290, 300, 310])) & 
+    (dfp["Date de début planifiée"] <= now_ts)
+].copy()
+anomaly_dfs["Performance Systématiques"] = dfp[
+    perf_filt & 
+    (dfp["_tw_num"] == 360) & 
+    (dfp["Date de début planifiée"] <= now_ts)
+].copy()
+
+anomaly_dfs["Taux d'approbation des Avis"] = avf[
+    ~avf["Statut utilisateur"].isin(["APRV", "APRV AVAU"])
+].copy()
+anomaly_dfs["OT LANC ESTIME"] = dfp[
+    (dfp["Statut OT"] == "LANC") & (dfp["OT LANC ESTIME"] == "NON")
+].copy()
+anomaly_dfs["Backlog préparation caractérisé"] = dfp[
+    (dfp["Statut OT"] == "CRÉÉ") & (dfp["Backlog preparation"] == "NON CARACTERISE")
+].copy()
+anomaly_dfs["Backlog planification caractérisé"] = dfp[
+    (dfp["Statut OT"] == "LANC") & 
+    (dfp["Contient SOPL"] == 0) & 
+    (dfp["Backlog planification"] == "NON CARACTERISE")
+].copy()
+anomaly_dfs["OT CONFIME"] = dfp[dfp["OT CONFIME"] == "NON"].copy()
+anomaly_dfs["OT_COR_EGAL"] = dfp[dfp["OT_COR_EGAL"] == "NON"].copy()
+anomaly_dfs["Backlog exécution"] = dfp[
+    (dfp["Statut OT"] == "LANC") & (dfp["Contient SOPL"] == 1)
+].copy()
+
+# ==========================================
+# CHARGEMENT HISTORIQUE ET CALCULS
+# ==========================================
+hist_filepath = os.path.join("kpis", "indicateurs_kpis.xlsx")
+hist_df = load_historical_kpis(hist_filepath)
+var_df = calculate_variations(hist_df)
+journal_df = generate_journal(var_df)
+top5_df, bot5_df = calculate_rankings(var_df)
+
+# ==========================================
 # SYNTHESE DATA
 # ==========================================
 synth_perf = {}
@@ -1600,34 +1633,25 @@ if not var_df.empty and "Date precedente" in var_df.columns:
 # ==========================================
 # CONSTRUCTION DONNÉES PLAN D'ACTIONS
 # ==========================================
-
 plan_actions_rows = []
 
 for poste in vp:
-
     if poste not in ckdf.index:
         continue
 
     poste_data = ckdf.loc[poste]
 
-    # KPI existants
+    # --- KPI existants ---
     for kpi in ALL_KPI:
-
         actual = float(poste_data.get(kpi, 100))
         target = CIBLE.get(kpi, 100)
         lower = is_lb(kpi)
 
-        if lower:
-            needs_action = actual > target
-        else:
-            needs_action = actual < target
-
+        needs_action = (actual > target) if lower else (actual < target)
         ecart = actual - target
-
         nb_anom = int(ano_map.get(kpi, pd.Series()).get(poste, 0))
 
         if needs_action or nb_anom > 0:
-
             plan_actions_rows.append({
                 "poste": poste,
                 "kpi": kpi,
@@ -1639,10 +1663,7 @@ for poste in vp:
                 "delai": ""
             })
 
-    # ======================================
-    # Backlog Exécution
-    # ======================================
-
+    # --- Backlog Exécution (au même niveau que la boucle KPI) ---
     backlog_exec = dfp[
         (dfp["Poste travail princ."] == poste) &
         (dfp["Statut OT"] == "LANC") &
@@ -1652,7 +1673,6 @@ for poste in vp:
     nb_backlog = len(backlog_exec)
 
     if nb_backlog > 0:
-
         age_moyen = round(backlog_exec["amex"].mean(), 1)
 
         plan_actions_rows.append({
@@ -1666,20 +1686,49 @@ for poste in vp:
             "delai": ""
         })
 
+# --- Séparation SF1 / SF2 (hors de la boucle principale) ---
 sf1_rows = [r for r in plan_actions_rows if str(r["poste"]).startswith("SF1")]
 sf2_rows = [r for r in plan_actions_rows if str(r["poste"]).startswith("SF2")]
 
-            avg_p_score=sum(pa.values())/len(pa) if pa else 0
-            avg_q_score=sum(qa.values())/len(qa) if qa else 0
-            total_ano_p=sum([r["Total Anomalies"] for r in ano_p_rows if r.get("Poste de travail")!="Total"])
-            total_ano_q=sum([r["Total Anomalies"] for r in ano_q_rows if r.get("Poste de travail")!="Total"])
-            total_ot=len(df)
-            logo_b64 = get_logo_base64()
-            if logo_b64:
-               st.markdown(f'<div class="mh"><img src="data:image/png;base64,{logo_b64}" class="logo" alt="Logo"><h1>Tableau de Bord KPIs Performance & Qualite</h1><span class="db">📅 {fichier_date}</span></div>', unsafe_allow_html=True)
-            else:
-                st.markdown('<div class="mh"><h1>Tableau de Bord KPIs Performance & Qualite</h1><span class="db">📅 18/06/2026</span></div>',unsafe_allow_html=True)
-            
+# ==========================================
+# CALCULS FINAUX POUR L'AFFICHAGE
+# ==========================================
+avg_p_score = sum(pa.values()) / len(pa) if pa else 0
+avg_q_score = sum(qa.values()) / len(qa) if qa else 0
+total_ano_p = sum([
+    r["Total Anomalies"] 
+    for r in ano_p_rows 
+    if r.get("Poste de travail") != "Total"
+])
+total_ano_q = sum([
+    r["Total Anomalies"] 
+    for r in ano_q_rows 
+    if r.get("Poste de travail") != "Total"
+])
+total_ot = len(df)
+
+# ==========================================
+# AFFICHAGE EN-TÊTE STREAMLIT
+# ==========================================
+logo_b64 = get_logo_base64()
+
+if logo_b64:
+    st.markdown(
+        f'<div class="mh">'
+        f'<img src="data:image/png;base64,{logo_b64}" class="logo" alt="Logo">'
+        f'<h1>Tableau de Bord KPIs Performance & Qualite</h1>'
+        f'<span class="db">📅 {fichier_date}</span>'
+        f'</div>',
+        unsafe_allow_html=True
+    )
+else:
+    st.markdown(
+        '<div class="mh">'
+        '<h1>Tableau de Bord KPIs Performance & Qualite</h1>'
+        '<span class="db">📅 18/06/2026</span>'
+        '</div>',
+        unsafe_allow_html=True
+    )
             # === Variations automatiques depuis hist_df ===
             prev_values = get_previous_card_values(hist_df)
 
