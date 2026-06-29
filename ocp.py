@@ -1410,7 +1410,7 @@ def main():
             ano_map["Taux d'approbation des Avis"] = avf_tot.sub(avf_aprv, fill_value=0)
             ano_map["OT LANC ESTIME"] = dfp[(dfp["Statut OT"]=="LANC")&(dfp["OT LANC ESTIME"]=="NON")].groupby("Poste travail princ.")["Ordre"].count()
             ano_map["Backlog préparation caractérisé"] = dfp[(dfp["Statut OT"]=="CRÉÉ")&(dfp["Backlog preparation"]=="NON CARACTERISE")].groupby("Poste travail princ.")["Ordre"].count()
-            ano_map["Backlog planification caractérisé"] = dfp[(dfp["Statut OT"]=="LANC")&(dfp["Backlog planification"]=="NON CARACTERISE")].groupby("Poste travail princ.")["Ordre"].count()
+            ano_map["Backlog planification caractérisé"] = dfp[(dfp["Statut OT"]=="LANC") & (dfp["Contient SOPL"]==0) & (dfp["Backlog planification"]=="NON CARACTERISE")].groupby("Poste travail princ.")["Ordre"].count()
             ano_map["OT CONFIME"] = dfp[dfp["OT CONFIME"]=="NON"].groupby("Poste travail princ.")["Ordre"].count()
             ano_map["OT_COR_EGAL"] = dfp[dfp["OT_COR_EGAL"]=="NON"].groupby("Poste travail princ.")["Ordre"].count()
             
@@ -1558,7 +1558,7 @@ def main():
             anomaly_dfs["Taux d'approbation des Avis"] = avf[~avf["Statut utilisateur"].isin(["APRV","APRV AVAU"])].copy()
             anomaly_dfs["OT LANC ESTIME"] = dfp[(dfp["Statut OT"]=="LANC")&(dfp["OT LANC ESTIME"]=="NON")].copy()
             anomaly_dfs["Backlog préparation caractérisé"] = dfp[(dfp["Statut OT"]=="CRÉÉ")&(dfp["Backlog preparation"]=="NON CARACTERISE")].copy()
-            anomaly_dfs["Backlog planification caractérisé"] = dfp[(dfp["Statut OT"]=="LANC")&(dfp["Backlog planification"]=="NON CARACTERISE")].copy()
+            anomaly_dfs["Backlog planification caractérisé"] = dfp[(dfp["Statut OT"]=="LANC") & (dfp["Contient SOPL"]==0) & (dfp["Backlog planification"]=="NON CARACTERISE")].copy()
             anomaly_dfs["OT CONFIME"] = dfp[dfp["OT CONFIME"]=="NON"].copy()
             anomaly_dfs["OT_COR_EGAL"] = dfp[dfp["OT_COR_EGAL"]=="NON"].copy()
             
