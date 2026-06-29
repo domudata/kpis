@@ -1540,6 +1540,9 @@ def main():
             ano_q_cols = ["Poste de travail"] + PK + ["Total Anomalies"]
             save_kpis_to_excel(prows,pcols,qrows,qcols,ano_p_rows,ano_p_cols,ano_q_rows,ano_q_cols,fichier_date)
             # ANOMALIES DETAILED EXPORT (Pour les liens de téléchargement du Plan d'action)
+            # ==========================================
+# ANOMALIES DETAILED EXPORT
+# ==========================================
 anomaly_dfs = {}
 
 anomaly_dfs["TAUX_REALISATION_CORRECTIF/PT"] = dfp[
@@ -1562,13 +1565,13 @@ anomaly_dfs["OT exécution 1mois< <3mois"] = dfp[exec_filt & (dfp["aex"] == "1 m
 
 anomaly_dfs["Performance Graissage"] = dfp[perf_filt & (dfp["_tw_num"] == 350)].copy()
 anomaly_dfs["Performance Inspection"] = dfp[
-    perf_filt & 
-    (dfp["_tw_num"].isin([290, 300, 310])) & 
+    perf_filt &
+    (dfp["_tw_num"].isin([290, 300, 310])) &
     (dfp["Date de début planifiée"] <= now_ts)
 ].copy()
 anomaly_dfs["Performance Systématiques"] = dfp[
-    perf_filt & 
-    (dfp["_tw_num"] == 360) & 
+    perf_filt &
+    (dfp["_tw_num"] == 360) &
     (dfp["Date de début planifiée"] <= now_ts)
 ].copy()
 
@@ -1582,8 +1585,8 @@ anomaly_dfs["Backlog préparation caractérisé"] = dfp[
     (dfp["Statut OT"] == "CRÉÉ") & (dfp["Backlog preparation"] == "NON CARACTERISE")
 ].copy()
 anomaly_dfs["Backlog planification caractérisé"] = dfp[
-    (dfp["Statut OT"] == "LANC") & 
-    (dfp["Contient SOPL"] == 0) & 
+    (dfp["Statut OT"] == "LANC") &
+    (dfp["Contient SOPL"] == 0) &
     (dfp["Backlog planification"] == "NON CARACTERISE")
 ].copy()
 anomaly_dfs["OT CONFIME"] = dfp[dfp["OT CONFIME"] == "NON"].copy()
@@ -1663,7 +1666,7 @@ for poste in vp:
                 "delai": ""
             })
 
-    # --- Backlog Exécution (au même niveau que la boucle KPI) ---
+    # --- Backlog Exécution ---
     backlog_exec = dfp[
         (dfp["Poste travail princ."] == poste) &
         (dfp["Statut OT"] == "LANC") &
@@ -1686,23 +1689,23 @@ for poste in vp:
             "delai": ""
         })
 
-# --- Séparation SF1 / SF2 (hors de la boucle principale) ---
+# --- Séparation SF1 / SF2 ---
 sf1_rows = [r for r in plan_actions_rows if str(r["poste"]).startswith("SF1")]
 sf2_rows = [r for r in plan_actions_rows if str(r["poste"]).startswith("SF2")]
 
 # ==========================================
-# CALCULS FINAUX POUR L'AFFICHAGE
+# CALCULS FINAUX
 # ==========================================
 avg_p_score = sum(pa.values()) / len(pa) if pa else 0
 avg_q_score = sum(qa.values()) / len(qa) if qa else 0
 total_ano_p = sum([
-    r["Total Anomalies"] 
-    for r in ano_p_rows 
+    r["Total Anomalies"]
+    for r in ano_p_rows
     if r.get("Poste de travail") != "Total"
 ])
 total_ano_q = sum([
-    r["Total Anomalies"] 
-    for r in ano_q_rows 
+    r["Total Anomalies"]
+    for r in ano_q_rows
     if r.get("Poste de travail") != "Total"
 ])
 total_ot = len(df)
