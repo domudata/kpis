@@ -9,7 +9,7 @@ from datetime import datetime
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from openpyxl import load_workbook, Workbook
+from openpyxl import load_workbook, Workbookf
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openai import OpenAI
 
@@ -1412,7 +1412,7 @@ def main():
             ano_map["Backlog préparation caractérisé"] = dfp[(dfp["Statut OT"]=="CRÉÉ")&(dfp["Backlog preparation"]=="NON CARACTERISE")].groupby("Poste travail princ.")["Ordre"].count()
             ano_map["Backlog planification caractérisé"] = dfp[(dfp["Statut OT"]=="LANC") & (dfp["Contient SOPL"]==0) & (dfp["Backlog planification"]=="NON CARACTERISE")].groupby("Poste travail princ.")["Ordre"].count()
             ano_map["OT CONFIME"] = dfp[(dfp["Statut OT"].isin(["CLOT","TCLO"])) & (dfp["OT CONFIME"]=="NON")].groupby("Poste travail princ.")["Ordre"].count()
-            ano_map["OT_COR_EGAL"] = dfp[(dfp["Statut OT"].isin(["CLOT","TCLO"])) & (dfp["OT_COR_EGAL"]=="NON")].groupby("Poste travail princ.")["Ordre"].count()
+            ano_map["OT_COR_EGAL"] = dfp[(dfp["Statut OT"].isin(["CLOT","TCLO"])) & (dfp["OT_COR_EGAL"]=="OUI")].groupby("Poste travail princ.")["Ordre"].count()
             
             ano_p_rows = []
             for poste in vp:
@@ -1560,7 +1560,7 @@ def main():
             anomaly_dfs["Backlog préparation caractérisé"] = dfp[(dfp["Statut OT"]=="CRÉÉ")&(dfp["Backlog preparation"]=="NON CARACTERISE")].copy()
             anomaly_dfs["Backlog planification caractérisé"] = dfp[(dfp["Statut OT"]=="LANC") & (dfp["Contient SOPL"]==0) & (dfp["Backlog planification"]=="NON CARACTERISE")].copy()
             anomaly_dfs["OT CONFIME"] = dfp[(dfp["Statut OT"].isin(["CLOT","TCLO"])) & (dfp["OT CONFIME"]=="NON")].copy()
-            anomaly_dfs["OT_COR_EGAL"] = dfp[(dfp["Statut OT"].isin(["CLOT","TCLO"])) & (dfp["OT_COR_EGAL"]=="NON")].copy()
+            anomaly_dfs["OT_COR_EGAL"] = dfp[(dfp["Statut OT"].isin(["CLOT","TCLO"])) & (dfp["OT_COR_EGAL"]=="OUI")].copy()
             hist_filepath=os.path.join("kpis","indicateurs_kpis.xlsx")
             hist_df=load_historical_kpis(hist_filepath)
             var_df=calculate_variations(hist_df)
