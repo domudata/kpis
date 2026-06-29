@@ -21,7 +21,7 @@ QK = ["TAUX_REALISATION_CORRECTIF/PT","OT préparation <1 mois","OT préparation
       "OT préparation 1mois< <3mois","OT planification <1 mois","OT planification >3 mois",
       "OT planification 1mois< <3mois","OT exécution <1 mois","OT exécution >3 mois",
       "OT exécution 1mois< <3mois",
-      "Performance Graissage","Performance Inspection","Performance Appels Systématiques"]
+      "Performance Graissage","Performance Inspection","Performance Systématiques"]
 PK = ["Taux d'approbation des Avis","OT LANC ESTIME","Backlog préparation caractérisé",
       "Backlog planification caractérisé","OT CONFIME","OT_COR_EGAL",
       "OT Fiabilité","Total Avis de Panne"]
@@ -33,7 +33,7 @@ CIBLE = {"TAUX_REALISATION_CORRECTIF/PT":85,"OT préparation <1 mois":80,"OT pr�
          "OT exécution 1mois< <3mois":15,"Taux d'approbation des Avis":95,"OT LANC ESTIME":100,
          "Backlog préparation caractérisé":100,"Backlog planification caractérisé":100,
          "OT CONFIME":100,"OT_COR_EGAL":100,
-         "Performance Graissage":95,"Performance Inspection":95,"Performance Appels Systématiques":95,
+         "Performance Graissage":95,"Performance Inspection":95,"Performance Systématiques":95,
          "OT Fiabilité":100,"Total Avis de Panne":100}
 
 ACT_MAP = {"TAUX_REALISATION_CORRECTIF/PT":"Ameliorer le taux de realisation des OT.",
@@ -54,7 +54,7 @@ ACT_MAP = {"TAUX_REALISATION_CORRECTIF/PT":"Ameliorer le taux de realisation des
            "OT exécution 1mois< <3mois":"Reduire les OT entre 1 et 3 mois.",
            "Performance Graissage":"Ameliorer le taux de realisation des OT de graissage (Type 350).",
            "Performance Inspection":"Ameliorer le taux de realisation des OT d'inspection (Types 290,300,310).",
-           "Performance Appels Systématiques":"Ameliorer le taux de realisation des appels systematiques (Type 360).",
+           "Performance Systématiques":"Ameliorer le taux de realisation des appels systematiques (Type 360).",
            "OT Fiabilité":"Maintenir la fiabilite des OT a 100%.",
            "Total Avis de Panne":"Maintenir le suivi des avis de panne a 100%."}
 
@@ -77,7 +77,7 @@ KPI_RESP_MAP = {
     "OT_COR_EGAL": "Agent de saisie",
     "Performance Graissage": "Chef d'atelier",
     "Performance Inspection": "Chef d'atelier",
-    "Performance Appels Systématiques": "Chef d'atelier",
+    "Performance Systématiques": "Chef d'atelier",
     "OT Fiabilité": "Fiabilité",
     "Total Avis de Panne": "Fiabilité"
 }
@@ -930,7 +930,7 @@ def main():
         sys_num=df[(df["Statut OT"].isin(["CLOT","TCLO"]))&sys_base].groupby("Poste travail princ.")["Ordre"].count()
         sys_den=df[(df["Contient SOPL"]==1)&sys_base].groupby("Poste travail princ.")["Ordre"].count()
         sys_df=pd.DataFrame({"_n":sys_num,"_d":sys_den}).reindex(posts,fill_value=0)
-        sys_df["Performance Appels Systématiques"]=np.where(sys_df["_d"]==0,100.0,(sys_df["_n"]/sys_df["_d"])*100)
+        sys_df["Performance Systématiques"]=np.where(sys_df["_d"]==0,100.0,(sys_df["_n"]/sys_df["_d"])*100)
         
         fiab_s=pd.Series(100.0,index=posts); avpan_s=pd.Series(100.0,index=posts)
         res['ckdf']=pd.DataFrame({
@@ -938,7 +938,7 @@ def main():
             "OT préparation <1 mois":pr["OT préparation <1 mois"],"OT préparation >3 mois":pr["OT préparation >3 mois"],"OT préparation 1mois< <3mois":pr["OT préparation 1mois< <3mois"],
             "OT planification <1 mois":pl["OT planification <1 mois"],"OT planification >3 mois":pl["OT planification >3 mois"],"OT planification 1mois< <3mois":pl["OT planification 1mois< <3mois"],
             "OT exécution <1 mois":ex["OT exécution <1 mois"],"OT exécution >3 mois":ex["OT exécution >3 mois"],"OT exécution 1mois< <3mois":ex["OT exécution 1mois< <3mois"],
-            "Performance Graissage":g_df["Performance Graissage"],"Performance Inspection":ins_df["Performance Inspection"],"Performance Appels Systématiques":sys_df["Performance Appels Systématiques"],
+            "Performance Graissage":g_df["Performance Graissage"],"Performance Inspection":ins_df["Performance Inspection"],"Performance Systématiques":sys_df["Performance Systématiques"],
             "Taux d'approbation des Avis":tca["Taux d'approbation des Avis"],"OT LANC ESTIME":la["OT LANC ESTIME"],
             "Backlog préparation caractérisé":pc["Backlog préparation caractérisé"],"Backlog planification caractérisé":plc["Backlog planification caractérisé"],
             "OT CONFIME":res['ot_confime']["OT CONFIME"],"OT_COR_EGAL":res['ot_cor_egal']["OT_COR_EGAL"],
@@ -969,7 +969,7 @@ def main():
             if v>=100: return "#38a169"
             elif v>=95: return "#f59e0b"
             else: return "#e53e3e"
-        if kpi in ["Performance Graissage","Performance Inspection","Performance Appels Systématiques"]:
+        if kpi in ["Performance Graissage","Performance Inspection","Performance Systématiques"]:
             if v>=95: return "#38a169"
             elif v>90: return "#f59e0b"
             else: return "#e53e3e"
@@ -994,7 +994,7 @@ def main():
             return "background:#c6efce;color:#006100;font-weight:600" if val>=95 else ("background:#ffeb9c;color:#9c6500;font-weight:600" if val>=90 else "background:#ffc7ce;color:#9c0006;font-weight:600")
         if c in ["OT LANC ESTIME","Backlog préparation caractérisé","Backlog planification caractérisé","OT CONFIME","OT_COR_EGAL"]:
             return "background:#c6efce;color:#006100;font-weight:600" if val>=100 else ("background:#ffeb9c;color:#9c6500;font-weight:600" if val>=95 else "background:#ffc7ce;color:#9c0006;font-weight:600")
-        if c in ["Performance Graissage","Performance Inspection","Performance Appels Systématiques"]:
+        if c in ["Performance Graissage","Performance Inspection","Performance Systématiques"]:
             return "background:#c6efce;color:#006100;font-weight:600" if val>=95 else ("background:#ffeb9c;color:#9c6500;font-weight:600" if val>90 else "background:#ffc7ce;color:#9c0006;font-weight:600")
         if c in ["OT Fiabilité","Total Avis de Panne"]:
             return "background:#c6efce;color:#006100;font-weight:600" if val>=100 else "background:#ffeb9c;color:#9c6500;font-weight:600"
@@ -1021,7 +1021,7 @@ def main():
         if k=="TAUX_REALISATION_CORRECTIF/PT": return 1 if a>=80 else 0
         if k=="Taux d'approbation des Avis": return 1 if a>=90 else 0
         if k in ["OT LANC ESTIME","Backlog préparation caractérisé","Backlog planification caractérisé","OT CONFIME","OT_COR_EGAL"]: return 1 if a>=95 else 0
-        if k in ["Performance Graissage","Performance Inspection","Performance Appels Systématiques"]: return 1 if a>=95 else 0
+        if k in ["Performance Graissage","Performance Inspection","Performance Systématiques"]: return 1 if a>=95 else 0
         if k in ["OT Fiabilité","Total Avis de Panne"]: return 1 if a>=100 else 0
         return 0
         
@@ -1404,7 +1404,7 @@ def main():
             perf_filt = (dfp["Contient SOPL"]==1)&(~dfp["Statut OT"].isin(["CLOT","TCLO"]))
             ano_map["Performance Graissage"] = dfp[perf_filt & (dfp["_tw_num"]==350)].groupby("Poste travail princ.")["Ordre"].count()
             ano_map["Performance Inspection"] = dfp[perf_filt & (dfp["_tw_num"].isin([290,300,310]))&(dfp["Date de début planifiée"]<=now_ts)].groupby("Poste travail princ.")["Ordre"].count()
-            ano_map["Performance Appels Systématiques"] = dfp[perf_filt & (dfp["_tw_num"]==360)&(dfp["Date de début planifiée"]<=now_ts)].groupby("Poste travail princ.")["Ordre"].count()
+            ano_map["Performance Systématiques"] = dfp[perf_filt & (dfp["_tw_num"]==360)&(dfp["Date de début planifiée"]<=now_ts)].groupby("Poste travail princ.")["Ordre"].count()
             avf_tot = avf.groupby("Poste travail princ.")["Avis"].count()
             avf_aprv = avf[avf["Statut utilisateur"].isin(["APRV","APRV AVAU"])].groupby("Poste travail princ.")["Avis"].count()
             ano_map["Taux d'approbation des Avis"] = avf_tot.sub(avf_aprv, fill_value=0)
@@ -1554,7 +1554,7 @@ def main():
             anomaly_dfs["OT exécution 1mois< <3mois"] = dfp[exec_filt & (dfp["aex"]=="1 mois < <3 mois")].copy()
             anomaly_dfs["Performance Graissage"] = dfp[perf_filt & (dfp["_tw_num"]==350)].copy()
             anomaly_dfs["Performance Inspection"] = dfp[perf_filt & (dfp["_tw_num"].isin([290,300,310]))&(dfp["Date de début planifiée"]<=now_ts)].copy()
-            anomaly_dfs["Performance Appels Systématiques"] = dfp[perf_filt & (dfp["_tw_num"]==360)&(dfp["Date de début planifiée"]<=now_ts)].copy()
+            anomaly_dfs["Performance Systématiques"] = dfp[perf_filt & (dfp["_tw_num"]==360)&(dfp["Date de début planifiée"]<=now_ts)].copy()
             anomaly_dfs["Taux d'approbation des Avis"] = avf[~avf["Statut utilisateur"].isin(["APRV","APRV AVAU"])].copy()
             anomaly_dfs["OT LANC ESTIME"] = dfp[(dfp["Statut OT"]=="LANC")&(dfp["OT LANC ESTIME"]=="NON")].copy()
             anomaly_dfs["Backlog préparation caractérisé"] = dfp[(dfp["Statut OT"]=="CRÉÉ")&(dfp["Backlog preparation"]=="NON CARACTERISE")].copy()
