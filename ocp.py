@@ -270,7 +270,7 @@ def save_kpis_to_excel(prows,pcols,qrows,qcols,ano_p_r,ano_p_c,ano_q_r,ano_q_c,s
 
 def load_historical_kpis(filepath):
     if not os.path.exists(filepath): return pd.DataFrame()
-    try: wb=load_workbook(filepath,read_only=True,data_only=True)
+    try: wb=load_workbook(filepath,data_only=True)
     except Exception: return pd.DataFrame()
     records=[]; section=None; headers=None
     for sheet_name in wb.sheetnames:
