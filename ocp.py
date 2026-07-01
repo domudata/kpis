@@ -1393,7 +1393,7 @@ def main():
             ano_map["OT préparation <1 mois"] = dfp[prep_filt & (dfp["ap"]!="<1 mois")].groupby("Poste travail princ.")["Ordre"].count()
             ano_map["OT préparation >3 mois"] = dfp[prep_filt & (dfp["ap"]==">3 mois")].groupby("Poste travail princ.")["Ordre"].count()
             ano_map["OT préparation 1mois< <3mois"] = dfp[prep_filt & (dfp["ap"]=="1 mois < <3 mois")].groupby("Poste travail princ.")["Ordre"].count()
-            plan_filt = (dfp["Statut OT"]=="LANC")&(dfp["Statut utilisateur"].str.contains("ATPL",case=False,na=False))
+            plan_filt = (dfp["Statut OT"]=="LANC") & (dfp["Statut utilisateur"].str.contains("ATPL", case=False, na=False))
             ano_map["OT planification <1 mois"] = dfp[plan_filt & (dfp["alp"]!="<1 mois")].groupby("Poste travail princ.")["Ordre"].count()
             ano_map["OT planification >3 mois"] = dfp[plan_filt & (dfp["alp"]==">3 mois")].groupby("Poste travail princ.")["Ordre"].count()
             ano_map["OT planification 1mois< <3mois"] = dfp[plan_filt & (dfp["alp"]=="1 mois < <3 mois")].groupby("Poste travail princ.")["Ordre"].count()
